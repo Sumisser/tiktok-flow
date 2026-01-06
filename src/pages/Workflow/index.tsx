@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 
 export default function Workflow() {
   const { id } = useParams<{ id: string }>();
-  const { getTask, updateTask, updateStep, updateStoryboards } = useTasks();
+  const { getTask, updateTask, updateStep, updateStoryboards, isLoading } =
+    useTasks();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState("");
 
@@ -22,6 +23,32 @@ export default function Workflow() {
     }
   }, [task?.id]);
 
+  // 加载中状态
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 bg-background">
+        <div className="space-y-8 text-center animate-in fade-in duration-500">
+          <div className="relative">
+            <div className="w-24 h-24 border-4 border-primary/10 border-t-primary rounded-full animate-spin mx-auto" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div
+                className="w-12 h-12 border-4 border-primary/5 border-t-primary/60 rounded-full animate-spin"
+                style={{
+                  animationDirection: "reverse",
+                  animationDuration: "1s",
+                }}
+              />
+            </div>
+          </div>
+          <p className="text-lg font-black tracking-widest uppercase text-muted-foreground">
+            正在加载项目...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // 项目不存在
   if (!task) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6 bg-background">

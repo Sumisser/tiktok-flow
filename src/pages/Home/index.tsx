@@ -159,7 +159,28 @@ export default function Home() {
 
       {/* 动态区域 - 根据是否有任务切换布局 */}
       <main className="relative z-10 min-h-screen">
-        {!hasTasks || isCreating ? (
+        {isLoading ? (
+          /* Loading 状态：展示加载动画 */
+          <section className="min-h-screen flex flex-col items-center justify-center px-8 animate-in fade-in duration-500">
+            <div className="space-y-8 text-center">
+              <div className="relative">
+                <div className="w-24 h-24 border-4 border-white/10 border-t-white/80 rounded-full animate-spin mx-auto" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div
+                    className="w-12 h-12 border-4 border-white/5 border-t-white/40 rounded-full animate-spin"
+                    style={{
+                      animationDirection: "reverse",
+                      animationDuration: "1s",
+                    }}
+                  />
+                </div>
+              </div>
+              <p className="text-xl font-black tracking-widest uppercase opacity-40">
+                正在加载创作流...
+              </p>
+            </div>
+          </section>
+        ) : !hasTasks || isCreating ? (
           /* 空状态 / 创建状态：展示全屏 Hero 区域 */
           <section className="min-h-screen flex flex-col items-center justify-center px-8 pb-32 animate-in fade-in duration-1000">
             <div className="w-full max-w-4xl space-y-16">
@@ -217,13 +238,7 @@ export default function Home() {
                       onClick={() => setIsCreating(true)}
                       className="px-12 py-6 bg-white/10 hover:bg-white/20 backdrop-blur-2xl rounded-[2rem] border border-white/10 transition-all group relative overflow-hidden"
                     >
-                      {isLoading ? (
-                        <div className="w-8 h-8 flex items-center justify-center">
-                          <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                        </div>
-                      ) : (
-                        <Plus className="w-8 h-8 opacity-40 group-hover:opacity-100 group-hover:rotate-90 transition-all" />
-                      )}
+                      <Plus className="w-8 h-8 opacity-40 group-hover:opacity-100 group-hover:rotate-90 transition-all" />
                     </button>
                   </div>
                 )}
