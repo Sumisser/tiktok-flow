@@ -195,19 +195,21 @@ export default function StoryboardEditor({
                     ref={dropzoneRef}
                     onPaste={(e) => handlePaste(e, item.id)}
                     className="w-full h-full p-2 flex flex-col items-center justify-center
-                               border-2 border-dashed border-purple-500/50 bg-purple-500/10"
+                                 border-2 border-dashed border-primary/50 bg-primary/10"
                     tabIndex={0}
                   >
                     {isProcessing ? (
-                      <div className="text-white/60 text-xs">处理中...</div>
+                      <div className="text-foreground/60 text-xs">
+                        处理中...
+                      </div>
                     ) : (
                       <>
-                        <div className="text-white/70 text-xs text-center mb-1">
+                        <div className="text-foreground/70 text-xs text-center mb-1">
                           Ctrl+V 粘贴
                         </div>
                         <label
-                          className="px-2 py-0.5 bg-purple-500/50 text-white text-xs rounded cursor-pointer
-                                         hover:bg-purple-500/70 transition-all"
+                          className="px-2 py-0.5 bg-primary/50 text-white text-xs rounded cursor-pointer
+                                           hover:bg-primary/70 transition-all font-bold"
                         >
                           选择文件
                           <input
@@ -219,7 +221,7 @@ export default function StoryboardEditor({
                         </label>
                         <button
                           onClick={() => setEditingId(null)}
-                          className="mt-1 text-white/40 text-xs hover:text-white/60"
+                          className="mt-1 text-muted-foreground text-xs hover:text-foreground/60"
                         >
                           取消
                         </button>
@@ -230,7 +232,7 @@ export default function StoryboardEditor({
                   <button
                     onClick={() => setEditingId(item.id)}
                     className="w-full h-full flex flex-col items-center justify-center 
-                               text-white/40 hover:text-white/60 hover:bg-white/5 transition-all"
+                                 text-muted-foreground hover:text-foreground/60 hover:bg-black/5 transition-all"
                   >
                     <svg
                       className="w-6 h-6 mb-1"
@@ -245,7 +247,7 @@ export default function StoryboardEditor({
                         d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                       />
                     </svg>
-                    <span className="text-xs">添加</span>
+                    <span className="text-xs font-bold">添加图片</span>
                   </button>
                 )}
               </div>
@@ -253,17 +255,17 @@ export default function StoryboardEditor({
               {/* 镜号和脚本 */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="px-2 py-0.5 bg-purple-500/30 text-purple-300 text-xs rounded font-medium">
+                  <span className="px-2 py-0.5 bg-primary/20 text-primary text-xs rounded font-black">
                     镜 {item.shotNumber}
                   </span>
                   <button
                     onClick={() => handleCopy(item.script, `script-${item.id}`)}
-                    className="flex items-center gap-1 px-2 py-1 text-xs text-white/50 
-                               hover:text-white/80 hover:bg-white/10 rounded transition-all"
+                    className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground 
+                                 hover:text-foreground hover:bg-black/5 rounded transition-all font-bold"
                   >
                     {copiedId === `script-${item.id}` ? (
                       <svg
-                        className="w-3 h-3 text-green-400"
+                        className="w-3 h-3 text-green-500"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -293,7 +295,7 @@ export default function StoryboardEditor({
                     {copiedId === `script-${item.id}` ? "已复制" : "复制脚本"}
                   </button>
                 </div>
-                <p className="text-white/90 text-sm leading-relaxed">
+                <p className="text-foreground/90 text-sm leading-relaxed font-medium">
                   {item.script}
                 </p>
               </div>
@@ -306,12 +308,12 @@ export default function StoryboardEditor({
                   onClick={() =>
                     handleCopy(item.imagePrompt, `prompt-${item.id}`)
                   }
-                  className="flex items-center gap-1 px-2 py-1 text-xs text-purple-400 
-                             hover:text-purple-300 hover:bg-purple-500/20 rounded transition-all"
+                  className="flex items-center gap-1 px-2 py-1 text-xs text-primary 
+                               hover:text-primary/80 hover:bg-primary/10 rounded transition-all font-black"
                 >
                   {copiedId === `prompt-${item.id}` ? (
                     <svg
-                      className="w-3 h-3 text-green-400"
+                      className="w-3 h-3 text-green-500"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -341,8 +343,8 @@ export default function StoryboardEditor({
                   {copiedId === `prompt-${item.id}` ? "已复制" : "复制提示词"}
                 </button>
               </div>
-              <div className="p-3 bg-black/30 rounded-lg border border-white/10">
-                <p className="text-white/70 text-xs leading-relaxed font-mono whitespace-pre-wrap break-all">
+              <div className="p-3 bg-secondary/50 rounded-lg border border-border">
+                <p className="text-muted-foreground text-xs leading-relaxed font-mono whitespace-pre-wrap break-all">
                   {item.imagePrompt}
                 </p>
               </div>

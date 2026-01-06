@@ -18,22 +18,22 @@
   --color-popover: oklch(1 0 0);
   --color-popover-foreground: oklch(0.2 0.02 260);
   
-  --color-primary: oklch(0.55 0.22 260); /* Professional Deep Azure */
+  --color-primary: oklch(0.5 0.15 265); /* Professional Indigo */
   --color-primary-foreground: oklch(0.98 0.005 0);
   
-  --color-secondary: oklch(0.95 0.01 260);
-  --color-secondary-foreground: oklch(0.3 0.05 260);
+  --color-secondary: oklch(0.96 0.01 265);
+  --color-secondary-foreground: oklch(0.3 0.05 265);
   
-  --color-muted: oklch(0.92 0.01 260);
-  --color-muted-foreground: oklch(0.5 0.02 260);
+  --color-muted: oklch(0.94 0.01 265);
+  --color-muted-foreground: oklch(0.5 0.02 265);
   
-  --color-accent: oklch(0.6 0.25 310); /* Soft Violet */
+  --color-accent: oklch(0.6 0.12 280); /* Soft Periwinkle */
   --color-accent-foreground: oklch(1 0 0);
   
   --color-destructive: oklch(0.6 0.18 25);
-  --color-border: oklch(0.9 0.01 260);
-  --color-input: oklch(0.95 0.01 260);
-  --color-ring: oklch(0.55 0.22 260 / 0.5);
+  --color-border: oklch(0.92 0.02 265);
+  --color-input: oklch(0.96 0.01 265);
+  --color-ring: oklch(0.5 0.15 265 / 0.5);
 
   --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

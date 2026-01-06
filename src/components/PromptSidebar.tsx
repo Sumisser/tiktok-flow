@@ -6,7 +6,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ListTodo, Info } from "lucide-react";
+import { Cpu, Info } from "lucide-react";
 
 interface PromptSidebarProps {
   isOpen: boolean;
@@ -26,14 +26,14 @@ export default function PromptSidebar({
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl -z-10" />
           <div className="flex items-center gap-4">
             <div className="p-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/10">
-              <ListTodo className="w-6 h-6" />
+              <Cpu className="w-6 h-6" />
             </div>
             <div>
               <SheetTitle className="text-2xl font-black tracking-tighter text-neon">
                 提示词引擎
               </SheetTitle>
               <SheetDescription className="text-muted-foreground/50 text-[10px] uppercase tracking-[0.3em] font-black flex items-center gap-2 mt-1">
-                AI System Prompt Architecture
+                AI 系统提示词架构
               </SheetDescription>
             </div>
           </div>
@@ -56,7 +56,7 @@ export default function PromptSidebar({
             <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
             <div className="space-y-1">
               <p className="text-xs font-black text-primary uppercase tracking-widest">
-                Protocol Intelligence
+                协议智能
               </p>
               <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
                 当前显示的是系统预设协议。它定义了 AI

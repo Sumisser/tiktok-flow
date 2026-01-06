@@ -33,7 +33,7 @@ export default function Workflow() {
             <div className="absolute -inset-8 bg-destructive/10 blur-[60px] opacity-40 -z-10" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-black tracking-tight">项目去哪了？</h2>
+            <h2 className="text-2xl font-black tracking-tight">项目不存在</h2>
             <p className="text-muted-foreground">
               该项目可能已被删除，或链接地址有误。
             </p>
@@ -79,9 +79,9 @@ export default function Workflow() {
 
   return (
     <div className="min-h-screen pb-32">
-      {/* Header */}
+      {/* 头部 */}
       <header className="sticky top-0 z-50 glass border-b border-primary/20 py-6 px-8 mb-16 overflow-hidden">
-        {/* Decorative background for header */}
+        {/* 头部装饰背景 */}
         <div className="absolute top-0 left-1/4 w-64 h-full bg-primary/10 blur-[100px] -z-10 animate-pulse" />
 
         <div className="max-w-6xl mx-auto flex items-center gap-10">
@@ -111,7 +111,7 @@ export default function Workflow() {
                   className="h-14 px-6 rounded-2xl shadow-2xl shadow-primary/20 font-black tracking-widest uppercase"
                 >
                   <Check className="w-6 h-6 mr-2" />
-                  Save
+                  保存
                 </Button>
                 <Button
                   variant="ghost"
@@ -143,22 +143,22 @@ export default function Workflow() {
                   variant="outline"
                   className="text-[10px] h-6 font-black tracking-[0.2em] border-primary/20 bg-primary/5 text-primary px-3 rounded-md uppercase"
                 >
-                  Core-Project-{task.id.slice(0, 8).toUpperCase()}
+                  核心架构-{task.id.slice(0, 8).toUpperCase()}
                 </Badge>
               </div>
               <div className="h-4 w-px bg-border" />
               <p className="text-[10px] text-muted-foreground uppercase tracking-[0.3em] font-black opacity-40 flex items-center gap-2.5">
                 <LayoutDashboard className="w-4 h-4 text-primary" />
-                Autonomous Content Pipeline
+                自主内容生成流水线
               </p>
             </div>
           </div>
 
           <div className="hidden xl:flex flex-col items-end gap-3 min-w-[240px]">
             <div className="flex justify-between w-full text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 px-1">
-              <span>Pipeline Status</span>
+              <span>流水线状态</span>
               <span className="text-primary font-black animate-pulse">
-                {progressPercent}% Sync
+                {progressPercent}% 同步中
               </span>
             </div>
             <div className="w-full h-3 bg-secondary rounded-full overflow-hidden border border-border shadow-inner p-0.5">
@@ -173,7 +173,7 @@ export default function Workflow() {
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* 主要内容 */}
       <main className="max-w-5xl mx-auto px-6">
         <Timeline>
           {task.steps.map((step, index) => (

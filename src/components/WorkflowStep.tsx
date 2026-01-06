@@ -100,12 +100,25 @@ export default function WorkflowStep({
     }
   };
 
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "completed":
+        return "已完成";
+      case "in-progress":
+        return "进行中";
+      case "pending":
+        return "待处理";
+      default:
+        return status;
+    }
+  };
+
   return (
     <div className="relative pl-16 pb-16 last:pb-4 group">
-      {/* Timeline Line */}
+      {/* 时间轴线条 */}
       <div className="absolute left-[19px] top-12 bottom-0 w-0.5 bg-gradient-to-b from-primary/50 via-primary/20 to-transparent group-last:hidden rounded-full" />
 
-      {/* Timeline Bullet */}
+      {/* 时间轴标记 */}
       <div
         className={cn(
           "absolute left-0 top-6 w-10 h-10 rounded-xl border border-border flex items-center justify-center z-10 transition-all duration-700 shadow-lg",
@@ -132,7 +145,7 @@ export default function WorkflowStep({
               : "bg-secondary/30 border-border hover:bg-secondary hover:border-primary/20 shadow-none"
           )}
         >
-          {/* AI Scanner Line Animation (Only when expanded) */}
+          {/* AI 扫描线动画 (仅在展开时显示) */}
           {isExpanded && (
             <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-20 animate-[scan_3s_linear_infinite]" />
           )}
@@ -166,7 +179,7 @@ export default function WorkflowStep({
                           : "bg-secondary text-muted-foreground"
                       )}
                     >
-                      {step.status}
+                      {getStatusText(step.status)}
                     </Badge>
                   </h3>
                   {!isExpanded && output && (
@@ -207,7 +220,7 @@ export default function WorkflowStep({
 
           <CollapsibleContent>
             <CardContent className="p-8 pt-0 space-y-12 animate-in fade-in slide-in-from-top-4 duration-500">
-              {/* Configuration Section */}
+              {/* 配置部分 */}
               <div className="space-y-6">
                 <div className="flex items-center justify-between border-b border-border/50 pb-4">
                   <div className="flex items-center gap-3">
@@ -216,10 +229,10 @@ export default function WorkflowStep({
                     </div>
                     <div className="space-y-0.5">
                       <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">
-                        Module-01
+                        模块-01
                       </span>
                       <p className="text-xs font-bold text-foreground/80">
-                        Input Parameters
+                        输入参数
                       </p>
                     </div>
                   </div>
@@ -254,7 +267,7 @@ export default function WorkflowStep({
                     className="absolute right-4 bottom-4 h-9 text-[11px] font-black tracking-widest text-muted-foreground hover:text-primary bg-white/80 hover:bg-secondary backdrop-blur-md border border-border rounded-xl px-4 transition-all uppercase"
                   >
                     <ListTodo className="w-4 h-4 mr-2" />
-                    Prompt Engine
+                    提示词引擎
                   </Button>
                 </div>
 
@@ -273,11 +286,11 @@ export default function WorkflowStep({
                   ) : (
                     <Copy className="w-6 h-6" />
                   )}
-                  {isCopied ? "Prompt Ready" : "Generate AI Prompt"}
+                  {isCopied ? "提示词已就绪" : "生成 AI 提示词"}
                 </Button>
               </div>
 
-              {/* AI Interaction Section */}
+              {/* AI 交互部分 */}
               <div className="space-y-6">
                 <div className="flex items-center gap-3 border-b border-border/50 pb-4">
                   <div className="p-2 rounded-lg bg-accent/10 text-accent border border-accent/20">
@@ -285,10 +298,10 @@ export default function WorkflowStep({
                   </div>
                   <div className="space-y-0.5">
                     <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">
-                      Module-02
+                      模块-02
                     </span>
                     <p className="text-xs font-bold text-foreground/80">
-                      AI Execution Output
+                      AI 执行输出
                     </p>
                   </div>
                 </div>
@@ -301,7 +314,7 @@ export default function WorkflowStep({
                         className="text-xs font-black h-9 px-6 rounded-lg data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm decoration-transparent uppercase tracking-wider"
                       >
                         <Edit2 className="w-4 h-4 mr-2" />
-                        Editor
+                        编辑器
                       </TabsTrigger>
                       <TabsTrigger
                         value="preview"
@@ -309,13 +322,13 @@ export default function WorkflowStep({
                         disabled={!output}
                       >
                         <Eye className="w-4 h-4 mr-2" />
-                        Preview
+                        预览
                       </TabsTrigger>
                     </TabsList>
 
                     <div className="flex items-center gap-2.5 text-[10px] text-muted-foreground/40 font-black italic tracking-[0.2em] uppercase">
                       <span className="w-2.5 h-2.5 rounded-full bg-primary/20 animate-pulse" />
-                      Live AI Feed
+                      实时 AI 同步中
                     </div>
                   </div>
 
@@ -326,7 +339,7 @@ export default function WorkflowStep({
                     <Textarea
                       value={output}
                       onChange={(e) => handleOutputChange(e.target.value)}
-                      placeholder="Paste AI response here..."
+                      placeholder="在此粘贴 AI 的响应内容..."
                       className="min-h-[260px] bg-secondary/50 border-border focus:border-accent/50 focus:ring-accent/20 placeholder:text-muted-foreground/30 resize-none font-mono rounded-2xl p-8 text-sm leading-relaxed"
                     />
                   </TabsContent>
@@ -346,7 +359,7 @@ export default function WorkflowStep({
                 </Tabs>
               </div>
 
-              {/* Specialized Editors */}
+              {/* 特殊编辑器部分 */}
               {step.type === "script" && output && (
                 <div className="space-y-6 pt-10 border-t border-border/50">
                   <div className="flex items-center gap-3">
@@ -355,10 +368,10 @@ export default function WorkflowStep({
                     </div>
                     <div className="space-y-0.5">
                       <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">
-                        Specialized
+                        专用工具
                       </span>
                       <p className="text-xs font-bold text-foreground/80">
-                        Storyboard Management System
+                        分镜脚本管理系统
                       </p>
                     </div>
                   </div>
@@ -373,7 +386,7 @@ export default function WorkflowStep({
                 </div>
               )}
 
-              {/* Action Section */}
+              {/* 操作按钮部分 */}
               {output && step.status !== "completed" && (
                 <div className="pt-8 transition-all animate-in slide-in-from-bottom-4">
                   <Button
@@ -381,7 +394,7 @@ export default function WorkflowStep({
                     className="w-full h-16 rounded-2xl text-[16px] font-black shadow-xl shadow-primary/20 bg-gradient-to-r from-primary via-primary to-accent hover:shadow-primary/30 transition-all duration-500 hover:scale-[1.01] active:scale-[0.99] gap-4 uppercase border-t border-white/20"
                   >
                     <Check className="w-6 h-6 border-2 border-primary-foreground rounded-full p-0.5" />
-                    Commit to Workflow
+                    存入工作流
                   </Button>
                 </div>
               )}

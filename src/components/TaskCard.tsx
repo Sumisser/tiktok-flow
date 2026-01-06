@@ -47,7 +47,7 @@ export default function TaskCard({ task, onDelete }: TaskCardProps) {
   return (
     <Link to={`/workflow/${task.id}`} className="block group">
       <Card className="glass-card border-border hover:border-primary/50 transition-all duration-500 overflow-hidden relative active:scale-95 shadow-lg">
-        {/* Dynamic Glow background */}
+        {/* 动态发光背景 */}
         <div className="absolute -right-10 -top-10 w-32 h-32 bg-primary/5 blur-[50px] group-hover:bg-primary/10 transition-all duration-500" />
 
         <CardHeader className="p-6 pb-2">
@@ -77,10 +77,10 @@ export default function TaskCard({ task, onDelete }: TaskCardProps) {
           <div className="space-y-3">
             <div className="flex justify-between items-end">
               <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">
-                Completion
+                完成进度
               </span>
               <span className="text-sm font-black text-primary">
-                {progress === 100 ? "READY" : `${Math.round(progress)}%`}
+                {progress === 100 ? "已就绪" : `${Math.round(progress)}%`}
               </span>
             </div>
             <div className="h-2 w-full bg-secondary rounded-full overflow-hidden border border-border p-0.5">
@@ -113,7 +113,7 @@ export default function TaskCard({ task, onDelete }: TaskCardProps) {
               variant="secondary"
               className="bg-primary/10 hover:bg-primary/20 text-primary text-[9px] font-black tracking-widest px-2.5 py-0.5 border border-primary/20 rounded-lg uppercase"
             >
-              {totalSteps} STAGES
+              {totalSteps} 个阶段
             </Badge>
             <div className="flex -space-x-2">
               {task.steps.slice(0, 4).map((step, i) => (
