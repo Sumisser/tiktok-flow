@@ -109,17 +109,17 @@
 @layer utilities {
   .glass {
     @apply backdrop-blur-3xl border border-white/30 shadow-2xl;
-    background: oklch(from var(--color-background) l c h / 0.8);
+    background: rgba(255, 255, 255, 0.85);
   }
   
   .glass-card {
     @apply backdrop-blur-2xl border border-white/30 shadow-2xl transition-all duration-500 rounded-3xl;
-    background: oklch(from var(--color-card) l c h / 0.85);
+    background: rgba(255, 255, 255, 0.75);
   }
   
   .glass-card:hover {
     @apply border-white/40 shadow-primary/10;
-    background: oklch(from var(--color-card) l c h / 0.9);
+    background: rgba(255, 255, 255, 0.85);
     transform: translateY(-4px) scale(1.01);
   }
 
