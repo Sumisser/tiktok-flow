@@ -12,7 +12,7 @@
   --color-background: oklch(0.98 0.005 0);
   --color-foreground: oklch(0.2 0.02 260);
   
-  --color-card: oklch(1 0 0);
+  --color-card: oklch(1 0 0 / 0.8);
   --color-card-foreground: oklch(0.2 0.02 260);
   
   --color-popover: oklch(1 0 0);
@@ -21,21 +21,52 @@
   --color-primary: oklch(0.5 0.15 265); /* Professional Indigo */
   --color-primary-foreground: oklch(0.98 0.005 0);
   
-  --color-secondary: oklch(0.96 0.01 265);
+  --color-secondary: oklch(0.96 0.01 265 / 0.5);
   --color-secondary-foreground: oklch(0.3 0.05 265);
   
-  --color-muted: oklch(0.94 0.01 265);
+  --color-muted: oklch(0.94 0.01 265 / 0.5);
   --color-muted-foreground: oklch(0.5 0.02 265);
   
   --color-accent: oklch(0.6 0.12 280); /* Soft Periwinkle */
   --color-accent-foreground: oklch(1 0 0);
   
   --color-destructive: oklch(0.6 0.18 25);
-  --color-border: oklch(0.92 0.02 265);
-  --color-input: oklch(0.96 0.01 265);
+  --color-border: oklch(1 0 0 / 0.1);
+  --color-input: oklch(1 0 0 / 0.05);
   --color-ring: oklch(0.5 0.15 265 / 0.5);
 
   --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@media (prefers-color-scheme: dark) {
+  @theme inline {
+    --color-background: oklch(0.15 0.02 260);
+    --color-foreground: oklch(0.98 0.005 0);
+    
+    --color-card: oklch(0.2 0.02 260 / 0.4);
+    --color-card-foreground: oklch(0.98 0.005 0);
+    
+    --color-popover: oklch(0.18 0.02 260);
+    --color-popover-foreground: oklch(0.98 0.005 0);
+    
+    --color-primary: oklch(0.7 0.12 265);
+    --color-primary-foreground: oklch(0.1 0.02 260);
+    
+    --color-secondary: oklch(1 0 0 / 0.05);
+    --color-secondary-foreground: oklch(0.8 0.02 265);
+    
+    --color-muted: oklch(1 0 0 / 0.03);
+    --color-muted-foreground: oklch(0.6 0.02 265);
+    
+    --color-accent: oklch(0.75 0.1 280);
+    --color-accent-foreground: oklch(0.1 0.02 260);
+    
+    --color-destructive: oklch(0.5 0.2 25);
+    --color-border: oklch(1 0 0 / 0.1);
+    --color-input: oklch(1 0 0 / 0.05);
+    --color-ring: oklch(0.7 0.12 265 / 0.5);
+  }
+
 }
 
 @layer base {
@@ -64,30 +95,32 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground antialiased min-h-screen font-sans;
     background-image: 
-      radial-gradient(circle at 10% 10%, oklch(0.55 0.22 260 / 0.05), transparent 50%),
-      radial-gradient(circle at 90% 90%, oklch(0.6 0.25 310 / 0.05), transparent 50%),
-      linear-gradient(to bottom, oklch(0.98 0.01 0 / 0.8) 0%, oklch(0.95 0.01 260 / 0.8) 100%),
-      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23eaebf6' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      linear-gradient(to bottom, transparent, var(--color-background) 80%),
+      url("https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2070&auto=format&fit=crop");
+    background-size: cover;
+    background-position: center;
     background-attachment: fixed;
+    background-repeat: no-repeat;
   }
 }
 
 @layer utilities {
   .glass {
-    @apply bg-white/70 backdrop-blur-xl border border-white shadow-xl;
-    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.01);
+    @apply backdrop-blur-3xl border border-white/20 shadow-2xl;
+    background: oklch(from var(--color-background) l c h / 0.6);
   }
   
   .glass-card {
-    @apply bg-white/60 backdrop-blur-2xl border border-white shadow-2xl transition-all duration-500;
-    box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+    @apply backdrop-blur-2xl border border-white/10 shadow-2xl transition-all duration-500 rounded-3xl;
+    background: oklch(from var(--color-card) l c h / 0.4);
   }
   
   .glass-card:hover {
-    @apply border-primary/20 bg-white/80 shadow-primary/10 shadow-2xl;
-    transform: translateY(-4px);
+    @apply border-white/20 shadow-primary/5;
+    opacity: 0.85;
+    transform: translateY(-4px) scale(1.01);
   }
 
   .text-neon {

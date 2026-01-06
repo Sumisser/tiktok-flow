@@ -1,15 +1,78 @@
 import { useTasks } from "../../store/hooks";
 import TaskCard from "../../components/TaskCard";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Clapperboard, Plus, X, Search, Sparkles } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, X, Search, CloudRain } from "lucide-react";
+
+const useTime = () => {
+  const [time, setTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return time;
+};
+
+const useWeather = () => {
+  const [data, setData] = useState<{
+    city: string;
+    temp: string;
+    condition: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const fetchWeather = async () => {
+      try {
+        // Step 1: Get location via IP (using ip-api.com - no API key needed for basic usage)
+        const locRes = await fetch("http://ip-api.com/json/");
+        const locData = await locRes.json();
+
+        if (locData.status === "success") {
+          // Step 2: Get weather via Open-Meteo (open API)
+          const weatherRes = await fetch(
+            `https://api.open-meteo.com/v1/forecast?latitude=${locData.lat}&longitude=${locData.lon}&current_weather=true`
+          );
+          const weatherData = await weatherRes.json();
+
+          setData({
+            city: locData.city,
+            temp: `${Math.round(weatherData.current_weather.temperature)}°`,
+            condition: "Clear", // Simplified context for now
+          });
+        }
+      } catch (error) {
+        console.error("Weather fetch failed:", error);
+        setData({ city: "Shanghai", temp: "12°", condition: "Cloudy" }); // Fallback
+      }
+    };
+
+    fetchWeather();
+    const interval = setInterval(fetchWeather, 1800000); // Update every 30 mins
+    return () => clearInterval(interval);
+  }, []);
+
+  return data;
+};
 
 export default function Home() {
   const { tasks, addTask, deleteTask } = useTasks();
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const currentTime = useTime();
+  const weather = useWeather();
+
+  const timeString = currentTime.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const greeting =
+    currentTime.getHours() < 12
+      ? "早上好"
+      : currentTime.getHours() < 18
+      ? "下午好"
+      : "晚上好";
 
   const handleCreate = () => {
     if (newTitle.trim()) {
@@ -32,146 +95,161 @@ export default function Home() {
     task.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const hasTasks = tasks.length > 0;
+
   return (
-    <div className="min-h-screen">
-      {/* 导航栏 */}
-      <header className="sticky top-0 z-50 glass border-b border-primary/20 px-8 py-5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-10">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30 text-primary shadow-lg shadow-primary/10">
-              <Clapperboard className="w-7 h-7" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-black tracking-tighter text-neon leading-none">
-                TikTok<span className="text-primary-gradient ml-1">Flow</span>
-              </h1>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                <p className="text-[10px] text-muted-foreground uppercase tracking-[0.4em] font-black opacity-50">
-                  AI 视频创作实验室
-                </p>
-              </div>
-            </div>
-          </div>
+    <div className="min-h-screen text-white overflow-x-hidden selection:bg-white/20">
+      {/* 极简顶栏 - 仅保留功能性图标 */}
+      <header className="fixed top-0 left-0 right-0 z-50 px-8 py-6 flex items-center justify-between pointer-events-none">
+        <div className="flex items-center gap-4 pointer-events-auto">
+          {!isCreating ? (
+            <button
+              onClick={() => setIsCreating(true)}
+              className="flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full transition-all border border-white/10 group active:scale-95 shadow-2xl"
+            >
+              <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" />
+              <span className="text-[11px] font-black tracking-widest uppercase">
+                新建创作流
+              </span>
+            </button>
+          ) : (
+            <button
+              onClick={() => setIsCreating(false)}
+              className="p-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full border border-white/10 transition-all shadow-2xl"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
 
-          <div className="flex-1 max-w-lg relative hidden lg:block">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/50" />
-            <Input
-              placeholder="搜索项目名称..."
-              className="pl-12 bg-secondary border-border focus:border-primary/50 transition-all rounded-2xl h-12 text-sm font-medium tracking-tight shadow-inner"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-
-          <div className="flex items-center gap-4">
-            {!isCreating ? (
-              <Button
-                onClick={() => setIsCreating(true)}
-                className="rounded-2xl h-12 px-8 bg-primary text-primary-foreground shadow-2xl shadow-primary/30 group transition-all duration-500 hover:scale-[1.05] border-t border-white/20 active:scale-95"
-              >
-                <Plus className="w-5 h-5 mr-2 group-hover:rotate-90 transition-transform" />
-                <span className="font-black uppercase tracking-widest text-xs">
-                  新建项目
-                </span>
-              </Button>
-            ) : (
-              <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-8 duration-500">
-                <Input
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="输入项目标题..."
-                  autoFocus
-                  className="w-48 sm:w-80 h-12 bg-secondary border-primary/20 rounded-2xl px-5"
+          {/* 状态感知的搜索框 - 仅在有任务且不处于创建状态时在顶部显示 */}
+          {hasTasks && !isCreating && (
+            <div className="ml-4 w-64 md:w-80 transition-all duration-500 animate-in fade-in slide-in-from-left-4">
+              <div className="relative group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-white/60 transition-colors" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="搜索项目..."
+                  className="w-full bg-white/5 hover:bg-white/10 focus:bg-white/20 backdrop-blur-3xl rounded-2xl h-11 pl-11 pr-4 text-sm font-bold tracking-tight border border-white/5 focus:border-white/20 transition-all outline-none"
                 />
-                <Button
-                  onClick={handleCreate}
-                  className="h-12 px-6 rounded-2xl font-black shadow-2xl shadow-primary/20 border-t border-white/20"
-                >
-                  初始化
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsCreating(false)}
-                  className="h-12 w-12 text-muted-foreground rounded-2xl hover:bg-secondary border border-border"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-6 pointer-events-auto">
+          {weather && (
+            <div className="flex items-center gap-3 animate-in fade-in duration-1000">
+              <CloudRain className="w-4 h-4 opacity-40" />
+              <span className="text-[11px] font-black tracking-widest uppercase opacity-40">
+                {weather.city} {weather.temp}
+              </span>
+            </div>
+          )}
         </div>
       </header>
 
-      {/* 主要内容 */}
-      <main className="max-w-7xl mx-auto px-8 py-20">
-        {tasks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-48 text-center animate-in fade-in zoom-in duration-1000">
-            <div className="relative mb-16">
-              <div className="relative z-10 w-32 h-32 rounded-[3rem] bg-white border border-primary/20 flex items-center justify-center shadow-xl">
-                <Sparkles className="w-14 h-14 text-primary animate-pulse" />
-              </div>
-              <div className="absolute -inset-16 bg-primary/10 blur-[120px] opacity-30 -z-10 animate-pulse" />
-              <div className="absolute -inset-16 bg-accent/10 blur-[120px] opacity-20 -z-10 animate-pulse delay-1000" />
-            </div>
-            <h2 className="text-5xl font-black mb-6 tracking-tighter text-gradient text-neon">
-              开启你的 AI 创作流
-            </h2>
-            <p className="text-muted-foreground max-w-lg mb-12 text-lg leading-relaxed font-medium">
-              将原始想法转化为高质量视频素材。 <br />
-              工业级 AI 视频编排与生产平台。
-            </p>
-            <Button
-              size="lg"
-              onClick={() => setIsCreating(true)}
-              className="rounded-3xl px-12 h-16 text-lg font-black shadow-[0_20px_50px_rgba(var(--color-primary),0.4)] bg-primary text-primary-foreground transition-all duration-500 hover:scale-105 border-t border-white/20"
-            >
-              <Plus className="w-6 h-6 mr-3" />
-              初始化首个流水线
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-16">
-            <div className="flex items-end justify-between border-b border-border pb-8">
-              <div className="space-y-2">
-                <p className="text-[11px] text-primary font-black uppercase tracking-[0.5em] opacity-60">
-                  项目注册表
-                </p>
-                <h2 className="text-4xl font-black tracking-tighter text-gradient">
-                  活跃流水线
+      {/* 动态区域 - 根据是否有任务切换布局 */}
+      <main className="relative z-10 min-h-screen">
+        {!hasTasks || isCreating ? (
+          /* 空状态 / 创建状态：展示全屏 Hero 区域 */
+          <section className="min-h-screen flex flex-col items-center justify-center px-8 pb-32 animate-in fade-in duration-1000">
+            <div className="w-full max-w-4xl space-y-16">
+              {/* 大时钟 */}
+              <div className="text-center space-y-4 select-none">
+                <h1 className="text-[140px] md:text-[200px] font-black tracking-tighter leading-none drop-shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
+                  {timeString}
+                </h1>
+                <h2 className="text-3xl md:text-5xl font-black tracking-tight opacity-70">
+                  {greeting}, Miracle.
                 </h2>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="px-5 py-2 glass bg-white/50 rounded-2xl border border-border/50">
-                  <p className="text-[10px] text-muted-foreground font-black tracking-[0.2em] uppercase">
-                    总资产容量:{" "}
-                    <span className="text-primary text-neon ml-2">
-                      {filteredTasks.length}
-                    </span>
-                  </p>
-                </div>
+
+              {/* 核心交互区 */}
+              <div className="relative max-w-2xl mx-auto w-full">
+                {isCreating ? (
+                  <div className="animate-in zoom-in-95 fade-in duration-500 text-center space-y-10">
+                    <p className="text-3xl md:text-4xl font-black tracking-tight drop-shadow-md">
+                      为你的新创作流命名
+                    </p>
+                    <div className="relative">
+                      <input
+                        autoFocus
+                        type="text"
+                        value={newTitle}
+                        onChange={(e) => setNewTitle(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder="例如：夏日旅行叙事..."
+                        className="w-full bg-white/10 backdrop-blur-[40px] rounded-[2.5rem] h-24 px-10 text-3xl font-black tracking-tight placeholder:text-white/10 border border-white/10 focus:border-white/30 transition-all outline-none text-center shadow-2xl"
+                      />
+                      <div className="mt-10 flex justify-center gap-6">
+                        <button
+                          onClick={handleCreate}
+                          disabled={!newTitle.trim()}
+                          className="px-12 py-5 bg-white text-black font-black rounded-3xl hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:scale-100 shadow-xl"
+                        >
+                          开始创作
+                        </button>
+                        <button
+                          onClick={() => setIsCreating(false)}
+                          className="px-12 py-5 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-3xl font-black transition-all border border-white/10 shadow-xl"
+                        >
+                          取消
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center space-y-8 animate-in slide-in-from-bottom-4 duration-700">
+                    <p className="text-2xl font-bold tracking-tight opacity-50">
+                      今天的创作核心目标是什么？
+                    </p>
+                    <div className="h-px bg-white/20 w-32 mx-auto" />
+                    <button
+                      onClick={() => setIsCreating(true)}
+                      className="px-12 py-6 bg-white/10 hover:bg-white/20 backdrop-blur-2xl rounded-[2rem] border border-white/10 transition-all group"
+                    >
+                      <Plus className="w-8 h-8 opacity-40 group-hover:opacity-100 group-hover:rotate-90 transition-all" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
-
+          </section>
+        ) : (
+          /* 有任务状态：展示顶部对齐的画廊布局 */
+          <section className="pt-32 px-8 pb-40 max-w-7xl mx-auto animate-in slide-in-from-bottom-8 duration-700">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {filteredTasks.map((task) => (
                 <TaskCard key={task.id} task={task} onDelete={deleteTask} />
               ))}
             </div>
 
-            {filteredTasks.length === 0 && (
-              <div className="py-32 text-center glass border border-dashed border-border rounded-[3rem] animate-in fade-in duration-500">
-                <Search className="w-12 h-12 text-primary/10 mx-auto mb-6" />
-                <p className="text-muted-foreground font-black tracking-widest uppercase text-xs">
-                  未在注册表中发现匹配项目
+            {filteredTasks.length === 0 && searchQuery && (
+              <div className="mt-20 text-center py-32 bg-white/2 backdrop-blur-sm rounded-[3rem] border border-dashed border-white/10 transition-all">
+                <Search className="w-16 h-16 opacity-5 mx-auto mb-6" />
+                <p className="text-white/30 font-black uppercase tracking-[0.3em] text-xs">
+                  未找到匹配的流水线资产
                 </p>
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="mt-6 text-[10px] font-black uppercase tracking-widest text-primary hover:text-white transition-colors"
+                >
+                  清除所有筛选
+                </button>
               </div>
             )}
-          </div>
+          </section>
         )}
       </main>
+
+      {/* 底部引用 - 极简版 */}
+      <footer className="fixed bottom-12 left-0 right-0 text-center pointer-events-none px-8 z-40">
+        <p className="text-white/40 text-[13px] font-medium tracking-tight italic drop-shadow-sm max-w-2xl mx-auto select-none">
+          "某些人让你的笑声更响亮，你的微笑更灿烂，你的生活更美好。努力成为那样的人之一。"
+        </p>
+      </footer>
     </div>
   );
 }
