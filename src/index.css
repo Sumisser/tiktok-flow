@@ -108,18 +108,18 @@
 
 @layer utilities {
   .glass {
-    @apply backdrop-blur-3xl border border-white/20 shadow-2xl;
-    background: oklch(from var(--color-background) l c h / 0.6);
+    @apply backdrop-blur-3xl border border-white/30 shadow-2xl;
+    background: oklch(from var(--color-background) l c h / 0.8);
   }
   
   .glass-card {
-    @apply backdrop-blur-2xl border border-white/10 shadow-2xl transition-all duration-500 rounded-3xl;
-    background: oklch(from var(--color-card) l c h / 0.4);
+    @apply backdrop-blur-2xl border border-white/20 shadow-2xl transition-all duration-500 rounded-3xl;
+    background: oklch(from var(--color-card) l c h / 0.7);
   }
   
   .glass-card:hover {
-    @apply border-white/20 shadow-primary/5;
-    opacity: 0.85;
+    @apply border-white/30 shadow-primary/10;
+    background: oklch(from var(--color-card) l c h / 0.8);
     transform: translateY(-4px) scale(1.01);
   }
 

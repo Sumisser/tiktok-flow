@@ -146,8 +146,8 @@ export default function Workflow() {
               backgroundImage: `url(${wallpaper.url})`,
             }}
           />
-          {/* 深色遮罩层 */}
-          <div className="fixed inset-0 -z-10 bg-gradient-to-b from-black/40 via-black/30 to-black/50" />
+          {/* 浅色遮罩层 */}
+          <div className="fixed inset-0 -z-10 bg-gradient-to-b from-black/20 via-black/10 to-black/30" />
         </>
       )}
       {/* 头部 */}

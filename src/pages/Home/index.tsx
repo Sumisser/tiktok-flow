@@ -180,8 +180,8 @@ export default function Home() {
               backgroundImage: `url(${wallpaper.url})`,
             }}
           />
-          {/* 深色遮罩层，增强文本可读性 */}
-          <div className="fixed inset-0 -z-10 bg-gradient-to-b from-black/40 via-black/30 to-black/50" />
+          {/* 浅色遮罩层，保持文本可读性的同时更明亮 */}
+          <div className="fixed inset-0 -z-10 bg-gradient-to-b from-black/20 via-black/10 to-black/30" />
         </>
       )}
       {/* 极简顶栏 - 仅保留功能性图标 */}
