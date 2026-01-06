@@ -179,6 +179,7 @@ export default function Workflow() {
           {task.steps.map((step, index) => (
             <WorkflowStep
               key={step.id}
+              taskId={task.id}
               step={step}
               stepNumber={index + 1}
               prevStepOutput={index > 0 ? task.steps[index - 1].output : ""}

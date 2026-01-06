@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import type { StoryboardItem } from "../types";
+import { uploadStoryboardImage, deleteStoryboardImage } from "../lib/storage";
 
 interface StoryboardEditorProps {
+  taskId: string;
   output: string;
   storyboards: StoryboardItem[];
   onUpdateStoryboards: (storyboards: StoryboardItem[]) => void;
@@ -43,17 +45,8 @@ function parseMarkdownTable(markdown: string): StoryboardItem[] {
   return items;
 }
 
-// 将图片文件转换为 Base64
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
 export default function StoryboardEditor({
+  taskId,
   output,
   storyboards,
   onUpdateStoryboards,
@@ -87,28 +80,35 @@ export default function StoryboardEditor({
   const items = storyboards;
 
   // 处理粘贴图片
-  const handlePaste = async (e: React.ClipboardEvent, itemId: string) => {
+  const handlePaste = async (e: React.ClipboardEvent, item: StoryboardItem) => {
     const clipboardItems = e.clipboardData?.items;
     if (!clipboardItems) return;
 
-    for (const item of clipboardItems) {
-      if (item.type.startsWith("image/")) {
+    for (const clipItem of clipboardItems) {
+      if (clipItem.type.startsWith("image/")) {
         e.preventDefault();
         setIsProcessing(true);
 
-        const file = item.getAsFile();
+        const file = clipItem.getAsFile();
         if (file) {
           try {
-            const base64 = await fileToBase64(file);
+            // 上传图片到 Supabase Storage
+            const imageUrl = await uploadStoryboardImage(
+              file,
+              taskId,
+              item.shotNumber
+            );
+
             const updated = items.map((storyboard) =>
-              storyboard.id === itemId
-                ? { ...storyboard, imageUrl: base64 }
+              storyboard.id === item.id
+                ? { ...storyboard, imageUrl }
                 : storyboard
             );
             onUpdateStoryboards(updated);
             setEditingId(null);
           } catch (error) {
-            console.error("图片处理失败:", error);
+            console.error("图片上传失败:", error);
+            alert("图片上传失败，请重试");
           }
         }
 
@@ -121,30 +121,42 @@ export default function StoryboardEditor({
   // 处理文件选择
   const handleFileSelect = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    itemId: string
+    item: StoryboardItem
   ) => {
     const file = e.target.files?.[0];
     if (!file || !file.type.startsWith("image/")) return;
 
     setIsProcessing(true);
     try {
-      const base64 = await fileToBase64(file);
+      // 上传图片到 Supabase Storage
+      const imageUrl = await uploadStoryboardImage(
+        file,
+        taskId,
+        item.shotNumber
+      );
+
       const updated = items.map((storyboard) =>
-        storyboard.id === itemId
-          ? { ...storyboard, imageUrl: base64 }
-          : storyboard
+        storyboard.id === item.id ? { ...storyboard, imageUrl } : storyboard
       );
       onUpdateStoryboards(updated);
       setEditingId(null);
     } catch (error) {
-      console.error("图片处理失败:", error);
+      console.error("图片上传失败:", error);
+      alert("图片上传失败，请重试");
     }
     setIsProcessing(false);
   };
 
-  const handleRemoveImage = (itemId: string) => {
-    const updated = items.map((item) =>
-      item.id === itemId ? { ...item, imageUrl: "" } : item
+  const handleRemoveImage = async (item: StoryboardItem) => {
+    // 如果有图片URL，先删除 Supabase Storage 中的图片
+    if (item.imageUrl) {
+      await deleteStoryboardImage(item.imageUrl);
+    }
+
+    const updated = items.map((storyboardItem) =>
+      storyboardItem.id === item.id
+        ? { ...storyboardItem, imageUrl: "" }
+        : storyboardItem
     );
     onUpdateStoryboards(updated);
   };
@@ -182,7 +194,7 @@ export default function StoryboardEditor({
                       className="w-full h-full object-cover"
                     />
                     <button
-                      onClick={() => handleRemoveImage(item.id)}
+                      onClick={() => handleRemoveImage(item)}
                       className="absolute top-1 right-1 w-5 h-5 bg-red-500/80 rounded-full 
                                  flex items-center justify-center text-white text-xs
                                  hover:bg-red-500 transition-all"
@@ -193,7 +205,7 @@ export default function StoryboardEditor({
                 ) : editingId === item.id ? (
                   <div
                     ref={dropzoneRef}
-                    onPaste={(e) => handlePaste(e, item.id)}
+                    onPaste={(e) => handlePaste(e, item)}
                     className="w-full h-full p-2 flex flex-col items-center justify-center
                                  border-2 border-dashed border-primary/50 bg-primary/10"
                     tabIndex={0}
@@ -215,7 +227,7 @@ export default function StoryboardEditor({
                           <input
                             type="file"
                             accept="image/*"
-                            onChange={(e) => handleFileSelect(e, item.id)}
+                            onChange={(e) => handleFileSelect(e, item)}
                             className="hidden"
                           />
                         </label>

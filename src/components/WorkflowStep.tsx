@@ -32,6 +32,7 @@ import {
 import { cn } from "@/lib/utils";
 
 interface WorkflowStepProps {
+  taskId: string;
   step: WorkflowStepType;
   stepNumber: number;
   prevStepOutput: string;
@@ -41,6 +42,7 @@ interface WorkflowStepProps {
 }
 
 export default function WorkflowStep({
+  taskId,
   step,
   stepNumber,
   prevStepOutput,
@@ -378,6 +380,7 @@ export default function WorkflowStep({
                   <div className="bg-secondary/40 border border-border rounded-[2.5rem] p-8 shadow-inner overflow-hidden relative">
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
                     <StoryboardEditor
+                      taskId={taskId}
                       output={output}
                       storyboards={storyboards}
                       onUpdateStoryboards={onUpdateStoryboards}
