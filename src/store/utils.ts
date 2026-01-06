@@ -48,25 +48,19 @@ export const createDefaultSteps = (): WorkflowStep[] => [
 
 **关键帧提示词结构（使用英文，逗号分隔，按权重排序）：**
 
-采用 **写实动漫风格 (Realistic Anime Style)**：
+采用以下指定的画面风格：
 
-1. **风格定义**：
-   - 基础风格：realistic anime style, semi-realistic Makoto Shinkai aesthetic, high-quality anime illustration
-   - 艺术特征：detailed scenery, cinematic lighting, vibrant atmosphere, soft focus background
-   - 色彩：vibrant harmonious palette, beautiful light and shadow, golden hour or clear day lighting
+**[画面风格指令将在此处由引擎自动注入]**
 
-2. **主提示词 prompt** - 核心描述，包含：
+1. **主提示词 prompt** - 核心描述，包含：
    - 画面内容：人物动作、表情、环境细节
    - 环境光影：god rays, lens flare, soft glow, realistic reflections
    - 构图：cinematic composition, close-up / medium shot / wide shot
 
-3. **质量标签**：masterpiece, high quality, highly detailed, 8k resolution, trending on ArtStation
+2. **质量标签**：masterpiece, high quality, highly detailed, 8k resolution, trending on ArtStation
 
-4. **负面提示词 negative_prompt**（避免出现的元素）：
+3. **负面提示词 negative_prompt**（避免出现的元素）：
    deformed, ugly, blurry, low quality, messy lines, realistic photo, 3d render style, dark or horror mood
-
-**提示词示例：**
-masterpiece, high quality, realistic anime style, a girl sitting by the window in a library, golden sunlight streaming through windows, soft dust particles in the air, expressive eyes, highly detailed school uniform, cinematic lighting, Makoto Shinkai aesthetic, vibrant colors, calm and peaceful atmosphere, 8k
 
 **输出格式（使用 markdown 代码块）：**
 \`\`\`markdown

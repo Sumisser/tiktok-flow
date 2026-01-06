@@ -200,11 +200,29 @@ export default function WorkflowStep({
       }
     }
     
-    const styleInstruction = `\n\n**重要：请强制采用以下画面风格进行创作：**\n${stylePrompt}`;
+    // 生成风格指令区块
+    const styleInstruction = `**重要：请强制采用以下画面风格进行创作：**\n${stylePrompt}`;
 
     if (step.type === "script") {
-      // 脚本步骤：只依赖于上一步输出 + 选定的风格
-      return (step.basePrompt + styleInstruction + "\n\n" + (prevStepOutput || "")).trim();
+      let finalBasePrompt = step.basePrompt;
+      
+      const placeholder = "**[画面风格指令将在此处由引擎自动注入]**";
+      if (finalBasePrompt.includes(placeholder)) {
+        // 1. 优先替换专门设置的占位符
+        finalBasePrompt = finalBasePrompt.replace(placeholder, styleInstruction);
+      } else {
+        // 2. 兼容逻辑：检测并替换旧版硬编码的“写实动漫”规则块
+        const oldStyleBlockRegex = /采用 \*\*写实动漫风格[\s\S]*?(?=\d\. \*\*主提示词)/;
+        if (oldStyleBlockRegex.test(finalBasePrompt)) {
+          finalBasePrompt = finalBasePrompt.replace(oldStyleBlockRegex, `采用以下指定的画面风格：\n\n${styleInstruction}\n\n`);
+        } else {
+          // 3. 兜底：如果既没有占位符也不是旧版，则直接追加
+          finalBasePrompt = finalBasePrompt + "\n\n" + styleInstruction;
+        }
+      }
+
+      // 只依赖于上一步输出 + 已经融合了风格的 BasePrompt
+      return (finalBasePrompt + "\n\n" + (prevStepOutput || "")).trim();
     }
     const currentInput = input || "";
     return (step.basePrompt + "\n\n" + currentInput).trim();
