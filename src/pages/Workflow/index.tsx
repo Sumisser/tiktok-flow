@@ -8,33 +8,15 @@ import { Input } from "@/components/ui/input";
 import { ChevronLeft, Edit3, Check, X } from "lucide-react";
 
 const useBingWallpaper = () => {
-  const [wallpaper, setWallpaper] = useState<{
-    url: string;
-    title: string;
-    copyright: string;
-  } | null>(null);
+  const [url, setUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchWallpaper = async () => {
-      try {
-        const response = await fetch("https://api.xygeng.cn/openapi/bing/info");
-        const data = await response.json();
-        if (data.code === 200 && data.data) {
-          setWallpaper({
-            url: data.data.urls[0] || data.data.url,
-            title: data.data.title,
-            copyright: data.data.copyright,
-          });
-        }
-      } catch (error) {
-        console.error("获取背景图片失败:", error);
-      }
-    };
-
-    fetchWallpaper();
+    // 使用指定的随机背景 API，添加时间戳防止缓存
+    const randomUrl = `https://bing.biturl.top/?resolution=1920&format=image&index=random&_t=${Date.now()}`;
+    setUrl(randomUrl);
   }, []);
 
-  return wallpaper;
+  return url;
 };
 
 export default function Workflow() {
@@ -43,7 +25,7 @@ export default function Workflow() {
     useTasks();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState("");
-  const wallpaper = useBingWallpaper();
+  const wallpaperUrl = useBingWallpaper();
 
   const task = getTask(id || "");
 
@@ -137,12 +119,12 @@ export default function Workflow() {
   return (
     <div className="min-h-screen pb-32 relative text-white">
       {/* 背景图片 */}
-      {wallpaper && (
+      {wallpaperUrl && (
         <>
           <div
             className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat"
             style={{
-              backgroundImage: `url(${wallpaper.url})`,
+              backgroundImage: `url(${wallpaperUrl})`,
             }}
           />
           {/* 浅色遮罩层 */}

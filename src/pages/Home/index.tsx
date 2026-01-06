@@ -92,34 +92,15 @@ const useQuote = () => {
 };
 
 const useBingWallpaper = () => {
-  const [wallpaper, setWallpaper] = useState<{
-    url: string;
-    title: string;
-    copyright: string;
-  } | null>(null);
+  const [url, setUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchWallpaper = async () => {
-      try {
-        const response = await fetch("https://api.xygeng.cn/openapi/bing/info");
-        const data = await response.json();
-        if (data.code === 200 && data.data) {
-          // 使用 1920x1080 分辨率的图片
-          setWallpaper({
-            url: data.data.urls[0] || data.data.url,
-            title: data.data.title,
-            copyright: data.data.copyright,
-          });
-        }
-      } catch (error) {
-        console.error("获取背景图片失败:", error);
-      }
-    };
-
-    fetchWallpaper();
+    // 使用指定的随机背景 API，添加时间戳防止缓存
+    const randomUrl = `https://bing.biturl.top/?resolution=1920&format=image&index=random&_t=${Date.now()}`;
+    setUrl(randomUrl);
   }, []);
 
-  return wallpaper;
+  return url;
 };
 
 export default function Home() {
@@ -131,7 +112,7 @@ export default function Home() {
   const currentTime = useTime();
   const weather = useWeather();
   const quote = useQuote();
-  const wallpaper = useBingWallpaper();
+  const wallpaperUrl = useBingWallpaper();
 
   const timeString = currentTime.toLocaleTimeString([], {
     hour: "2-digit",
@@ -172,12 +153,12 @@ export default function Home() {
   return (
     <div className="min-h-screen text-white overflow-x-hidden selection:bg-white/20 relative">
       {/* 背景图片 */}
-      {wallpaper && (
+      {wallpaperUrl && (
         <>
           <div
             className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat"
             style={{
-              backgroundImage: `url(${wallpaper.url})`,
+              backgroundImage: `url(${wallpaperUrl})`,
             }}
           />
           {/* 浅色遮罩层，保持文本可读性的同时更明亮 */}
