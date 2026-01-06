@@ -157,8 +157,8 @@ export default function WorkflowStep({
           className={cn(
             "transition-all duration-500 overflow-hidden relative",
             isExpanded
-              ? "glass-card border-primary/20 ring-1 ring-primary/10"
-              : "bg-secondary/30 border-border hover:bg-secondary hover:border-primary/20 shadow-none"
+              ? "glass-card border-primary/20 ring-1 ring-primary/10 shadow-2xl"
+              : "bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 hover:border-white/20 shadow-sm"
           )}
         >
           {/* AI 扫描线动画 (仅在展开时显示) */}
