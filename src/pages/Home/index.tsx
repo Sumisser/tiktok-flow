@@ -56,6 +56,41 @@ const useWeather = () => {
   return data;
 };
 
+const useQuote = () => {
+  const [quote, setQuote] = useState<{
+    content: string;
+    origin?: string;
+    author?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const fetchQuote = async () => {
+      try {
+        const response = await fetch("https://api.xygeng.cn/one");
+        const data = await response.json();
+        if (data.code === 200 && data.data) {
+          setQuote({
+            content: data.data.content,
+            origin: data.data.origin,
+            author: data.data.name !== "佚名" ? data.data.name : undefined,
+          });
+        }
+      } catch (error) {
+        console.error("获取名言失败:", error);
+        // Fallback 名言
+        setQuote({
+          content: "一个人至少拥有一个梦想，有一个理由去强大。",
+          author: "三毛",
+        });
+      }
+    };
+
+    fetchQuote();
+  }, []);
+
+  return quote;
+};
+
 export default function Home() {
   const { tasks, isLoading, addTask, deleteTask } = useTasks();
   const navigate = useNavigate();
@@ -64,6 +99,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const currentTime = useTime();
   const weather = useWeather();
+  const quote = useQuote();
 
   const timeString = currentTime.toLocaleTimeString([], {
     hour: "2-digit",
@@ -278,9 +314,23 @@ export default function Home() {
 
       {/* 底部引用 - 极简版 */}
       <footer className="fixed bottom-12 left-0 right-0 text-center pointer-events-none px-8 z-40">
-        <p className="text-white/40 text-[13px] font-medium tracking-tight italic drop-shadow-sm max-w-2xl mx-auto select-none">
-          "某些人让你的笑声更响亮，你的微笑更灿烂，你的生活更美好。努力成为那样的人之一。"
-        </p>
+        {quote ? (
+          <div className="max-w-2xl mx-auto space-y-2 animate-in fade-in duration-1000">
+            <p className="text-white/40 text-[13px] font-medium tracking-tight italic drop-shadow-sm select-none">
+              「{quote.content}」
+            </p>
+            {(quote.origin || quote.author) && (
+              <p className="text-white/20 text-[10px] font-bold tracking-widest uppercase">
+                {quote.author && `— ${quote.author}`}
+                {quote.origin && ` · ${quote.origin}`}
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="max-w-2xl mx-auto">
+            <div className="h-4 w-64 mx-auto bg-white/5 rounded-full animate-pulse" />
+          </div>
+        )}
       </footer>
     </div>
   );
