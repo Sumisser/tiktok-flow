@@ -8,12 +8,43 @@ import { Input } from "@/components/ui/input";
 import { ChevronLeft, Edit3, Check, X, LayoutDashboard } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
+const useBingWallpaper = () => {
+  const [wallpaper, setWallpaper] = useState<{
+    url: string;
+    title: string;
+    copyright: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const fetchWallpaper = async () => {
+      try {
+        const response = await fetch("https://api.xygeng.cn/openapi/bing/info");
+        const data = await response.json();
+        if (data.code === 200 && data.data) {
+          setWallpaper({
+            url: data.data.urls[0] || data.data.url,
+            title: data.data.title,
+            copyright: data.data.copyright,
+          });
+        }
+      } catch (error) {
+        console.error("获取背景图片失败:", error);
+      }
+    };
+
+    fetchWallpaper();
+  }, []);
+
+  return wallpaper;
+};
+
 export default function Workflow() {
   const { id } = useParams<{ id: string }>();
   const { getTask, updateTask, updateStep, updateStoryboards, isLoading } =
     useTasks();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState("");
+  const wallpaper = useBingWallpaper();
 
   const task = getTask(id || "");
 
@@ -105,7 +136,20 @@ export default function Workflow() {
   );
 
   return (
-    <div className="min-h-screen pb-32">
+    <div className="min-h-screen pb-32 relative text-white">
+      {/* 背景图片 */}
+      {wallpaper && (
+        <>
+          <div
+            className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage: `url(${wallpaper.url})`,
+            }}
+          />
+          {/* 深色遮罩层 */}
+          <div className="fixed inset-0 -z-10 bg-gradient-to-b from-black/40 via-black/30 to-black/50" />
+        </>
+      )}
       {/* 头部 */}
       <header className="sticky top-0 z-50 glass border-b border-primary/20 py-3 px-6 mb-12 overflow-hidden">
         {/* 头部装饰背景 */}

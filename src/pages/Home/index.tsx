@@ -91,6 +91,37 @@ const useQuote = () => {
   return quote;
 };
 
+const useBingWallpaper = () => {
+  const [wallpaper, setWallpaper] = useState<{
+    url: string;
+    title: string;
+    copyright: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const fetchWallpaper = async () => {
+      try {
+        const response = await fetch("https://api.xygeng.cn/openapi/bing/info");
+        const data = await response.json();
+        if (data.code === 200 && data.data) {
+          // 使用 1920x1080 分辨率的图片
+          setWallpaper({
+            url: data.data.urls[0] || data.data.url,
+            title: data.data.title,
+            copyright: data.data.copyright,
+          });
+        }
+      } catch (error) {
+        console.error("获取背景图片失败:", error);
+      }
+    };
+
+    fetchWallpaper();
+  }, []);
+
+  return wallpaper;
+};
+
 export default function Home() {
   const { tasks, isLoading, addTask, deleteTask } = useTasks();
   const navigate = useNavigate();
@@ -100,6 +131,7 @@ export default function Home() {
   const currentTime = useTime();
   const weather = useWeather();
   const quote = useQuote();
+  const wallpaper = useBingWallpaper();
 
   const timeString = currentTime.toLocaleTimeString([], {
     hour: "2-digit",
@@ -138,7 +170,20 @@ export default function Home() {
   const hasTasks = tasks.length > 0;
 
   return (
-    <div className="min-h-screen text-white overflow-x-hidden selection:bg-white/20">
+    <div className="min-h-screen text-white overflow-x-hidden selection:bg-white/20 relative">
+      {/* 背景图片 */}
+      {wallpaper && (
+        <>
+          <div
+            className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage: `url(${wallpaper.url})`,
+            }}
+          />
+          {/* 深色遮罩层，增强文本可读性 */}
+          <div className="fixed inset-0 -z-10 bg-gradient-to-b from-black/40 via-black/30 to-black/50" />
+        </>
+      )}
       {/* 极简顶栏 - 仅保留功能性图标 */}
       <header className="fixed top-0 left-0 right-0 z-50 px-8 py-6 flex items-center justify-between pointer-events-none">
         <div className="flex items-center gap-4 pointer-events-auto">
