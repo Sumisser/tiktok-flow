@@ -13,34 +13,51 @@ interface StoryboardEditorProps {
 // 解析 Markdown 表格
 function parseMarkdownTable(markdown: string): StoryboardItem[] {
   const lines = markdown.split("\n").filter((line) => line.trim());
+  
+  // 检查是否包含 Markdown 表格特征 (至少有两个 | )
+  const hasTable = lines.some(line => (line.match(/\|/g) || []).length >= 2);
+  
   const items: StoryboardItem[] = [];
 
-  for (const line of lines) {
-    // 跳过表头（包含"镜号"）
-    if (line.includes("镜号")) continue;
+  if (hasTable) {
+    for (const line of lines) {
+      // 跳过表头（包含"镜号"）
+      if (line.includes("镜号")) continue;
 
-    // 跳过分隔线（只包含 |、-、:、空格的行）
-    if (/^[\s|:-]+$/.test(line)) continue;
+      // 跳过分隔线（只包含 |、-、:、空格的行）
+      if (/^[\s|:-]+$/.test(line)) continue;
 
-    const cells = line
-      .split("|")
-      .map((cell) => cell.trim())
-      .filter(Boolean);
+      const cells = line
+        .split("|")
+        .map((cell) => cell.trim())
+        .filter(Boolean);
 
-    // 跳过分隔线单元格（只有 - 和 : 组成）
-    if (cells.length > 0 && cells.every((cell) => /^[-:]+$/.test(cell)))
-      continue;
+      // 跳过分隔线单元格（只有 - 和 : 组成）
+      if (cells.length > 0 && cells.every((cell) => /^[-:]+$/.test(cell)))
+        continue;
 
-    if (cells.length >= 3) {
-      const shotNumber = parseInt(cells[0]) || items.length + 1;
+      if (cells.length >= 3) {
+        const shotNumber = parseInt(cells[0]) || items.length + 1;
+        items.push({
+          id: `shot-${shotNumber}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          shotNumber,
+          script: cells[1] || "",
+          imagePrompt: cells[2] || "",
+          imageUrl: "",
+        });
+      }
+    }
+  } else {
+    // 兜底逻辑：如果是纯文本，按行拆分分镜
+    lines.forEach((line, index) => {
       items.push({
-        id: `shot-${shotNumber}`,
-        shotNumber,
-        script: cells[1] || "",
-        imagePrompt: cells[2] || "",
+        id: `shot-${index + 1}-${Date.now()}`,
+        shotNumber: index + 1,
+        script: line,
+        imagePrompt: "", // 初始没有提示词
         imageUrl: "",
       });
-    }
+    });
   }
 
   return items;
@@ -57,12 +74,32 @@ export default function StoryboardEditor({
   const [isProcessing, setIsProcessing] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const dropzoneRef = useRef<HTMLDivElement>(null);
+  const storyboardsRef = useRef(storyboards);
+
+  // Sync ref
+  useEffect(() => {
+    storyboardsRef.current = storyboards;
+  }, [storyboards]);
 
   // 监听 output 变化，自动解析并重置所有分镜内容
   useEffect(() => {
     if (output) {
       const newItems = parseMarkdownTable(output);
-      onUpdateStoryboards(newItems);
+      // 合并现有图片信息，防止重新解析时丢失图片
+      const mergedItems = newItems.map((newItem) => {
+        const existingItem = storyboardsRef.current.find(
+          (s) => s.shotNumber === newItem.shotNumber
+        );
+        if (existingItem) {
+          return {
+            ...newItem,
+            id: existingItem.id, // 保留原有ID
+            imageUrl: existingItem.imageUrl || newItem.imageUrl, // 优先使用已存图片
+          };
+        }
+        return newItem;
+      });
+      onUpdateStoryboards(mergedItems);
     }
   }, [output]);
 

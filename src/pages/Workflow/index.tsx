@@ -1,6 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { useTasks } from "../../store/hooks";
-import Timeline from "../../components/Timeline";
+import WorkflowCarousel from "../../components/WorkflowCarousel";
 import WorkflowStep from "../../components/WorkflowStep";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -203,8 +203,8 @@ export default function Workflow() {
       </header>
 
       {/* 主要内容 */}
-      <main className="max-w-5xl mx-auto px-6">
-        <Timeline>
+      <main className="w-full overflow-x-hidden">
+        <WorkflowCarousel steps={task.steps}>
           {task.steps.map((step, index) => (
             <WorkflowStep
               key={step.id}
@@ -219,7 +219,7 @@ export default function Workflow() {
               }
             />
           ))}
-        </Timeline>
+        </WorkflowCarousel>
       </main>
     </div>
   );

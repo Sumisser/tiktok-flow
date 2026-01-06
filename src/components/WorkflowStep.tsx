@@ -23,6 +23,10 @@ import {
   Eye,
   Edit2,
   ListTodo,
+  ClipboardPaste,
+  CheckCircle2,
+  CircleDashed,
+  Clock,
 } from "lucide-react";
 import {
   Collapsible,
@@ -83,8 +87,127 @@ export default function WorkflowStep({
     onUpdate({ output: value, status: value ? "completed" : "in-progress" });
   };
 
+  const STYLE_CATEGORIES = [
+    {
+      name: "热门推荐",
+      styles: [
+        { id: "anime", label: "🎬 写实动漫", prompt: "Realistic Anime Style, Makoto Shinkai aesthetic, high-quality anime illustration, cinematic lighting" },
+        { id: "3d", label: "🧊 3D 渲染", prompt: "3D render, Pixar/Disney style, C4D, Octane render, volumetric lighting, soft shadows" },
+        { id: "film", label: "📸 电影写实", prompt: "Cinematic realism, photorealistic, 35mm lens, depth of field, natural lighting, grain" },
+        { id: "ghibli", label: "🍃 吉卜力", prompt: "Studio Ghibli style, hand-drawn illustration, lush nature, nostalgic watercolor textures" },
+        { id: "cyber", label: "🌆 赛博霓虹", prompt: "Cyberpunk neon, futuristic city, rainy night, violet and teal lighting, high tech" },
+      ]
+    },
+    {
+      name: "动画次元",
+      styles: [
+        { id: "shinkai", label: "✨ 新海诚", prompt: "Makoto Shinkai style, breathtaking sky, cinematic lighting, lens flare, hyper-detailed backgrounds" },
+        { id: "niji", label: "🌈 Niji 6", prompt: "Niji style version 6, cute, expressive, stylized anime, vibrant colors, clean lines" },
+        { id: "manga", label: "🖋️ 黑白漫画", prompt: "B&W Manga style, pen and ink, high contrast, speed lines, expressive hatching" },
+        { id: "disney2d", label: "🏰 迪士尼 2D", prompt: "Classic Disney 2D animation style, hand-drawn, expressive characters, magical atmosphere" },
+        { id: "spiderman", label: "🕷️ 蜘蛛侠元宇宙", prompt: "Into the Spider-Verse style, halftone patterns, chromatic aberration, comic book aesthetics" },
+        { id: "retro_anime", label: "📺 90s 复古番", prompt: "90s retro anime style, lo-fi aesthetic, VHS grain, muted colors, classic cel shaded" },
+      ]
+    },
+    {
+      name: "数字材质",
+      styles: [
+        { id: "clay", label: "🧸 黏土动画", prompt: "Claymation style, handmade texture, stop-motion aesthetic, soft studio lighting" },
+        { id: "ue5", label: "🎮 虚幻引擎", prompt: "Unreal Engine 5 render, ray tracing, cinematic game environment, high fidelity" },
+        { id: "voxel", label: "📦 体素艺术", prompt: "Voxel art, Minecraft style, 3D pixel design, vibrant blocky textures" },
+        { id: "poly", label: "📐 低多边形", prompt: "Low poly art style, geometric, clean edges, artistic lighting" },
+        { id: "paper", label: "✂️ 剪纸拼贴", prompt: "Paper cut art, layered paper texture, handcrafted look, soft shadows, 3D paper craft" },
+        { id: "glass", label: "💎 磨砂玻璃", prompt: "Frosted glass aesthetic, glassmorphism, transparent layers, soft refractions, elegant" },
+        { id: "origami", label: "� 折纸艺术", prompt: "Origami style, folded paper textures, sharp creases, clean geometric look" },
+      ]
+    },
+    {
+      name: "专业摄影",
+      styles: [
+        { id: "vintage", label: "🎞️ 复古胶片", prompt: "Vintage film photography, Kodak Portra 400, warm tones, slight light leak" },
+        { id: "polaroid", label: "🖼️ 拍立得", prompt: "Polaroid photography style, instant film look, washed out colors, vintage border" },
+        { id: "noir", label: "� 黑色电影", prompt: "Film Noir style, black and white, dramatic shadows, moody lighting, smoke" },
+        { id: "lomo", label: "🎨 Lomo 摄影", prompt: "Lomography style, oversaturated colors, vignette, high contrast, artistic blur" },
+        { id: "portra", label: "👤 柔焦人像", prompt: "Professional portrait photography, shallow depth of field, soft skin tones, catching light in eyes" },
+        { id: "infra", label: "❄️ 红外摄影", prompt: "Infrared photography, white foliage, dark sky, surreal ethereal landscape" },
+      ]
+    },
+    {
+      name: "创意镜头",
+      styles: [
+        { id: "drone", label: "🚁 航拍视角", prompt: "Aerial photography, drone view, high angle, vast landscape, cinematic scope" },
+        { id: "macro", label: "🔍 微距世界", prompt: "Macro photography, extreme detail, blurry background, sharp focus, droplets, textures" },
+        { id: "tilt", label: "🧸 移轴摄影", prompt: "Tilt-shift photography, miniature model effect, blurred top and bottom, vibrant colors" },
+        { id: "fisheye", label: "👁️ 鱼眼镜头", prompt: "Fisheye lens perspective, distorted wide angle, spherical view, unique artistic look" },
+        { id: "long_exp", label: "� 长曝光", prompt: "Long exposure photography, light trails, silky water, motion blur, nighttime city lights" },
+        { id: "silhouete", label: "👤 剪影艺术", prompt: "Silhouette photography, dark subject against bright light, high contrast, golden hour" },
+      ]
+    },
+    {
+      name: "古典艺术",
+      styles: [
+        { id: "oil", label: "🎨 古典油画", prompt: "Classic oil painting, thick brushstrokes, impasto, dramatic lighting, Rembrandt aesthetic" },
+        { id: "watercolor", label: "🖌️ 柔美水彩", prompt: "Watercolor illustration, soft bleeding colors, paper texture, delicate details" },
+        { id: "ink", label: "�️ 水墨意境", prompt: "Traditional Chinese ink wash, minimalist, elegant brushwork, ethereal atmosphere" },
+        { id: "ukiyo", label: "🌊 浮世绘", prompt: "Ukiyo-e style, woodblock print, traditional Japanese art, flat colors, bold outlines" },
+        { id: "statue", label: "🗿 大理石像", prompt: "Neoclassical marble sculpture style, smooth white texture, dramatic museum lighting" },
+        { id: "fresco", label: "⛪ 壁画艺术", prompt: "Ancient fresco painting style, weathered texture, historical aesthetic, mural feel" },
+      ]
+    },
+    {
+      name: "绘本插画",
+      styles: [
+        { id: "pencil", label: "✏️ 铅笔素描", prompt: "Pencil sketch, graphite texture, cross-hatching, artistic hand-drawn look" },
+        { id: "gouache", label: "🎨 设色粉彩", prompt: "Gouache painting style, vibrant opaque colors, matte finish, artistic illustration" },
+        { id: "crayon", label: "🖍️ 蜡笔涂鸦", prompt: "Crayon drawing, childlike texture, rough strokes, vibrant and playful" },
+        { id: "comic", label: "💥 美漫风格", prompt: "Western comic book style, bold ink lines, Ben-Day dots, high action feel" },
+        { id: "pop", label: "� 波普艺术", prompt: "Pop art, Andy Warhol style, bold colors, halftone patterns, high contrast" },
+        { id: "fairytale", label: "🧚 梦幻绘本", prompt: "Fairytale book illustration, whimsical, soft glow, magical storytelling aesthetic" },
+      ]
+    },
+    {
+      name: "科幻潮流",
+      styles: [
+        { id: "vapor", label: "🌈 蒸汽波", prompt: "Vaporwave aesthetic, 80s retro, pastel colors, glitch art, surreal neon" },
+        { id: "synth", label: "🎹 赛博合成", prompt: "Synthwave style, retro-futuristic, wireframe sun, chrome textures, dark purple" },
+        { id: "glitch", label: "📺 故障艺术", prompt: "Glitch art, digital noise, chromatic aberration, distorted scanlines" },
+        { id: "punk", label: "⚙️ 蒸汽朋克", prompt: "Steampunk aesthetic, brass gears, Victorian era, industrial, sepia tones" },
+        { id: "hologram", label: "✨ 全息投影", prompt: "Holographic projection, glowing blue lines, semi-transparent, futuristic interface look" },
+        { id: "biopunk", label: "🧬 生物朋克", prompt: "Biopunk aesthetic, organic technology, glowing neon veins, surreal fusion" },
+      ]
+    },
+    {
+      name: "极简设计",
+      styles: [
+        { id: "minimal", label: "⬜ 极简主义", prompt: "Minimalist design, clean lines, simple shapes, monochromatic, significant negative space" },
+        { id: "flat", label: "📏 扁平矢量", prompt: "Flat design illustration, vector art, modern corporate style, clean and professional" },
+        { id: "ios", label: "🍎 现代移动", prompt: "Modern app interface aesthetic, clean glassmorphism, soft gradients, iOS style" },
+        { id: "bauhaus", label: "📐 包豪斯", prompt: "Bauhaus style, geometric shapes, primary colors, architectural composition" },
+        { id: "abstract", label: "🌀 抽象表现", prompt: "Abstract expressionism, organic shapes, fluid composition, artistic and conceptual" },
+      ]
+    }
+  ];
+
+  const [selectedStyle, setSelectedStyle] = useState(STYLE_CATEGORIES[0].styles[0].id);
+
   const getFullPrompt = () => {
-    return step.basePrompt + "\n\n" + input;
+    let stylePrompt = "";
+    for (const cat of STYLE_CATEGORIES) {
+      const found = cat.styles.find(s => s.id === selectedStyle);
+      if (found) {
+        stylePrompt = found.prompt;
+        break;
+      }
+    }
+    
+    const styleInstruction = `\n\n**重要：请强制采用以下画面风格进行创作：**\n${stylePrompt}`;
+
+    if (step.type === "script") {
+      // 脚本步骤：只依赖于上一步输出 + 选定的风格
+      return (step.basePrompt + styleInstruction + "\n\n" + (prevStepOutput || "")).trim();
+    }
+    const currentInput = input || "";
+    return (step.basePrompt + "\n\n" + currentInput).trim();
   };
 
   const handleCopyPrompt = async () => {
@@ -130,83 +253,90 @@ export default function WorkflowStep({
   };
 
   return (
-    <div className="relative pl-16 pb-16 last:pb-4 group">
-      {/* 时间轴线条 */}
-      <div className="absolute left-[19px] top-12 bottom-0 w-0.5 bg-gradient-to-b from-primary/50 via-primary/20 to-transparent group-last:hidden rounded-full" />
+    <div className="relative pb-16 last:pb-4 group">
 
-      {/* 时间轴标记 */}
-      <div
-        className={cn(
-          "absolute left-0 top-6 w-10 h-10 rounded-xl border border-border flex items-center justify-center z-10 transition-all duration-700 shadow-lg",
-          step.status === "completed"
-            ? "bg-primary text-primary-foreground scale-110 shadow-primary/20 text-neon"
-            : "bg-card text-muted-foreground"
-        )}
+      <Collapsible
+        open={(step.type === "idea" || step.type === "script") ? true : isExpanded}
+        onOpenChange={(step.type === "idea" || step.type === "script") ? () => {} : setIsExpanded}
       >
-        {step.status === "completed" ? (
-          <Check className="w-5 h-5" />
-        ) : (
-          <span className="text-xs font-black tracking-tighter">
-            {stepNumber.toString().padStart(2, "0")}
-          </span>
-        )}
-      </div>
-
-      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
         <Card
           className={cn(
             "transition-all duration-500 overflow-hidden relative",
-            isExpanded
+            (step.type === "idea" || step.type === "script" || isExpanded)
               ? "glass-card border-primary/20 ring-1 ring-primary/10 shadow-2xl"
-              : "bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 hover:border-white/20 shadow-sm"
+              : "bg-black/40 backdrop-blur-md border border-white/10 hover:bg-black/50 hover:border-white/20 shadow-sm"
           )}
         >
           {/* AI 扫描线动画 (仅在展开时显示) */}
-          {isExpanded && (
+          {(step.type === "idea" || step.type === "script" || isExpanded) && (
             <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-20 animate-[scan_3s_linear_infinite]" />
           )}
 
           <CollapsibleTrigger asChild>
-            <div className="p-6 cursor-pointer flex items-center justify-between group/header select-none">
-              <div className="flex items-center gap-6">
-                <span className="text-4xl filter drop-shadow-lg opacity-80 group-hover/header:opacity-100 transition-all duration-500 transform group-hover/header:scale-110">
+            <div
+              className={cn(
+                "p-5 flex items-center justify-between group/header select-none",
+                (step.type !== "idea" && step.type !== "script") && "cursor-pointer"
+              )}
+            >
+              <div className="flex items-center gap-5">
+                <span className="text-3xl filter drop-shadow-lg opacity-80 group-hover/header:opacity-100 transition-all duration-500 transform group-hover/header:scale-110">
                   {step.title.split(" ")[0]}
                 </span>
                 <div className="min-w-0">
-                  <h3 className="text-xl font-black flex items-center gap-4">
+                  <h3 className="text-lg font-black flex items-center gap-3">
                     <span
                       className={cn(
                         "truncate transition-colors duration-300",
-                        isExpanded
+                        (step.type === "idea" || step.type === "script" || isExpanded)
                           ? "text-primary text-neon"
                           : "text-foreground group-hover/header:text-primary transition-colors"
                       )}
                     >
                       {step.title.split(" ").slice(1).join(" ")}
                     </span>
-                    <Badge
-                      variant={
-                        step.status === "completed" ? "default" : "outline"
-                      }
-                      className={cn(
-                        "text-[9px] h-5 px-2.5 font-black tracking-[0.2em] uppercase border-border shrink-0 font-mono",
-                        step.status === "completed"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-secondary text-muted-foreground"
-                      )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsPromptSidebarOpen(true);
+                      }}
+                      className="h-7 text-[10px] font-black tracking-widest text-primary/70 hover:text-primary bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded-lg px-2.5 transition-all uppercase"
                     >
-                      {getStatusText(step.status)}
-                    </Badge>
+                      <ListTodo className="w-3.5 h-3.5 mr-1.5" />
+                      引擎
+                    </Button>
+                    <div className="flex items-center">
+                      {step.status === "completed" && (
+                        <div className="flex items-center gap-1.5 text-primary bg-primary/10 px-2 py-1 rounded-md border border-primary/20">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span className="text-[10px] font-black uppercase tracking-widest">Done</span>
+                        </div>
+                      )}
+                      {step.status === "in-progress" && (
+                        <div className="flex items-center gap-1.5 text-amber-500 bg-amber-500/10 px-2 py-1 rounded-md border border-amber-500/20">
+                          <CircleDashed className="w-3.5 h-3.5 animate-spin" />
+                          <span className="text-[10px] font-black uppercase tracking-widest">Doing</span>
+                        </div>
+                      )}
+                      {step.status === "pending" && (
+                        <div className="flex items-center gap-1.5 text-muted-foreground bg-secondary/50 px-2 py-1 rounded-md border border-border">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span className="text-[10px] font-black uppercase tracking-widest">Wait</span>
+                        </div>
+                      )}
+                    </div>
                   </h3>
-                  {!isExpanded && output && (
-                    <p className="text-xs text-muted-foreground line-clamp-1 mt-1.5 font-medium tracking-tight">
+                  {step.type !== "idea" && step.type !== "script" && !isExpanded && output && (
+                    <p className="text-xs text-muted-foreground line-clamp-1 mt-1 font-medium tracking-tight">
                       {output.substring(0, 150)}...
                     </p>
                   )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 shrink-0">
+              <div className="flex items-center gap-3 shrink-0">
                 {step.status === "completed" && (
                   <Button
                     variant="ghost"
@@ -215,187 +345,305 @@ export default function WorkflowStep({
                       e.stopPropagation();
                       handleResetClick();
                     }}
-                    className="h-10 w-10 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+                    className="h-9 w-9 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
                   >
-                    <RotateCcw className="w-4 h-4" />
+                    <RotateCcw className="w-3.5 h-3.5" />
                   </Button>
                 )}
-                <div
-                  className={cn(
-                    "p-2 rounded-xl bg-secondary border border-border transition-all duration-500",
-                    isExpanded
-                      ? "rotate-0 bg-primary/10 border-primary/20 text-primary"
-                      : "-rotate-90"
-                  )}
-                >
-                  <ChevronDown className="w-4 h-4" />
-                </div>
+                {(step.type !== "idea" && step.type !== "script") && (
+                  <div
+                    className={cn(
+                      "p-1.5 rounded-xl bg-black/20 border border-white/10 transition-all duration-500",
+                      isExpanded
+                        ? "rotate-0 bg-primary/10 border-primary/20 text-primary"
+                        : "-rotate-90"
+                    )}
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                  </div>
+                )}
               </div>
             </div>
           </CollapsibleTrigger>
 
           <CollapsibleContent>
-            <CardContent className="p-8 pt-0 space-y-12 animate-in fade-in slide-in-from-top-4 duration-500">
-              {/* 配置部分 */}
-              <div className="space-y-6">
-                <div className="flex items-center justify-between border-b border-border/50 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10 text-primary border border-primary/20">
-                      <Edit2 className="w-4 h-4" />
+            <CardContent className={cn("p-6 pt-0 animate-in fade-in slide-in-from-top-4 duration-500", step.type === "script" ? "space-y-4" : "space-y-8")}>
+              {/* 第一步或第三步显示配置部分 */}
+              {step.type !== "script" && (
+                <div className="space-y-6">
+                  {step.type !== "idea" && (
+                    <div className="flex items-center justify-between border-b border-border/50 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-primary/10 text-primary border border-primary/20">
+                          <Edit2 className="w-4 h-4" />
+                        </div>
+                        <div className="space-y-0.5">
+                          <span className="text-[10px] font-black text-primary/70 uppercase tracking-[0.3em]">
+                            模块-01
+                          </span>
+                          <p className="text-xs font-bold text-foreground">
+                            输入参数
+                          </p>
+                        </div>
+                      </div>
+                      {prevStepOutput && !input && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleInputChange(prevStepOutput)}
+                          className="h-9 text-[11px] font-bold text-primary border-primary/30 hover:bg-primary/10 rounded-xl px-4 transition-all shadow-lg shadow-primary/5"
+                        >
+                          <ArrowLeftRight className="w-3.5 h-3.5 mr-2" />
+                          连接上一步输出
+                        </Button>
+                      )}
                     </div>
-                    <div className="space-y-0.5">
-                      <span className="text-[10px] font-black text-primary/70 uppercase tracking-[0.3em]">
-                        模块-01
-                      </span>
-                      <p className="text-xs font-bold text-foreground">
-                        输入参数
-                      </p>
-                    </div>
-                  </div>
-                  {prevStepOutput && !input && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleInputChange(prevStepOutput)}
-                      className="h-9 text-[11px] font-bold text-primary border-primary/30 hover:bg-primary/10 rounded-xl px-4 transition-all shadow-lg shadow-primary/5"
-                    >
-                      <ArrowLeftRight className="w-3.5 h-3.5 mr-2" />
-                      连接上一步输出
-                    </Button>
                   )}
-                </div>
 
-                <div className="relative group/input">
-                  <Textarea
-                    value={input}
-                    onChange={(e) => handleInputChange(e.target.value)}
-                    placeholder={
-                      stepNumber === 1
-                        ? "请输入你的想法、剧本主题或原始素材内容..."
-                        : "请输入内容或在此基础上进行调整..."
-                    }
-                    className="min-h-[160px] bg-secondary/50 border-border focus:border-primary/50 focus:ring-primary/20 placeholder:text-foreground/20 resize-none rounded-2xl p-6 text-sm leading-relaxed font-medium transition-all shadow-inner"
-                  />
+                  <div className="relative group/input">
+                    <Textarea
+                      value={input}
+                      onChange={(e) => handleInputChange(e.target.value)}
+                      placeholder={
+                        stepNumber === 1
+                          ? "请输入你的想法、剧本主题或原始素材内容..."
+                          : "请输入内容或在此基础上进行调整..."
+                      }
+                      className={cn(
+                        "bg-black/20 border-white/10 focus:border-primary/50 focus:ring-primary/20 placeholder:text-white/30 resize-none rounded-2xl p-6 text-sm leading-relaxed font-medium transition-all shadow-inner text-white",
+                        step.type === "idea" ? "min-h-[100px]" : "min-h-[160px]"
+                      )}
+                    />
+                  </div>
+
                   <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsPromptSidebarOpen(true)}
-                    className="absolute right-4 bottom-4 h-9 text-[11px] font-black tracking-widest text-muted-foreground hover:text-primary bg-white/80 hover:bg-secondary backdrop-blur-md border border-border rounded-xl px-4 transition-all uppercase"
+                    onClick={handleCopyPrompt}
+                    disabled={step.type === "idea" ? !input : (!input && !prevStepOutput)}
+                    className={cn(
+                      "w-full rounded-2xl text-[16px] font-black tracking-[0.1em] gap-4 transition-all duration-300 shadow-2xl uppercase",
+                      step.type === "idea" ? "h-12" : "h-16",
+                      (input || (step.type !== "idea" && prevStepOutput))
+                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] border-t border-white/20"
+                        : "bg-black/20 text-white/20 pointer-events-none border border-white/5"
+                    )}
                   >
-                    <ListTodo className="w-4 h-4 mr-2" />
-                    提示词引擎
+                    {isCopied ? (
+                      <Check className="w-6 h-6 animate-bounce" />
+                    ) : (
+                      <Copy className="w-6 h-6" />
+                    )}
+                    {isCopied ? "提示词已就绪" : "生成 AI 提示词"}
                   </Button>
                 </div>
+              )}
 
-                <Button
-                  onClick={handleCopyPrompt}
-                  disabled={!input}
-                  className={cn(
-                    "w-full h-16 rounded-2xl text-[16px] font-black tracking-[0.1em] gap-4 transition-all duration-300 shadow-2xl uppercase",
-                    input
-                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] border-t border-white/20"
-                      : "bg-secondary text-muted-foreground/50 pointer-events-none"
-                  )}
-                >
-                  {isCopied ? (
-                    <Check className="w-6 h-6 animate-bounce" />
+              {/* 第一步或第三步显示 AI 交互部分 */}
+              {step.type !== "script" && (
+                <div className="space-y-6">
+                  {step.type !== "idea" ? (
+                    <>
+                      <div className="flex items-center gap-3 border-b border-border/50 pb-4">
+                        <div className="p-2 rounded-lg bg-accent/10 text-accent border border-accent/20">
+                          <Bot className="w-4 h-4" />
+                        </div>
+                        <div className="space-y-0.5">
+                          <span className="text-[10px] font-black text-primary/70 uppercase tracking-[0.3em]">
+                            模块-02
+                          </span>
+                          <p className="text-xs font-bold text-foreground">
+                            AI 执行输出
+                          </p>
+                        </div>
+                      </div>
+
+                      <Tabs defaultValue="edit" className="w-full">
+                        <div className="flex items-center justify-between mb-4">
+                          <TabsList className="bg-black/20 border border-white/10 h-11 p-1 rounded-xl">
+                            <TabsTrigger
+                              value="edit"
+                              className="text-xs font-black h-9 px-6 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm decoration-transparent uppercase tracking-wider transition-all"
+                            >
+                              <Edit2 className="w-4 h-4 mr-2" />
+                              编辑器
+                            </TabsTrigger>
+                            <TabsTrigger
+                              value="preview"
+                              className="text-xs font-black h-9 px-6 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm uppercase tracking-wider text-white/40 data-[state=active]:text-white"
+                              disabled={!output}
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              预览
+                            </TabsTrigger>
+                          </TabsList>
+
+                          <div className="flex items-center gap-2.5 text-[10px] text-muted-foreground font-black italic tracking-[0.2em] uppercase">
+                            <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--color-primary),0.5)]" />
+                            实时 AI 同步中
+                          </div>
+                        </div>
+
+                        <TabsContent
+                          value="edit"
+                          className="mt-0 ring-offset-background outline-none"
+                        >
+                          <Textarea
+                            value={output}
+                            onChange={(e) => handleOutputChange(e.target.value)}
+                            placeholder="在此粘贴 AI 的响应内容..."
+                            className="min-h-[260px] bg-black/20 border-white/10 focus:border-accent/50 focus:ring-accent/20 placeholder:text-white/30 resize-none font-mono rounded-2xl p-8 text-sm leading-relaxed text-white"
+                          />
+                        </TabsContent>
+
+                        <TabsContent value="preview" className="mt-0">
+                          <div className="w-full min-h-[260px] p-10 bg-white rounded-2xl border border-border shadow-inner overflow-hidden relative">
+                            <div className="absolute top-0 right-0 p-4 opacity-5">
+                              <Bot className="w-40 h-40" />
+                            </div>
+                            <div className="prose prose-sm max-w-none relative z-10">
+                              <Markdown remarkPlugins={[remarkGfm]}>
+                                {output}
+                              </Markdown>
+                            </div>
+                          </div>
+                        </TabsContent>
+                      </Tabs>
+                    </>
                   ) : (
-                    <Copy className="w-6 h-6" />
+                    <div className="space-y-3 pt-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary/50" />
+                          AI 响应数据
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              const text = await navigator.clipboard.readText();
+                              if (text) handleOutputChange(text);
+                            } catch (err) {
+                              console.error("Paste failed", err);
+                            }
+                          }}
+                          className="h-6 text-[10px] font-bold text-primary hover:text-primary hover:bg-primary/10 px-3 rounded-lg transition-all"
+                        >
+                          <ClipboardPaste className="w-3 h-3 mr-1.5" />
+                          {output ? "覆盖粘贴" : "粘贴内容"}
+                        </Button>
+                      </div>
+                      
+                      <div className="h-24 bg-black/20 border border-white/5 rounded-lg p-3 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 hover:scrollbar-thumb-white/20">
+                        {output ? (
+                          <p className="text-xs font-mono text-white/70 whitespace-pre-wrap leading-relaxed break-all">
+                            {output}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-white/20 italic select-none flex items-center h-full justify-center">
+                            等待粘贴 AI 响应内容...
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   )}
-                  {isCopied ? "提示词已就绪" : "生成 AI 提示词"}
-                </Button>
-              </div>
-
-              {/* AI 交互部分 */}
-              <div className="space-y-6">
-                <div className="flex items-center gap-3 border-b border-border/50 pb-4">
-                  <div className="p-2 rounded-lg bg-accent/10 text-accent border border-accent/20">
-                    <Bot className="w-4 h-4" />
-                  </div>
-                  <div className="space-y-0.5">
-                    <span className="text-[10px] font-black text-primary/70 uppercase tracking-[0.3em]">
-                      模块-02
-                    </span>
-                    <p className="text-xs font-bold text-foreground">
-                      AI 执行输出
-                    </p>
-                  </div>
                 </div>
+              )}
 
-                <Tabs defaultValue="edit" className="w-full">
-                  <div className="flex items-center justify-between mb-4">
-                    <TabsList className="bg-secondary border border-border h-11 p-1 rounded-xl">
-                      <TabsTrigger
-                        value="edit"
-                        className="text-xs font-black h-9 px-6 rounded-lg data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm decoration-transparent uppercase tracking-wider"
-                      >
-                        <Edit2 className="w-4 h-4 mr-2" />
-                        编辑器
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="preview"
-                        className="text-xs font-black h-9 px-6 rounded-lg data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm uppercase tracking-wider text-foreground/40"
-                        disabled={!output}
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        预览
-                      </TabsTrigger>
-                    </TabsList>
-
-                    <div className="flex items-center gap-2.5 text-[10px] text-muted-foreground font-black italic tracking-[0.2em] uppercase">
-                      <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--color-primary),0.5)]" />
-                      实时 AI 同步中
+              {/* 第二步专属布局 */}
+              {step.type === "script" && (
+                <div className="space-y-4 pt-2">
+                  {/* 风格选择标签 - 使用 Tab 切换 */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-[10px] font-black text-primary/70 uppercase tracking-[0.2em]">
+                        <div className="w-1 h-1 rounded-full bg-primary" />
+                        视觉风格定制
+                      </div>
+                      <div className="text-[9px] font-bold text-white/20 uppercase tracking-tighter bg-white/5 px-2 py-0.5 rounded-md">
+                        {STYLE_CATEGORIES.length} 个分类
+                      </div>
                     </div>
+                    
+                    <Tabs defaultValue={STYLE_CATEGORIES[0].name} className="w-full">
+                      <div className="relative mb-4">
+                        <TabsList className="w-full h-9 bg-black/40 border border-white/5 p-1 rounded-xl flex justify-start overflow-x-auto no-scrollbar mask-fade-right">
+                          {STYLE_CATEGORIES.map((category) => (
+                            <TabsTrigger
+                              key={category.name}
+                              value={category.name}
+                              className="px-4 py-1.5 text-[10px] font-black rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300 whitespace-nowrap"
+                            >
+                              {category.name}
+                            </TabsTrigger>
+                          ))}
+                        </TabsList>
+                      </div>
+
+                      {STYLE_CATEGORIES.map((category) => (
+                        <TabsContent key={category.name} value={category.name} className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+                          <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
+                            {category.styles.map((style) => (
+                              <button
+                                key={style.id}
+                                onClick={() => setSelectedStyle(style.id)}
+                                className={cn(
+                                  "px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all duration-300 border uppercase tracking-tighter flex items-center gap-2",
+                                  selectedStyle === style.id
+                                    ? "bg-primary/20 text-primary border-primary/50 shadow-lg shadow-primary/5 scale-[1.02]"
+                                    : "bg-black/20 text-white/30 border-white/5 hover:border-white/10 hover:text-white/60"
+                                )}
+                              >
+                                {style.label.includes(" ") ? (
+                                  <>
+                                    <span className="text-xs">{style.label.split(" ")[0]}</span>
+                                    <span>{style.label.split(" ").slice(1).join(" ")}</span>
+                                  </>
+                                ) : (
+                                  style.label
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        </TabsContent>
+                      ))}
+                    </Tabs>
                   </div>
 
-                  <TabsContent
-                    value="edit"
-                    className="mt-0 ring-offset-background outline-none"
+                  <Button
+                    onClick={handleCopyPrompt}
+                    className={cn(
+                      "w-full h-12 rounded-xl text-sm font-black tracking-[0.1em] gap-3 transition-all duration-300 shadow-xl uppercase border-t border-white/20",
+                      prevStepOutput 
+                        ? "bg-primary text-primary-foreground shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]"
+                        : "bg-black/20 text-white/20 pointer-events-none border border-white/5"
+                    )}
                   >
-                    <Textarea
-                      value={output}
-                      onChange={(e) => handleOutputChange(e.target.value)}
-                      placeholder="在此粘贴 AI 的响应内容..."
-                      className="min-h-[260px] bg-secondary/50 border-border focus:border-accent/50 focus:ring-accent/20 placeholder:text-muted-foreground/30 resize-none font-mono rounded-2xl p-8 text-sm leading-relaxed"
-                    />
-                  </TabsContent>
+                    {isCopied ? <Check className="w-5 h-5 animate-bounce" /> : <Copy className="w-5 h-5" />}
+                    {isCopied ? "提示词已就绪" : "一键生成提示词"}
+                  </Button>
 
-                  <TabsContent value="preview" className="mt-0">
-                    <div className="w-full min-h-[260px] p-10 bg-white rounded-2xl border border-border shadow-inner overflow-hidden relative">
-                      <div className="absolute top-0 right-0 p-4 opacity-5">
-                        <Bot className="w-40 h-40" />
-                      </div>
-                      <div className="prose prose-sm max-w-none relative z-10">
-                        <Markdown remarkPlugins={[remarkGfm]}>
-                          {output}
-                        </Markdown>
-                      </div>
+                  <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div className="flex justify-end mb-4">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            const text = await navigator.clipboard.readText();
+                            if (text) handleOutputChange(text);
+                          } catch (err) {
+                            console.error("Paste failed", err);
+                          }
+                        }}
+                        className="h-8 text-[11px] font-black text-primary/70 hover:text-primary hover:bg-primary/10 px-4 rounded-xl transition-all uppercase tracking-widest border border-primary/20"
+                      >
+                        <ClipboardPaste className="w-4 h-4 mr-2" />
+                        同步 AI 结果
+                      </Button>
                     </div>
-                  </TabsContent>
-                </Tabs>
-              </div>
-
-              {/* 特殊编辑器部分 */}
-              {step.type === "script" && output && (
-                <div className="space-y-6 pt-10 border-t border-border/50">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10 text-primary border border-primary/20">
-                      <FileText className="w-4 h-4" />
-                    </div>
-                    <div className="space-y-0.5">
-                      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">
-                        专用工具
-                      </span>
-                      <p className="text-xs font-bold text-foreground/80">
-                        分镜脚本管理系统
-                      </p>
-                    </div>
-                  </div>
-                  <div className="bg-secondary/40 border border-border rounded-[2.5rem] p-8 shadow-inner overflow-hidden relative">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
                     <StoryboardEditor
                       taskId={taskId}
-                      output={output}
+                      output={output || prevStepOutput}
                       storyboards={storyboards}
                       onUpdateStoryboards={onUpdateStoryboards}
                     />
