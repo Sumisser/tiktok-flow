@@ -199,7 +199,7 @@ export default function WorkflowStep({
                     </Badge>
                   </h3>
                   {!isExpanded && output && (
-                    <p className="text-xs text-muted-foreground/50 line-clamp-1 mt-1.5 font-medium tracking-tight">
+                    <p className="text-xs text-muted-foreground line-clamp-1 mt-1.5 font-medium tracking-tight">
                       {output.substring(0, 150)}...
                     </p>
                   )}
@@ -342,8 +342,8 @@ export default function WorkflowStep({
                       </TabsTrigger>
                     </TabsList>
 
-                    <div className="flex items-center gap-2.5 text-[10px] text-muted-foreground/40 font-black italic tracking-[0.2em] uppercase">
-                      <span className="w-2.5 h-2.5 rounded-full bg-primary/20 animate-pulse" />
+                    <div className="flex items-center gap-2.5 text-[10px] text-muted-foreground font-black italic tracking-[0.2em] uppercase">
+                      <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--color-primary),0.5)]" />
                       实时 AI 同步中
                     </div>
                   </div>

@@ -41,32 +41,31 @@
 @media (prefers-color-scheme: dark) {
   @theme inline {
     --color-background: oklch(0.15 0.02 260);
-    --color-foreground: oklch(0.98 0.005 0);
+    --color-foreground: oklch(0.99 0 0); /* 极亮白 */
     
     --color-card: oklch(0.2 0.02 260 / 0.4);
-    --color-card-foreground: oklch(0.98 0.005 0);
+    --color-card-foreground: oklch(0.99 0 0);
     
     --color-popover: oklch(0.18 0.02 260);
-    --color-popover-foreground: oklch(0.98 0.005 0);
+    --color-popover-foreground: oklch(0.99 0 0);
     
-    --color-primary: oklch(0.7 0.12 265);
+    --color-primary: oklch(0.75 0.12 265); /* 稍微调亮主色 */
     --color-primary-foreground: oklch(0.1 0.02 260);
     
-    --color-secondary: oklch(1 0 0 / 0.05);
-    --color-secondary-foreground: oklch(0.8 0.02 265);
+    --color-secondary: oklch(1 0 0 / 0.15); /* 增加背景厚度 */
+    --color-secondary-foreground: oklch(0.95 0 0); /* 接近纯白 */
     
-    --color-muted: oklch(1 0 0 / 0.03);
-    --color-muted-foreground: oklch(0.6 0.02 265);
+    --color-muted: oklch(1 0 0 / 0.1);
+    --color-muted-foreground: oklch(0.85 0 0); /* 大幅调亮副标题文字 (85% 亮度) */
     
-    --color-accent: oklch(0.75 0.1 280);
+    --color-accent: oklch(0.8 0.1 280);
     --color-accent-foreground: oklch(0.1 0.02 260);
     
-    --color-destructive: oklch(0.5 0.2 25);
-    --color-border: oklch(1 0 0 / 0.1);
-    --color-input: oklch(1 0 0 / 0.05);
-    --color-ring: oklch(0.7 0.12 265 / 0.5);
+    --color-destructive: oklch(0.6 0.2 25);
+    --color-border: oklch(1 0 0 / 0.2); /* 边框更明显 */
+    --color-input: oklch(1 0 0 / 0.1);
+    --color-ring: oklch(0.75 0.12 265 / 0.5);
   }
-
 }
 
 @layer base {
