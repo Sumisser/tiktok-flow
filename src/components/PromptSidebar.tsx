@@ -1,10 +1,17 @@
-import { useEffect } from "react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ListTodo, Info } from "lucide-react";
 
 interface PromptSidebarProps {
   isOpen: boolean;
   onClose: () => void;
   basePrompt: string;
-  onSave?: (prompt: string) => void;
 }
 
 export default function PromptSidebar({
@@ -12,74 +19,53 @@ export default function PromptSidebar({
   onClose,
   basePrompt,
 }: PromptSidebarProps) {
-  // 按 ESC 关闭
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    if (isOpen) {
-      document.addEventListener("keydown", handleEsc);
-      document.body.style.overflow = "hidden";
-    }
-    return () => {
-      document.removeEventListener("keydown", handleEsc);
-      document.body.style.overflow = "";
-    };
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
   return (
-    <>
-      {/* 遮罩层 */}
-      <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-        onClick={onClose}
-      />
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent className="w-[90vw] sm:max-w-2xl glass border-l border-border flex flex-col p-0 shadow-2xl">
+        <SheetHeader className="p-8 border-b border-border/50 space-y-2 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl -z-10" />
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/10">
+              <ListTodo className="w-6 h-6" />
+            </div>
+            <div>
+              <SheetTitle className="text-2xl font-black tracking-tighter text-neon">
+                提示词引擎
+              </SheetTitle>
+              <SheetDescription className="text-muted-foreground/50 text-[10px] uppercase tracking-[0.3em] font-black flex items-center gap-2 mt-1">
+                AI System Prompt Architecture
+              </SheetDescription>
+            </div>
+          </div>
+        </SheetHeader>
 
-      {/* 侧边栏 */}
-      <div
-        className="fixed right-0 top-0 h-full w-full max-w-lg bg-slate-900/95 border-l border-white/10 
-                   shadow-2xl z-50 flex flex-col animate-slide-in-right"
-      >
-        {/* 头部 */}
-        <div className="flex items-center justify-between p-4 border-b border-white/10">
-          <h3 className="text-lg font-semibold text-white">📋 基础提示词</h3>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center text-white/60 
-                       hover:text-white hover:bg-white/10 rounded-lg transition-all"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
+        <ScrollArea className="flex-1 p-8">
+          <div className="relative group">
+            <div className="absolute -left-5 top-0 bottom-0 w-1 bg-gradient-to-b from-primary/30 via-primary/5 to-transparent rounded-full font-black" />
+            <pre className="text-sm text-foreground/80 whitespace-pre-wrap leading-relaxed font-mono pl-8 bg-secondary/50 p-8 rounded-[2.5rem] border border-border shadow-inner">
+              {basePrompt}
+            </pre>
+          </div>
+        </ScrollArea>
 
-        {/* 内容 */}
-        <div className="flex-1 overflow-y-auto p-4">
-          <pre className="text-sm text-white/80 whitespace-pre-wrap leading-relaxed">
-            {basePrompt}
-          </pre>
+        <div className="p-8 border-t border-border/50 bg-secondary/20">
+          <div className="flex items-start gap-4 p-5 rounded-[1.5rem] bg-white border border-border relative overflow-hidden shadow-sm">
+            <div className="absolute top-0 right-0 p-2 opacity-5">
+              <Info className="w-12 h-12" />
+            </div>
+            <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="text-xs font-black text-primary uppercase tracking-widest">
+                Protocol Intelligence
+              </p>
+              <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
+                当前显示的是系统预设协议。它定义了 AI
+                的行为逻辑、输出精度以及结构化要求。在生成过程中，本协议将作为全局约束条件。
+              </p>
+            </div>
+          </div>
         </div>
-
-        {/* 底部提示 */}
-        <div className="p-4 border-t border-white/10 text-center">
-          <p className="text-xs text-white/40">
-            提示词模板由系统预设，更新后自动应用到所有任务
-          </p>
-        </div>
-      </div>
-    </>
+      </SheetContent>
+    </Sheet>
   );
 }

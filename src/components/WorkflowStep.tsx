@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type {
   WorkflowStep as WorkflowStepType,
   StoryboardItem,
@@ -7,6 +7,29 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import StoryboardEditor from "./StoryboardEditor";
 import PromptSidebar from "./PromptSidebar";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  ChevronDown,
+  Copy,
+  Check,
+  RotateCcw,
+  ArrowLeftRight,
+  FileText,
+  Bot,
+  Eye,
+  Edit2,
+  ListTodo,
+} from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 
 interface WorkflowStepProps {
   step: WorkflowStepType;
@@ -29,27 +52,13 @@ export default function WorkflowStep({
   const [output, setOutput] = useState(step.output);
   const [isExpanded, setIsExpanded] = useState(step.status !== "completed");
   const [isCopied, setIsCopied] = useState(false);
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isPromptSidebarOpen, setIsPromptSidebarOpen] = useState(false);
 
-  // 自动填充上一步的输出
-  const [prevStepOutputVal, setPrevStepOutputVal] = useState(prevStepOutput);
-  if (prevStepOutput !== prevStepOutputVal) {
-    setPrevStepOutputVal(prevStepOutput);
-    if (prevStepOutput && !input) {
-      setInput(prevStepOutput);
-    }
-  }
-
-  // 同步状态
-  const [prevStepInput, setPrevStepInput] = useState(step.input);
-  const [prevStepOutputState, setPrevStepOutputState] = useState(step.output);
-  if (step.input !== prevStepInput || step.output !== prevStepOutputState) {
-    setPrevStepInput(step.input);
-    setPrevStepOutputState(step.output);
+  // Sync state
+  useEffect(() => {
     setInput(step.input);
     setOutput(step.output);
-  }
+  }, [step.input, step.output]);
 
   const handleInputChange = (value: string) => {
     setInput(value);
@@ -83,325 +92,309 @@ export default function WorkflowStep({
   };
 
   const handleReset = () => {
-    setInput("");
-    setOutput("");
-    onUpdate({ input: "", output: "", status: "pending" });
-    setIsExpanded(true);
-  };
-
-  // 状态指示颜色
-  const statusColors = {
-    pending: "bg-white/20 border-white/30",
-    "in-progress": "bg-yellow-500/20 border-yellow-500/50 animate-pulse",
-    completed: "bg-green-500/20 border-green-500/50",
-  };
-
-  const statusDotColors = {
-    pending: "bg-white/40",
-    "in-progress": "bg-yellow-500",
-    completed: "bg-green-500",
+    if (confirm("确定要重置当前步骤吗？所有输入和生成结果将被清空。")) {
+      setInput("");
+      setOutput("");
+      onUpdate({ input: "", output: "", status: "pending" });
+      setIsExpanded(true);
+    }
   };
 
   return (
-    <div className="relative pl-20">
-      {/* 时间轴节点 */}
-      <div className="absolute left-5 top-6 z-10">
-        <div
-          className={`w-7 h-7 rounded-full border-2 flex items-center justify-center
-                         ${
-                           statusColors[step.status]
-                         } backdrop-blur-sm transition-all duration-300`}
-        >
-          <div
-            className={`w-3 h-3 rounded-full ${
-              statusDotColors[step.status]
-            } transition-all duration-300`}
-          />
-        </div>
-      </div>
+    <div className="relative pl-16 pb-16 last:pb-4 group">
+      {/* Timeline Line */}
+      <div className="absolute left-[19px] top-12 bottom-0 w-0.5 bg-gradient-to-b from-primary/50 via-primary/20 to-transparent group-last:hidden rounded-full" />
 
-      {/* 卡片 */}
+      {/* Timeline Bullet */}
       <div
-        className={`rounded-2xl border backdrop-blur-xl transition-all duration-500
-                       ${
-                         step.status === "completed"
-                           ? "bg-green-500/5 border-green-500/20"
-                           : "bg-white/5 border-white/10 hover:border-purple-500/30"
-                       }`}
+        className={cn(
+          "absolute left-0 top-6 w-10 h-10 rounded-xl border border-border flex items-center justify-center z-10 transition-all duration-700 shadow-lg",
+          step.status === "completed"
+            ? "bg-primary text-primary-foreground scale-110 shadow-primary/20 text-neon"
+            : "bg-card text-muted-foreground"
+        )}
       >
-        {/* 标题栏 */}
-        <div
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center justify-between p-5 cursor-pointer"
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">{step.title.split(" ")[0]}</span>
-            <div>
-              <h3 className="text-lg font-semibold text-white">
-                第 {stepNumber} 步：{step.title.split(" ").slice(1).join(" ")}
-              </h3>
-              <p className="text-sm text-white/50">
-                {step.status === "completed"
-                  ? "已完成"
-                  : step.status === "in-progress"
-                  ? "进行中"
-                  : "待开始"}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {step.status === "completed" && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleReset();
-                }}
-                className="px-3 py-1.5 text-sm text-white/60 hover:text-white 
-                           bg-white/10 hover:bg-white/20 rounded-lg transition-all"
-              >
-                重置
-              </button>
-            )}
-            <svg
-              className={`w-5 h-5 text-white/60 transition-transform duration-300 ${
-                isExpanded ? "rotate-180" : ""
-              }`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </div>
-        </div>
-
-        {/* 展开内容 */}
-        {isExpanded && (
-          <div className="px-5 pb-5 space-y-5 border-t border-white/10 pt-5">
-            {/* 预设提示词 - 折叠按钮 */}
-            <div className="space-y-2">
-              <button
-                onClick={() => setIsPromptSidebarOpen(true)}
-                className="flex items-center gap-2 px-4 py-3 w-full bg-black/20 rounded-xl
-                           border border-white/10 hover:border-purple-500/50 hover:bg-black/30
-                           transition-all group"
-              >
-                <span className="text-lg">📋</span>
-                <span className="text-sm font-medium text-white/70 group-hover:text-white/90">
-                  查看基础提示词
-                </span>
-                <svg
-                  className="w-4 h-4 text-white/40 group-hover:text-purple-400 ml-auto transition-colors"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {/* 侧边栏 */}
-            <PromptSidebar
-              isOpen={isPromptSidebarOpen}
-              onClose={() => setIsPromptSidebarOpen(false)}
-              basePrompt={step.basePrompt}
-            />
-
-            {/* 用户输入 */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-white/70 flex items-center gap-2">
-                <span>✏️</span> 你的输入
-                {prevStepOutput && !input && (
-                  <button
-                    onClick={() => handleInputChange(prevStepOutput)}
-                    className="text-xs text-purple-400 hover:text-purple-300 ml-2"
-                  >
-                    ← 使用上一步结果
-                  </button>
-                )}
-              </label>
-              <textarea
-                value={input}
-                onChange={(e) => handleInputChange(e.target.value)}
-                placeholder={
-                  stepNumber === 1
-                    ? "输入你的想法或主题..."
-                    : "输入内容或使用上一步的结果..."
-                }
-                className="w-full h-32 p-4 bg-black/30 rounded-xl text-white placeholder-white/40
-                           border border-white/10 focus:border-purple-500/50 focus:outline-none
-                           resize-none transition-all"
-              />
-            </div>
-
-            {/* 复制完整提示词按钮 */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleCopyPrompt}
-                disabled={!input}
-                className={`flex-1 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2
-                           ${
-                             input
-                               ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/25"
-                               : "bg-white/10 text-white/40 cursor-not-allowed"
-                           }`}
-              >
-                {isCopied ? (
-                  <>
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                    已复制到剪贴板
-                  </>
-                ) : (
-                  <>
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                      />
-                    </svg>
-                    复制完整提示词（发送给 AI）
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* AI 输出结果 */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-white/70 flex items-center gap-2">
-                  <span>🤖</span> AI 生成结果
-                  <span className="text-xs text-white/40">
-                    （将 AI 回复粘贴到这里）
-                  </span>
-                </label>
-              </div>
-              {/* 第二步（分镜）不需要预览模式 */}
-              {(step.type as string) === "script" ? (
-                <textarea
-                  value={output}
-                  onChange={(e) => handleOutputChange(e.target.value)}
-                  placeholder="粘贴 AI 生成的分镜表格..."
-                  className="w-full h-32 p-4 bg-black/30 rounded-xl text-white placeholder-white/40
-                             border border-white/10 focus:border-green-500/50 focus:outline-none
-                             resize-none transition-all text-sm font-mono"
-                />
-              ) : isPreviewMode && output ? (
-                <div
-                  className="w-full min-h-48 p-4 bg-black/30 rounded-xl text-white
-                             border border-white/10 overflow-auto prose prose-invert prose-sm max-w-none
-                             prose-table:border-collapse prose-th:border prose-th:border-white/20 prose-th:p-2 prose-th:bg-white/10
-                             prose-td:border prose-td:border-white/20 prose-td:p-2"
-                >
-                  <Markdown remarkPlugins={[remarkGfm]}>{output}</Markdown>
-                </div>
-              ) : (
-                <>
-                  {output && step.type !== "script" && (
-                    <div className="flex items-center gap-1 bg-white/10 rounded-lg p-1 mb-2 w-fit">
-                      <button
-                        onClick={() => setIsPreviewMode(false)}
-                        className={`px-3 py-1 text-xs rounded-md transition-all ${
-                          !isPreviewMode
-                            ? "bg-purple-500 text-white"
-                            : "text-white/60 hover:text-white"
-                        }`}
-                      >
-                        编辑
-                      </button>
-                      <button
-                        onClick={() => setIsPreviewMode(true)}
-                        className={`px-3 py-1 text-xs rounded-md transition-all ${
-                          isPreviewMode
-                            ? "bg-purple-500 text-white"
-                            : "text-white/60 hover:text-white"
-                        }`}
-                      >
-                        预览
-                      </button>
-                    </div>
-                  )}
-                  <textarea
-                    value={output}
-                    onChange={(e) => handleOutputChange(e.target.value)}
-                    placeholder="粘贴 AI 生成的结果..."
-                    className="w-full h-48 p-4 bg-black/30 rounded-xl text-white placeholder-white/40
-                               border border-white/10 focus:border-green-500/50 focus:outline-none
-                               resize-none transition-all"
-                  />
-                </>
-              )}
-            </div>
-
-            {/* 分镜编辑器 - 仅对第二步显示 */}
-            {step.type === "script" && output && (
-              <div className="border-t border-white/10 pt-5">
-                <StoryboardEditor
-                  output={output}
-                  storyboards={storyboards}
-                  onUpdateStoryboards={onUpdateStoryboards}
-                />
-              </div>
-            )}
-
-            {/* 完成按钮 */}
-            {output && step.status !== "completed" && (
-              <button
-                onClick={handleMarkComplete}
-                className="w-full py-3 rounded-xl font-medium transition-all
-                           bg-gradient-to-r from-green-500 to-emerald-500 text-white 
-                           hover:from-green-600 hover:to-emerald-600 shadow-lg shadow-green-500/25
-                           flex items-center justify-center gap-2"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                标记为完成，继续下一步
-              </button>
-            )}
-          </div>
+        {step.status === "completed" ? (
+          <Check className="w-5 h-5" />
+        ) : (
+          <span className="text-xs font-black tracking-tighter">
+            {stepNumber.toString().padStart(2, "0")}
+          </span>
         )}
       </div>
+
+      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+        <Card
+          className={cn(
+            "transition-all duration-500 overflow-hidden relative",
+            isExpanded
+              ? "glass-card border-primary/20 ring-1 ring-primary/10"
+              : "bg-secondary/30 border-border hover:bg-secondary hover:border-primary/20 shadow-none"
+          )}
+        >
+          {/* AI Scanner Line Animation (Only when expanded) */}
+          {isExpanded && (
+            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-20 animate-[scan_3s_linear_infinite]" />
+          )}
+
+          <CollapsibleTrigger asChild>
+            <div className="p-6 cursor-pointer flex items-center justify-between group/header select-none">
+              <div className="flex items-center gap-6">
+                <span className="text-4xl filter drop-shadow-lg opacity-80 group-hover/header:opacity-100 transition-all duration-500 transform group-hover/header:scale-110">
+                  {step.title.split(" ")[0]}
+                </span>
+                <div className="min-w-0">
+                  <h3 className="text-xl font-black flex items-center gap-4">
+                    <span
+                      className={cn(
+                        "truncate transition-colors duration-300",
+                        isExpanded
+                          ? "text-primary text-neon"
+                          : "text-foreground/70 group-hover/header:text-foreground"
+                      )}
+                    >
+                      {step.title.split(" ").slice(1).join(" ")}
+                    </span>
+                    <Badge
+                      variant={
+                        step.status === "completed" ? "default" : "outline"
+                      }
+                      className={cn(
+                        "text-[9px] h-5 px-2.5 font-black tracking-[0.2em] uppercase border-border shrink-0 font-mono",
+                        step.status === "completed"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-secondary text-muted-foreground"
+                      )}
+                    >
+                      {step.status}
+                    </Badge>
+                  </h3>
+                  {!isExpanded && output && (
+                    <p className="text-xs text-muted-foreground/50 line-clamp-1 mt-1.5 font-medium tracking-tight">
+                      {output.substring(0, 150)}...
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 shrink-0">
+                {step.status === "completed" && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleReset();
+                    }}
+                    className="h-10 w-10 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                  </Button>
+                )}
+                <div
+                  className={cn(
+                    "p-2 rounded-xl bg-secondary border border-border transition-all duration-500",
+                    isExpanded
+                      ? "rotate-0 bg-primary/10 border-primary/20 text-primary"
+                      : "-rotate-90"
+                  )}
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </div>
+            </div>
+          </CollapsibleTrigger>
+
+          <CollapsibleContent>
+            <CardContent className="p-8 pt-0 space-y-12 animate-in fade-in slide-in-from-top-4 duration-500">
+              {/* Configuration Section */}
+              <div className="space-y-6">
+                <div className="flex items-center justify-between border-b border-border/50 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10 text-primary border border-primary/20">
+                      <Edit2 className="w-4 h-4" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">
+                        Module-01
+                      </span>
+                      <p className="text-xs font-bold text-foreground/80">
+                        Input Parameters
+                      </p>
+                    </div>
+                  </div>
+                  {prevStepOutput && !input && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleInputChange(prevStepOutput)}
+                      className="h-9 text-[11px] font-bold text-primary border-primary/30 hover:bg-primary/10 rounded-xl px-4 transition-all shadow-lg shadow-primary/5"
+                    >
+                      <ArrowLeftRight className="w-3.5 h-3.5 mr-2" />
+                      连接上一步输出
+                    </Button>
+                  )}
+                </div>
+
+                <div className="relative group/input">
+                  <Textarea
+                    value={input}
+                    onChange={(e) => handleInputChange(e.target.value)}
+                    placeholder={
+                      stepNumber === 1
+                        ? "请输入你的想法、剧本主题或原始素材内容..."
+                        : "请输入内容或在此基础上进行调整..."
+                    }
+                    className="min-h-[160px] bg-secondary/50 border-border focus:border-primary/50 focus:ring-primary/20 placeholder:text-muted-foreground/30 resize-none rounded-2xl p-6 text-sm leading-relaxed font-medium transition-all shadow-inner"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsPromptSidebarOpen(true)}
+                    className="absolute right-4 bottom-4 h-9 text-[11px] font-black tracking-widest text-muted-foreground hover:text-primary bg-white/80 hover:bg-secondary backdrop-blur-md border border-border rounded-xl px-4 transition-all uppercase"
+                  >
+                    <ListTodo className="w-4 h-4 mr-2" />
+                    Prompt Engine
+                  </Button>
+                </div>
+
+                <Button
+                  onClick={handleCopyPrompt}
+                  disabled={!input}
+                  className={cn(
+                    "w-full h-16 rounded-2xl text-[16px] font-black tracking-[0.1em] gap-4 transition-all duration-300 shadow-2xl uppercase",
+                    input
+                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] border-t border-white/20"
+                      : "bg-secondary text-muted-foreground/50 pointer-events-none"
+                  )}
+                >
+                  {isCopied ? (
+                    <Check className="w-6 h-6 animate-bounce" />
+                  ) : (
+                    <Copy className="w-6 h-6" />
+                  )}
+                  {isCopied ? "Prompt Ready" : "Generate AI Prompt"}
+                </Button>
+              </div>
+
+              {/* AI Interaction Section */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 border-b border-border/50 pb-4">
+                  <div className="p-2 rounded-lg bg-accent/10 text-accent border border-accent/20">
+                    <Bot className="w-4 h-4" />
+                  </div>
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">
+                      Module-02
+                    </span>
+                    <p className="text-xs font-bold text-foreground/80">
+                      AI Execution Output
+                    </p>
+                  </div>
+                </div>
+
+                <Tabs defaultValue="edit" className="w-full">
+                  <div className="flex items-center justify-between mb-4">
+                    <TabsList className="bg-secondary border border-border h-11 p-1 rounded-xl">
+                      <TabsTrigger
+                        value="edit"
+                        className="text-xs font-black h-9 px-6 rounded-lg data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm decoration-transparent uppercase tracking-wider"
+                      >
+                        <Edit2 className="w-4 h-4 mr-2" />
+                        Editor
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="preview"
+                        className="text-xs font-black h-9 px-6 rounded-lg data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm uppercase tracking-wider"
+                        disabled={!output}
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Preview
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <div className="flex items-center gap-2.5 text-[10px] text-muted-foreground/40 font-black italic tracking-[0.2em] uppercase">
+                      <span className="w-2.5 h-2.5 rounded-full bg-primary/20 animate-pulse" />
+                      Live AI Feed
+                    </div>
+                  </div>
+
+                  <TabsContent
+                    value="edit"
+                    className="mt-0 ring-offset-background outline-none"
+                  >
+                    <Textarea
+                      value={output}
+                      onChange={(e) => handleOutputChange(e.target.value)}
+                      placeholder="Paste AI response here..."
+                      className="min-h-[260px] bg-secondary/50 border-border focus:border-accent/50 focus:ring-accent/20 placeholder:text-muted-foreground/30 resize-none font-mono rounded-2xl p-8 text-sm leading-relaxed"
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="preview" className="mt-0">
+                    <div className="w-full min-h-[260px] p-10 bg-white rounded-2xl border border-border shadow-inner overflow-hidden relative">
+                      <div className="absolute top-0 right-0 p-4 opacity-5">
+                        <Bot className="w-40 h-40" />
+                      </div>
+                      <div className="prose prose-sm max-w-none relative z-10">
+                        <Markdown remarkPlugins={[remarkGfm]}>
+                          {output}
+                        </Markdown>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </div>
+
+              {/* Specialized Editors */}
+              {step.type === "script" && output && (
+                <div className="space-y-6 pt-10 border-t border-border/50">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10 text-primary border border-primary/20">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">
+                        Specialized
+                      </span>
+                      <p className="text-xs font-bold text-foreground/80">
+                        Storyboard Management System
+                      </p>
+                    </div>
+                  </div>
+                  <div className="bg-secondary/40 border border-border rounded-[2.5rem] p-8 shadow-inner overflow-hidden relative">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+                    <StoryboardEditor
+                      output={output}
+                      storyboards={storyboards}
+                      onUpdateStoryboards={onUpdateStoryboards}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Action Section */}
+              {output && step.status !== "completed" && (
+                <div className="pt-8 transition-all animate-in slide-in-from-bottom-4">
+                  <Button
+                    onClick={handleMarkComplete}
+                    className="w-full h-16 rounded-2xl text-[16px] font-black shadow-xl shadow-primary/20 bg-gradient-to-r from-primary via-primary to-accent hover:shadow-primary/30 transition-all duration-500 hover:scale-[1.01] active:scale-[0.99] gap-4 uppercase border-t border-white/20"
+                  >
+                    <Check className="w-6 h-6 border-2 border-primary-foreground rounded-full p-0.5" />
+                    Commit to Workflow
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      <PromptSidebar
+        isOpen={isPromptSidebarOpen}
+        onClose={() => setIsPromptSidebarOpen(false)}
+        basePrompt={step.basePrompt}
+      />
     </div>
   );
 }

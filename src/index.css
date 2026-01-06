@@ -1,82 +1,144 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
-/* 全局样式 */
-:root {
-  --color-primary: #a855f7;
-  --color-secondary: #ec4899;
+@theme inline {
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+
+  --color-background: oklch(0.98 0.005 0);
+  --color-foreground: oklch(0.2 0.02 260);
+  
+  --color-card: oklch(1 0 0);
+  --color-card-foreground: oklch(0.2 0.02 260);
+  
+  --color-popover: oklch(1 0 0);
+  --color-popover-foreground: oklch(0.2 0.02 260);
+  
+  --color-primary: oklch(0.55 0.22 260); /* Professional Deep Azure */
+  --color-primary-foreground: oklch(0.98 0.005 0);
+  
+  --color-secondary: oklch(0.95 0.01 260);
+  --color-secondary-foreground: oklch(0.3 0.05 260);
+  
+  --color-muted: oklch(0.92 0.01 260);
+  --color-muted-foreground: oklch(0.5 0.02 260);
+  
+  --color-accent: oklch(0.6 0.25 310); /* Soft Violet */
+  --color-accent-foreground: oklch(1 0 0);
+  
+  --color-destructive: oklch(0.6 0.18 25);
+  --color-border: oklch(0.9 0.01 260);
+  --color-input: oklch(0.95 0.01 260);
+  --color-ring: oklch(0.55 0.22 260 / 0.5);
+
+  --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-html {
-  scroll-behavior: smooth;
+@layer base {
+  :root {
+    --background: var(--color-background);
+    --foreground: var(--color-foreground);
+    --card: var(--color-card);
+    --card-foreground: var(--color-card-foreground);
+    --primary: var(--color-primary);
+    --primary-foreground: var(--color-primary-foreground);
+    --secondary: var(--color-secondary);
+    --secondary-foreground: var(--color-secondary-foreground);
+    --muted: var(--color-muted);
+    --muted-foreground: var(--color-muted-foreground);
+    --accent: var(--color-accent);
+    --accent-foreground: var(--color-accent-foreground);
+    --destructive: var(--color-destructive);
+    --border: var(--color-border);
+    --input: var(--color-input);
+    --ring: var(--color-ring);
+    --radius: 1rem;
+  }
+
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    background-image: 
+      radial-gradient(circle at 10% 10%, oklch(0.55 0.22 260 / 0.05), transparent 50%),
+      radial-gradient(circle at 90% 90%, oklch(0.6 0.25 310 / 0.05), transparent 50%),
+      linear-gradient(to bottom, oklch(0.98 0.01 0 / 0.8) 0%, oklch(0.95 0.01 260 / 0.8) 100%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23eaebf6' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    background-attachment: fixed;
+  }
 }
 
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@layer utilities {
+  .glass {
+    @apply bg-white/70 backdrop-blur-xl border border-white shadow-xl;
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.01);
+  }
+  
+  .glass-card {
+    @apply bg-white/60 backdrop-blur-2xl border border-white shadow-2xl transition-all duration-500;
+    box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+  }
+  
+  .glass-card:hover {
+    @apply border-primary/20 bg-white/80 shadow-primary/10 shadow-2xl;
+    transform: translateY(-4px);
+  }
+
+  .text-neon {
+    /* Subtle glow for light mode */
+    text-shadow: 0 0 20px oklch(0.55 0.22 260 / 0.2), 0 0 40px oklch(0.55 0.22 260 / 0.1);
+    @apply font-black tracking-tighter;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-foreground via-foreground/80 to-foreground/60;
+  }
+
+  .text-primary-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-primary via-primary/80 to-accent;
+  }
 }
 
-/* 自定义滚动条 */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
 }
-
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
+  @apply bg-transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
+  @apply bg-primary/10 rounded-full border-4 border-transparent bg-clip-padding hover:bg-primary/20 transition-all;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+/* Typography refinements */
+h1, h2, h3, h4, h5, h6 {
+  @apply tracking-tight font-black text-foreground;
 }
 
-::selection {
-  background: rgba(168, 85, 247, 0.4);
-  color: white;
+/* Markdown refinements (Light Mode) */
+.prose {
+  @apply max-w-none text-foreground/80 leading-relaxed;
 }
-
-/* Markdown 表格样式 */
 .prose table {
-  width: 100%;
-  min-width: 600px;
-  border-collapse: collapse;
-  font-size: 0.875rem;
+  @apply w-full border-collapse my-8 rounded-2xl overflow-hidden bg-white/70 backdrop-blur-xl border border-white;
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.01);
 }
-
-.prose th,
-.prose td {
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 0.75rem 1rem;
-  text-align: left;
-}
-
 .prose th {
-  background: rgba(255, 255, 255, 0.1);
-  font-weight: 600;
+  @apply bg-secondary p-5 text-left border-b border-black/5 font-black text-primary uppercase tracking-widest text-[11px];
+}
+.prose td {
+  @apply p-5 border-b border-black/5 font-medium text-sm;
 }
 
-.prose tr:hover td {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-/* 侧边栏滑入动画 */
-@keyframes slide-in-right {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-.animate-slide-in-right {
-  animation: slide-in-right 0.3s ease-out;
+@keyframes scan {
+  0% { transform: translateY(-100%); opacity: 0; }
+  20% { opacity: 0.1; }
+  80% { opacity: 0.1; }
+  100% { transform: translateY(500%); opacity: 0; }
 }

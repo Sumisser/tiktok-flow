@@ -1,5 +1,16 @@
 import { Link } from "react-router-dom";
-import { Task } from "../types";
+import type { Task } from "../types";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar, Trash2, Clapperboard, CheckCircle2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface TaskCardProps {
   task: Task;
@@ -12,11 +23,11 @@ export default function TaskCard({ task, onDelete }: TaskCardProps) {
     (s) => s.status === "completed"
   ).length;
   const totalSteps = task.steps.length;
-  const progress = Math.round((completedSteps / totalSteps) * 100);
+  const progress = (completedSteps / totalSteps) * 100;
 
   // 格式化日期
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
+    const date = new Date(dateStr || Date.now());
     return date.toLocaleDateString("zh-CN", {
       month: "short",
       day: "numeric",
@@ -34,86 +45,98 @@ export default function TaskCard({ task, onDelete }: TaskCardProps) {
   };
 
   return (
-    <Link to={`/workflow/${task.id}`} className="group relative block">
-      <div
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-white/10 to-white/5 
-                      backdrop-blur-xl border border-white/10
-                      hover:border-purple-500/50 hover:shadow-xl hover:shadow-purple-500/10
-                      transition-all duration-500 hover:-translate-y-1"
-      >
-        {/* 渐变装饰 */}
-        <div
-          className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-pink-500 
-                        opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        />
+    <Link to={`/workflow/${task.id}`} className="block group">
+      <Card className="glass-card border-border hover:border-primary/50 transition-all duration-500 overflow-hidden relative active:scale-95 shadow-lg">
+        {/* Dynamic Glow background */}
+        <div className="absolute -right-10 -top-10 w-32 h-32 bg-primary/5 blur-[50px] group-hover:bg-primary/10 transition-all duration-500" />
 
-        {/* 删除按钮 */}
-        <button
-          onClick={handleDelete}
-          className="absolute top-3 right-3 w-8 h-8 rounded-lg bg-red-500/20 text-red-400
-                     opacity-0 group-hover:opacity-100 transition-all duration-300
-                     hover:bg-red-500/40 flex items-center justify-center z-10"
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
-
-        <div className="p-5">
-          {/* 标题 */}
-          <h3 className="text-lg font-semibold text-white mb-2 line-clamp-2 group-hover:text-purple-300 transition-colors">
+        <CardHeader className="p-6 pb-2">
+          <div className="flex justify-between items-start mb-4">
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 border border-border text-primary shadow-sm group-hover:scale-110 transition-transform duration-500">
+              <Clapperboard className="w-5 h-5" />
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-8 h-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 md:opacity-0 group-hover:opacity-100 transition-all rounded-lg"
+              onClick={handleDelete}
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+          <CardTitle className="text-xl font-black line-clamp-1 group-hover:text-primary-gradient transition-all duration-300 tracking-tight">
             {task.title}
-          </h3>
-
-          {/* 时间信息 */}
-          <p className="text-sm text-white/50 mb-4">
+          </CardTitle>
+          <CardDescription className="flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-widest text-muted-foreground/60 mt-2">
+            <Calendar className="w-3 h-3 text-primary/60" />
             {formatDate(task.updatedAt)}
-          </p>
+          </CardDescription>
+        </CardHeader>
 
-          {/* 进度条 */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-white/60">进度</span>
-              <span className="text-purple-400 font-medium">
-                {completedSteps}/{totalSteps} 步骤
+        <CardContent className="p-6 pt-4 space-y-6">
+          <div className="space-y-3">
+            <div className="flex justify-between items-end">
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">
+                Completion
+              </span>
+              <span className="text-sm font-black text-primary">
+                {progress === 100 ? "READY" : `${Math.round(progress)}%`}
               </span>
             </div>
-            <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+            <div className="h-2 w-full bg-secondary rounded-full overflow-hidden border border-border p-0.5">
               <div
-                className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-500"
+                className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-1000 ease-out shadow-[0_0_8px_rgba(var(--color-primary),0.2)]"
                 style={{ width: `${progress}%` }}
               />
             </div>
           </div>
 
-          {/* 步骤状态指示器 */}
-          <div className="flex items-center gap-2 mt-4">
+          <div className="flex items-center gap-1">
             {task.steps.map((step, index) => (
               <div
                 key={step.id}
-                className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${
+                className={cn(
+                  "flex-1 h-1.5 rounded-full transition-all duration-500",
                   step.status === "completed"
-                    ? "bg-green-500"
+                    ? "bg-primary shadow-sm"
                     : step.status === "in-progress"
-                    ? "bg-yellow-500 animate-pulse"
-                    : "bg-white/20"
-                }`}
-                title={`步骤 ${index + 1}: ${step.title}`}
+                    ? "bg-primary/40 animate-pulse"
+                    : "bg-secondary"
+                )}
+                title={`第 ${index + 1} 步: ${step.title}`}
               />
             ))}
           </div>
-        </div>
-      </div>
+
+          <div className="flex items-center justify-between pt-2">
+            <Badge
+              variant="secondary"
+              className="bg-primary/10 hover:bg-primary/20 text-primary text-[9px] font-black tracking-widest px-2.5 py-0.5 border border-primary/20 rounded-lg uppercase"
+            >
+              {totalSteps} STAGES
+            </Badge>
+            <div className="flex -space-x-2">
+              {task.steps.slice(0, 4).map((step, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "w-6 h-6 rounded-lg border-2 border-card flex items-center justify-center transition-all duration-300",
+                    step.status === "completed"
+                      ? "bg-primary text-primary-foreground scale-110 z-10 shadow-sm"
+                      : "bg-secondary text-muted-foreground z-0"
+                  )}
+                >
+                  {step.status === "completed" ? (
+                    <CheckCircle2 className="w-3 h-3" />
+                  ) : (
+                    <span className="text-[8px] font-black">{i + 1}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </Link>
   );
 }

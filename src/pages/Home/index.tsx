@@ -1,11 +1,15 @@
 import { useTasks } from "../../store/hooks";
 import TaskCard from "../../components/TaskCard";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Clapperboard, Plus, X, Search, Sparkles } from "lucide-react";
 
 export default function Home() {
   const { tasks, addTask, deleteTask } = useTasks();
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleCreate = () => {
     if (newTitle.trim()) {
@@ -24,96 +28,147 @@ export default function Home() {
     }
   };
 
+  const filteredTasks = tasks.filter((task) =>
+    task.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-black/30 border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">🎬</span>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              AI 视频工作流
-            </h1>
+      <header className="sticky top-0 z-50 glass border-b border-primary/20 px-8 py-5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-10">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30 text-primary shadow-lg shadow-primary/10">
+              <Clapperboard className="w-7 h-7" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-black tracking-tighter text-neon leading-none">
+                TikTok<span className="text-primary-gradient ml-1">Flow</span>
+              </h1>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                <p className="text-[10px] text-muted-foreground uppercase tracking-[0.4em] font-black opacity-50">
+                  AI Production Lab
+                </p>
+              </div>
+            </div>
           </div>
 
-          {!isCreating ? (
-            <button
-              onClick={() => setIsCreating(true)}
-              className="px-5 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium rounded-xl
-                         hover:from-purple-600 hover:to-pink-600 transition-all duration-300
-                         shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40
-                         flex items-center gap-2"
-            >
-              <span className="text-lg">+</span>
-              新建项目
-            </button>
-          ) : (
-            <div className="flex items-center gap-3">
-              <input
-                type="text"
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="输入项目名称..."
-                autoFocus
-                className="px-4 py-2.5 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50
-                           focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50
-                           transition-all duration-300 w-64"
-              />
-              <button
-                onClick={handleCreate}
-                className="px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-medium rounded-xl
-                           hover:from-green-600 hover:to-emerald-600 transition-all"
+          <div className="flex-1 max-w-lg relative hidden lg:block">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/50" />
+            <Input
+              placeholder="Search autonomous projects..."
+              className="pl-12 bg-secondary border-border focus:border-primary/50 transition-all rounded-2xl h-12 text-sm font-medium tracking-tight shadow-inner"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div className="flex items-center gap-4">
+            {!isCreating ? (
+              <Button
+                onClick={() => setIsCreating(true)}
+                className="rounded-2xl h-12 px-8 bg-primary text-primary-foreground shadow-2xl shadow-primary/30 group transition-all duration-500 hover:scale-[1.05] border-t border-white/20 active:scale-95"
               >
-                创建
-              </button>
-              <button
-                onClick={() => {
-                  setIsCreating(false);
-                  setNewTitle("");
-                }}
-                className="px-4 py-2.5 bg-white/10 text-white/70 font-medium rounded-xl
-                           hover:bg-white/20 transition-all"
-              >
-                取消
-              </button>
-            </div>
-          )}
+                <Plus className="w-5 h-5 mr-2 group-hover:rotate-90 transition-transform" />
+                <span className="font-black uppercase tracking-widest text-xs">
+                  New Project
+                </span>
+              </Button>
+            ) : (
+              <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-8 duration-500">
+                <Input
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Project Designation..."
+                  autoFocus
+                  className="w-48 sm:w-80 h-12 bg-black/60 border-primary/50 rounded-2xl px-5"
+                />
+                <Button
+                  onClick={handleCreate}
+                  className="h-12 px-6 rounded-2xl font-black shadow-2xl shadow-primary/20 border-t border-white/20"
+                >
+                  Init
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsCreating(false)}
+                  className="h-12 w-12 text-muted-foreground rounded-2xl hover:bg-secondary border border-border"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="max-w-7xl mx-auto px-8 py-20">
         {tasks.length === 0 ? (
-          /* Empty State */
-          <div className="flex flex-col items-center justify-center py-24">
-            <div
-              className="w-32 h-32 mb-8 rounded-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 
-                            flex items-center justify-center border border-white/10"
-            >
-              <span className="text-6xl">📽️</span>
+          <div className="flex flex-col items-center justify-center py-48 text-center animate-in fade-in zoom-in duration-1000">
+            <div className="relative mb-16">
+              <div className="relative z-10 w-32 h-32 rounded-[3rem] bg-white border border-primary/20 flex items-center justify-center shadow-xl">
+                <Sparkles className="w-14 h-14 text-primary animate-pulse" />
+              </div>
+              <div className="absolute -inset-16 bg-primary/10 blur-[120px] opacity-30 -z-10 animate-pulse" />
+              <div className="absolute -inset-16 bg-accent/10 blur-[120px] opacity-20 -z-10 animate-pulse delay-1000" />
             </div>
-            <h2 className="text-2xl font-semibold text-white mb-3">
-              还没有项目
+            <h2 className="text-5xl font-black mb-6 tracking-tighter text-gradient text-neon">
+              Begin Autonomous Workflow
             </h2>
-            <p className="text-white/60 mb-8 text-center max-w-md">
-              点击「新建项目」开始你的第一个 AI 短视频创作之旅
+            <p className="text-muted-foreground max-w-lg mb-12 text-lg leading-relaxed font-medium">
+              Transform raw concepts into production-ready assets. <br />
+              Systematized AI video orchestration platform.
             </p>
-            <button
+            <Button
+              size="lg"
               onClick={() => setIsCreating(true)}
-              className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium rounded-xl
-                         hover:from-purple-600 hover:to-pink-600 transition-all duration-300
-                         shadow-lg shadow-purple-500/25"
+              className="rounded-3xl px-12 h-16 text-lg font-black shadow-[0_20px_50px_rgba(var(--color-primary),0.4)] bg-primary text-primary-foreground transition-all duration-500 hover:scale-105 border-t border-white/20"
             >
-              开始创作
-            </button>
+              <Plus className="w-6 h-6 mr-3" />
+              Initialize First Pipeline
+            </Button>
           </div>
         ) : (
-          /* Task Gallery */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {tasks.map((task) => (
-              <TaskCard key={task.id} task={task} onDelete={deleteTask} />
-            ))}
+          <div className="space-y-16">
+            <div className="flex items-end justify-between border-b border-white/10 pb-8">
+              <div className="space-y-2">
+                <p className="text-[11px] text-primary font-black uppercase tracking-[0.5em] opacity-60">
+                  System Registry
+                </p>
+                <h2 className="text-4xl font-black tracking-tighter text-gradient">
+                  Active Pipelines
+                </h2>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="px-5 py-2 glass bg-white/50 rounded-2xl border border-border/50">
+                  <p className="text-[10px] text-muted-foreground font-black tracking-[0.2em] uppercase">
+                    Total Assets:{" "}
+                    <span className="text-primary text-neon ml-2">
+                      {filteredTasks.length}
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {filteredTasks.map((task) => (
+                <TaskCard key={task.id} task={task} onDelete={deleteTask} />
+              ))}
+            </div>
+
+            {filteredTasks.length === 0 && (
+              <div className="py-32 text-center glass border border-dashed border-border rounded-[3rem] animate-in fade-in duration-500">
+                <Search className="w-12 h-12 text-primary/10 mx-auto mb-6" />
+                <p className="text-muted-foreground font-black tracking-widest uppercase text-xs">
+                  No matching assets found in registry
+                </p>
+              </div>
+            )}
           </div>
         )}
       </main>
