@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Task } from "../types";
 import {
@@ -9,6 +10,16 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Calendar, Trash2, Clapperboard, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +30,8 @@ interface TaskCardProps {
 
 export default function TaskCard({ task, onDelete }: TaskCardProps) {
   const navigate = useNavigate();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
   // 计算完成进度
   const completedSteps = task.steps.filter(
     (s) => s.status === "completed"
@@ -37,12 +50,15 @@ export default function TaskCard({ task, onDelete }: TaskCardProps) {
     });
   };
 
-  const handleDelete = (e: React.MouseEvent) => {
+  const handleDeleteClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (confirm("确定要删除这个项目吗？")) {
-      onDelete(task.id);
-    }
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    onDelete(task.id);
+    setDeleteDialogOpen(false);
   };
 
   return (
@@ -59,7 +75,7 @@ export default function TaskCard({ task, onDelete }: TaskCardProps) {
           variant="ghost"
           size="icon"
           className="w-10 h-10 text-muted-foreground hover:text-destructive hover:bg-destructive/10 md:opacity-0 group-hover:opacity-100 transition-all rounded-xl backdrop-blur-3xl border border-white/5 bg-white/5 shadow-2xl"
-          onClick={handleDelete}
+          onClick={handleDeleteClick}
         >
           <Trash2 className="w-4 h-4" />
         </Button>
@@ -153,6 +169,27 @@ export default function TaskCard({ task, onDelete }: TaskCardProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* 删除确认对话框 */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要删除项目「{task.title}」吗？此操作无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

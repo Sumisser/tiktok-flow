@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import type { StoryboardItem } from "../types";
 import { uploadStoryboardImage, deleteStoryboardImage } from "../lib/storage";
+import { toast } from "sonner";
 
 interface StoryboardEditorProps {
   taskId: string;
@@ -108,7 +109,7 @@ export default function StoryboardEditor({
             setEditingId(null);
           } catch (error) {
             console.error("图片上传失败:", error);
-            alert("图片上传失败，请重试");
+            toast.error("图片上传失败，请重试");
           }
         }
 
@@ -142,7 +143,7 @@ export default function StoryboardEditor({
       setEditingId(null);
     } catch (error) {
       console.error("图片上传失败:", error);
-      alert("图片上传失败，请重试");
+      toast.error("图片上传失败，请重试");
     }
     setIsProcessing(false);
   };

@@ -1,6 +1,7 @@
 import { useTasks } from "../../store/hooks";
 import TaskCard from "../../components/TaskCard";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Plus, X, Search, CloudRain } from "lucide-react";
 
 const useTime = () => {
@@ -57,6 +58,7 @@ const useWeather = () => {
 
 export default function Home() {
   const { tasks, isLoading, addTask, deleteTask } = useTasks();
+  const navigate = useNavigate();
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -74,11 +76,13 @@ export default function Home() {
       ? "下午好"
       : "晚上好";
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (newTitle.trim()) {
-      addTask(newTitle.trim());
+      const newTask = await addTask(newTitle.trim());
       setNewTitle("");
       setIsCreating(false);
+      // 立即跳转到新创建的 workflow 页面
+      navigate(`/workflow/${newTask.id}`);
     }
   };
 

@@ -29,6 +29,16 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 
 interface WorkflowStepProps {
@@ -55,6 +65,7 @@ export default function WorkflowStep({
   const [isExpanded, setIsExpanded] = useState(step.status !== "completed");
   const [isCopied, setIsCopied] = useState(false);
   const [isPromptSidebarOpen, setIsPromptSidebarOpen] = useState(false);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
 
   // Sync state
   useEffect(() => {
@@ -93,13 +104,16 @@ export default function WorkflowStep({
     }
   };
 
-  const handleReset = () => {
-    if (confirm("确定要重置当前步骤吗？所有输入和生成结果将被清空。")) {
-      setInput("");
-      setOutput("");
-      onUpdate({ input: "", output: "", status: "pending" });
-      setIsExpanded(true);
-    }
+  const handleResetClick = () => {
+    setResetDialogOpen(true);
+  };
+
+  const handleConfirmReset = () => {
+    setInput("");
+    setOutput("");
+    onUpdate({ input: "", output: "", status: "pending" });
+    setIsExpanded(true);
+    setResetDialogOpen(false);
   };
 
   const getStatusText = (status: string) => {
@@ -199,7 +213,7 @@ export default function WorkflowStep({
                     size="icon"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleReset();
+                      handleResetClick();
                     }}
                     className="h-10 w-10 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
                   >
@@ -411,6 +425,27 @@ export default function WorkflowStep({
         onClose={() => setIsPromptSidebarOpen(false)}
         basePrompt={step.basePrompt}
       />
+
+      {/* 重置确认对话框 */}
+      <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认重置</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要重置当前步骤吗？所有输入和生成结果将被清空。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmReset}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              重置
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
