@@ -7,25 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChevronLeft, Edit3, Check, X } from "lucide-react";
 
-const useBingWallpaper = () => {
-  const [url, setUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    // 使用指定的随机背景 API，添加时间戳防止缓存
-    const randomUrl = `https://bing.biturl.top/?resolution=1920&format=image&index=random&_t=${Date.now()}`;
-    setUrl(randomUrl);
-  }, []);
-
-  return url;
-};
-
 export default function Workflow() {
   const { id } = useParams<{ id: string }>();
-  const { getTask, updateTask, updateStep, updateStoryboards, isLoading } =
-    useTasks();
+  const {
+    getTask,
+    updateTask,
+    updateStep,
+    updateStoryboards,
+    isLoading,
+    wallpaperUrl,
+  } = useTasks();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState("");
-  const wallpaperUrl = useBingWallpaper();
 
   const task = getTask(id || "");
 

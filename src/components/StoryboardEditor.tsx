@@ -173,8 +173,12 @@ export default function StoryboardEditor({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h4 className="text-white font-medium">分镜图片管理</h4>
-        <span className="text-white/50 text-sm">{items.length} 个分镜</span>
+        <h4 className="text-foreground font-black tracking-tight">
+          分镜图片管理
+        </h4>
+        <span className="text-muted-foreground text-xs font-bold uppercase tracking-widest">
+          {items.length} 个分镜
+        </span>
       </div>
 
       <div className="grid gap-4">
@@ -308,7 +312,7 @@ export default function StoryboardEditor({
                     {copiedId === `script-${item.id}` ? "已复制" : "复制脚本"}
                   </button>
                 </div>
-                <p className="text-foreground/90 text-sm leading-relaxed font-medium">
+                <p className="text-foreground font-medium text-sm leading-relaxed">
                   {item.script}
                 </p>
               </div>
@@ -357,7 +361,7 @@ export default function StoryboardEditor({
                 </button>
               </div>
               <div className="p-3 bg-secondary/50 rounded-lg border border-border">
-                <p className="text-muted-foreground text-xs leading-relaxed font-mono whitespace-pre-wrap break-all">
+                <p className="text-foreground/80 text-xs leading-relaxed font-mono whitespace-pre-wrap break-all">
                   {item.imagePrompt}
                 </p>
               </div>

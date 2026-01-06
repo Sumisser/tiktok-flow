@@ -17,6 +17,7 @@ export interface TaskContextType {
     taskId: string,
     storyboards: StoryboardItem[]
   ) => Promise<void>;
+  wallpaperUrl: string | null;
 }
 
 export const TaskContext = createContext<TaskContextType | null>(null);

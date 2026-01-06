@@ -179,7 +179,7 @@ export default function WorkflowStep({
                         "truncate transition-colors duration-300",
                         isExpanded
                           ? "text-primary text-neon"
-                          : "text-foreground/70 group-hover/header:text-foreground"
+                          : "text-foreground group-hover/header:text-primary transition-colors"
                       )}
                     >
                       {step.title.split(" ").slice(1).join(" ")}
@@ -244,10 +244,10 @@ export default function WorkflowStep({
                       <Edit2 className="w-4 h-4" />
                     </div>
                     <div className="space-y-0.5">
-                      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">
+                      <span className="text-[10px] font-black text-primary/70 uppercase tracking-[0.3em]">
                         模块-01
                       </span>
-                      <p className="text-xs font-bold text-foreground/80">
+                      <p className="text-xs font-bold text-foreground">
                         输入参数
                       </p>
                     </div>
@@ -274,7 +274,7 @@ export default function WorkflowStep({
                         ? "请输入你的想法、剧本主题或原始素材内容..."
                         : "请输入内容或在此基础上进行调整..."
                     }
-                    className="min-h-[160px] bg-secondary/50 border-border focus:border-primary/50 focus:ring-primary/20 placeholder:text-muted-foreground/30 resize-none rounded-2xl p-6 text-sm leading-relaxed font-medium transition-all shadow-inner"
+                    className="min-h-[160px] bg-secondary/50 border-border focus:border-primary/50 focus:ring-primary/20 placeholder:text-foreground/20 resize-none rounded-2xl p-6 text-sm leading-relaxed font-medium transition-all shadow-inner"
                   />
                   <Button
                     variant="ghost"
@@ -313,10 +313,10 @@ export default function WorkflowStep({
                     <Bot className="w-4 h-4" />
                   </div>
                   <div className="space-y-0.5">
-                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">
+                    <span className="text-[10px] font-black text-primary/70 uppercase tracking-[0.3em]">
                       模块-02
                     </span>
-                    <p className="text-xs font-bold text-foreground/80">
+                    <p className="text-xs font-bold text-foreground">
                       AI 执行输出
                     </p>
                   </div>
@@ -334,7 +334,7 @@ export default function WorkflowStep({
                       </TabsTrigger>
                       <TabsTrigger
                         value="preview"
-                        className="text-xs font-black h-9 px-6 rounded-lg data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm uppercase tracking-wider"
+                        className="text-xs font-black h-9 px-6 rounded-lg data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm uppercase tracking-wider text-foreground/40"
                         disabled={!output}
                       >
                         <Eye className="w-4 h-4 mr-2" />

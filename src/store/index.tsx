@@ -12,7 +12,14 @@ import {
 export function TaskProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [wallpaperUrl, setWallpaperUrl] = useState<string | null>(null);
   const isInitializedRef = useRef(false);
+
+  // 初始化壁纸
+  useEffect(() => {
+    const randomUrl = `https://bing.biturl.top/?resolution=1920&format=image&index=random&_t=${Date.now()}`;
+    setWallpaperUrl(randomUrl);
+  }, []);
 
   // 初始化：从 IndexedDB 加载数据
   useEffect(() => {
@@ -127,6 +134,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         getTask,
         updateStep,
         updateStoryboards,
+        wallpaperUrl,
       }}
     >
       {children}

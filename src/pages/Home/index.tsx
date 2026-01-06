@@ -91,20 +91,8 @@ const useQuote = () => {
   return quote;
 };
 
-const useBingWallpaper = () => {
-  const [url, setUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    // 使用指定的随机背景 API，添加时间戳防止缓存
-    const randomUrl = `https://bing.biturl.top/?resolution=1920&format=image&index=random&_t=${Date.now()}`;
-    setUrl(randomUrl);
-  }, []);
-
-  return url;
-};
-
 export default function Home() {
-  const { tasks, isLoading, addTask, deleteTask } = useTasks();
+  const { tasks, isLoading, addTask, deleteTask, wallpaperUrl } = useTasks();
   const navigate = useNavigate();
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
@@ -112,7 +100,6 @@ export default function Home() {
   const currentTime = useTime();
   const weather = useWeather();
   const quote = useQuote();
-  const wallpaperUrl = useBingWallpaper();
 
   const timeString = currentTime.toLocaleTimeString([], {
     hour: "2-digit",
@@ -338,25 +325,36 @@ export default function Home() {
         )}
       </main>
 
-      {/* 底部引用 - 极简版 */}
-      <footer className="fixed bottom-12 left-0 right-0 text-center pointer-events-none px-8 z-40">
-        {quote ? (
-          <div className="max-w-2xl mx-auto space-y-2 animate-in fade-in duration-1000">
-            <p className="text-white/40 text-[13px] font-medium tracking-tight italic drop-shadow-sm select-none">
-              「{quote.content}」
-            </p>
-            {(quote.origin || quote.author) && (
-              <p className="text-white/20 text-[10px] font-bold tracking-widest uppercase">
-                {quote.author && `— ${quote.author}`}
-                {quote.origin && ` · ${quote.origin}`}
-              </p>
-            )}
-          </div>
-        ) : (
-          <div className="max-w-2xl mx-auto">
-            <div className="h-4 w-64 mx-auto bg-white/5 rounded-full animate-pulse" />
-          </div>
-        )}
+      {/* 底部引用 - 灵感来源 */}
+      <footer className="fixed bottom-12 left-0 right-0 z-40 flex justify-center px-6 pointer-events-none">
+        <div className="max-w-2xl w-full text-center pointer-events-auto">
+          {quote ? (
+            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-1000">
+              <div className="relative inline-block">
+                {/* 装饰性引号 */}
+                <span className="absolute -left-8 -top-4 text-4xl text-white/20 font-serif italic select-none mix-blend-overlay">
+                  “
+                </span>
+                <p className="text-sm md:text-base font-medium tracking-wide text-white/90 selection:bg-primary/30 cursor-text mix-blend-plus-lighter drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">
+                  {quote.content}
+                </p>
+                <span className="absolute -right-8 -bottom-4 text-4xl text-white/20 font-serif italic select-none mix-blend-overlay">
+                  ”
+                </span>
+              </div>
+              <div className="flex items-center justify-center gap-2 text-[10px] uppercase tracking-[0.3em] text-white/40 font-black mix-blend-plus-lighter">
+                <span className="w-8 h-px bg-white/20" />
+                <span>
+                  {quote.author || "佚名"}
+                  {quote.origin && ` · 《${quote.origin}》`}
+                </span>
+                <span className="w-8 h-px bg-white/20" />
+              </div>
+            </div>
+          ) : (
+            <div className="h-4 w-48 bg-white/10 animate-pulse mx-auto rounded-full backdrop-blur-md" />
+          )}
+        </div>
       </footer>
     </div>
   );
