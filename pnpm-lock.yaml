@@ -12,6 +12,7 @@ specifiers:
   '@radix-ui/react-separator': ^1.1.8
   '@radix-ui/react-slot': ^1.2.4
   '@radix-ui/react-tabs': ^1.1.13
+  '@supabase/supabase-js': ^2.89.0
   '@tailwindcss/postcss': ^4.1.18
   '@types/node': ^24.10.1
   '@types/react': ^19.2.5
@@ -48,6 +49,7 @@ dependencies:
   '@radix-ui/react-separator': 1.1.8_zmx5ia3i6g2gjv5aoymu4v7ngq
   '@radix-ui/react-slot': 1.2.4_by7g7f67gtldri3swjzb52k6hu
   '@radix-ui/react-tabs': 1.1.13_zmx5ia3i6g2gjv5aoymu4v7ngq
+  '@supabase/supabase-js': 2.89.0
   class-variance-authority: 0.7.1
   clsx: 2.1.1
   idb: 8.0.3
@@ -1135,6 +1137,62 @@ packages:
     resolution: {integrity: sha1-oS8H6QlbiQHevMF9mLQ1DwzGRjM=}
     dev: true
 
+  /@supabase/auth-js/2.89.0:
+    resolution: {integrity: sha1-DzhwSxT2D3HHxVkcjCses8cEEjw=}
+    engines: {node: '>=20.0.0'}
+    dependencies:
+      tslib: 2.8.1
+    dev: false
+
+  /@supabase/functions-js/2.89.0:
+    resolution: {integrity: sha1-QF2kwfaJ8aLd0pMVhZWovVz/CuI=}
+    engines: {node: '>=20.0.0'}
+    dependencies:
+      tslib: 2.8.1
+    dev: false
+
+  /@supabase/postgrest-js/2.89.0:
+    resolution: {integrity: sha1-mE+I01Y251RH+IILwdMOZTl+YX0=}
+    engines: {node: '>=20.0.0'}
+    dependencies:
+      tslib: 2.8.1
+    dev: false
+
+  /@supabase/realtime-js/2.89.0:
+    resolution: {integrity: sha1-poikJhtCkv6qQQrH/gDc479dkpk=}
+    engines: {node: '>=20.0.0'}
+    dependencies:
+      '@types/phoenix': 1.6.7
+      '@types/ws': 8.18.1
+      tslib: 2.8.1
+      ws: 8.19.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+    dev: false
+
+  /@supabase/storage-js/2.89.0:
+    resolution: {integrity: sha1-L/Za7IzYVQ2mQjkx5/pPm33m+xA=}
+    engines: {node: '>=20.0.0'}
+    dependencies:
+      iceberg-js: 0.8.1
+      tslib: 2.8.1
+    dev: false
+
+  /@supabase/supabase-js/2.89.0:
+    resolution: {integrity: sha1-Jzevw91RJBGkxaoqikZckVVp5I8=}
+    engines: {node: '>=20.0.0'}
+    dependencies:
+      '@supabase/auth-js': 2.89.0
+      '@supabase/functions-js': 2.89.0
+      '@supabase/postgrest-js': 2.89.0
+      '@supabase/realtime-js': 2.89.0
+      '@supabase/storage-js': 2.89.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+    dev: false
+
   /@swc/core-darwin-arm64/1.15.8:
     resolution: {integrity: sha1-9WWidE7oQDieuoAPG9RUpatcgjU=}
     engines: {node: '>=10'}
@@ -1469,7 +1527,10 @@ packages:
     resolution: {integrity: sha1-nSfAMqGyxCpOq4+2XFhWqLjgmMQ=}
     dependencies:
       undici-types: 7.16.0
-    dev: true
+
+  /@types/phoenix/1.6.7:
+    resolution: {integrity: sha1-dRN7fs9zLOrKKEzxDBVSBxz/8S8=}
+    dev: false
 
   /@types/react-dom/19.2.3_@types+react@19.2.7:
     resolution: {integrity: sha1-weMF0VpSo+UI1U3Kdw0gLLY6vyw=}
@@ -1489,6 +1550,12 @@ packages:
 
   /@types/unist/3.0.3:
     resolution: {integrity: sha1-rKqw+RnOaczmKcLU7S60rcG2wgw=}
+    dev: false
+
+  /@types/ws/8.18.1:
+    resolution: {integrity: sha1-SEZOS/Ld/RfbE9hFRn9gcP/qSqk=}
+    dependencies:
+      '@types/node': 24.10.4
     dev: false
 
   /@typescript-eslint/eslint-plugin/8.52.0_bqx2fayj34qadqf7ldpizuwvay:
@@ -2168,6 +2235,11 @@ packages:
 
   /html-url-attributes/3.0.1:
     resolution: {integrity: sha1-g7BSzV5DcHG3Vs10rnD3CIcMLYc=}
+    dev: false
+
+  /iceberg-js/0.8.1:
+    resolution: {integrity: sha1-R9iTRoKToBA4XhxwEj8p0PwdmRI=}
+    engines: {node: '>=20.0.0'}
     dev: false
 
   /idb/8.0.3:
@@ -3419,7 +3491,6 @@ packages:
 
   /undici-types/7.16.0:
     resolution: {integrity: sha1-/8zf82rqSITL/OmnUKBYAiT1ikY=}
-    dev: true
 
   /unified/11.0.5:
     resolution: {integrity: sha1-9mZ3YQpcCp7pDKsrjU1mA3Am2eE=}
@@ -3540,6 +3611,19 @@ packages:
     resolution: {integrity: sha1-0sRcbdT7zmIaZvE2y+Mor9BBCzQ=}
     engines: {node: '>=0.10.0'}
     dev: true
+
+  /ws/8.19.0:
+    resolution: {integrity: sha1-3cK9+lua2GAgT1pypIY6iJX9jIs=}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+    dev: false
 
   /yallist/3.1.1:
     resolution: {integrity: sha1-27fa+b/YusmrRev2ArjLrQ1dCP0=}

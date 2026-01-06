@@ -1,11 +1,6 @@
 import { useState, useEffect, useRef, type ReactNode } from "react";
 import type { Task, WorkflowStep, StoryboardItem } from "../types";
-import {
-  getAllTasks,
-  saveTask,
-  deleteTaskById,
-  migrateFromLocalStorage,
-} from "./db";
+import { getAllTasks, saveTask, deleteTaskById } from "./db";
 import { TaskContext } from "./context";
 import {
   createDefaultSteps,
@@ -26,9 +21,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
 
     const loadTasks = async () => {
       try {
-        // 先尝试迁移 localStorage 数据
-        await migrateFromLocalStorage();
-        // 从 IndexedDB 加载任务
+        // 从 Supabase 加载任务
         const storedTasks = await getAllTasks();
         const hydratedTasks = hydrateTasksWithPrompts(storedTasks);
         setTasks(hydratedTasks);
@@ -123,21 +116,11 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div
-        className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 
-                      flex items-center justify-center"
-      >
-        <div className="text-white/60">加载中...</div>
-      </div>
-    );
-  }
-
   return (
     <TaskContext.Provider
       value={{
         tasks,
+        isLoading,
         addTask,
         deleteTask,
         updateTask,

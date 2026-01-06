@@ -56,7 +56,7 @@ const useWeather = () => {
 };
 
 export default function Home() {
-  const { tasks, addTask, deleteTask } = useTasks();
+  const { tasks, isLoading, addTask, deleteTask } = useTasks();
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -139,6 +139,13 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-6 pointer-events-auto">
+          {isLoading && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 backdrop-blur-md rounded-full border border-white/10 animate-pulse">
+              <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
+              <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
+              <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
+            </div>
+          )}
           {weather && (
             <div className="flex items-center gap-3 animate-in fade-in duration-1000">
               <CloudRain className="w-4 h-4 opacity-40" />
@@ -208,9 +215,15 @@ export default function Home() {
                     <div className="h-px bg-white/20 w-32 mx-auto" />
                     <button
                       onClick={() => setIsCreating(true)}
-                      className="px-12 py-6 bg-white/10 hover:bg-white/20 backdrop-blur-2xl rounded-[2rem] border border-white/10 transition-all group"
+                      className="px-12 py-6 bg-white/10 hover:bg-white/20 backdrop-blur-2xl rounded-[2rem] border border-white/10 transition-all group relative overflow-hidden"
                     >
-                      <Plus className="w-8 h-8 opacity-40 group-hover:opacity-100 group-hover:rotate-90 transition-all" />
+                      {isLoading ? (
+                        <div className="w-8 h-8 flex items-center justify-center">
+                          <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                        </div>
+                      ) : (
+                        <Plus className="w-8 h-8 opacity-40 group-hover:opacity-100 group-hover:rotate-90 transition-all" />
+                      )}
                     </button>
                   </div>
                 )}

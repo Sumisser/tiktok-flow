@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import type { Task } from "../types";
 import {
   Card,
@@ -18,6 +18,7 @@ interface TaskCardProps {
 }
 
 export default function TaskCard({ task, onDelete }: TaskCardProps) {
+  const navigate = useNavigate();
   // 计算完成进度
   const completedSteps = task.steps.filter(
     (s) => s.status === "completed"
@@ -45,98 +46,113 @@ export default function TaskCard({ task, onDelete }: TaskCardProps) {
   };
 
   return (
-    <Link to={`/workflow/${task.id}`} className="block group">
-      <Card className="glass-card border-border hover:border-primary/50 transition-all duration-500 overflow-hidden relative active:scale-95 shadow-lg">
-        {/* 动态发光背景 */}
-        <div className="absolute -right-10 -top-10 w-32 h-32 bg-primary/5 blur-[50px] group-hover:bg-primary/10 transition-all duration-500" />
+    <div className="relative group">
+      {/* 隐藏的删除按钮 - 完全脱离底层导航流 */}
+      <div
+        className="absolute top-8 right-8 z-30 pointer-events-auto"
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+        }}
+      >
+        <Button
+          variant="ghost"
+          size="icon"
+          className="w-10 h-10 text-muted-foreground hover:text-destructive hover:bg-destructive/10 md:opacity-0 group-hover:opacity-100 transition-all rounded-xl backdrop-blur-3xl border border-white/5 bg-white/5 shadow-2xl"
+          onClick={handleDelete}
+        >
+          <Trash2 className="w-4 h-4" />
+        </Button>
+      </div>
 
-        <CardHeader className="p-6 pb-2">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 border border-border text-primary shadow-sm group-hover:scale-110 transition-transform duration-500">
-              <Clapperboard className="w-5 h-5" />
+      <div
+        onClick={() => navigate(`/workflow/${task.id}`)}
+        className="block h-full cursor-pointer active:scale-[0.99] transition-all duration-300 pointer-events-auto"
+      >
+        <Card className="glass-card border-border hover:border-primary/50 transition-all duration-500 overflow-hidden relative shadow-lg h-full">
+          {/* 动态发光背景 */}
+          <div className="absolute -right-10 -top-10 w-32 h-32 bg-primary/5 blur-[50px] group-hover:bg-primary/10 transition-all duration-500" />
+
+          <CardHeader className="p-6 pb-2">
+            <div className="flex justify-between items-start mb-4 pr-12">
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 border border-border text-primary shadow-sm group-hover:scale-110 transition-transform duration-500">
+                <Clapperboard className="w-5 h-5" />
+              </div>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-8 h-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 md:opacity-0 group-hover:opacity-100 transition-all rounded-lg"
-              onClick={handleDelete}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-          <CardTitle className="text-xl font-black line-clamp-1 group-hover:text-primary-gradient transition-all duration-300 tracking-tight">
-            {task.title}
-          </CardTitle>
-          <CardDescription className="flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-widest text-muted-foreground/60 mt-2">
-            <Calendar className="w-3 h-3 text-primary/60" />
-            {formatDate(task.updatedAt)}
-          </CardDescription>
-        </CardHeader>
+            <CardTitle className="text-xl font-black line-clamp-1 group-hover:text-primary-gradient transition-all duration-300 tracking-tight">
+              {task.title}
+            </CardTitle>
+            <CardDescription className="flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-widest text-muted-foreground/60 mt-2">
+              <Calendar className="w-3 h-3 text-primary/60" />
+              {formatDate(task.updatedAt)}
+            </CardDescription>
+          </CardHeader>
 
-        <CardContent className="p-6 pt-4 space-y-6">
-          <div className="space-y-3">
-            <div className="flex justify-between items-end">
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">
-                完成进度
-              </span>
-              <span className="text-sm font-black text-primary">
-                {progress === 100 ? "已就绪" : `${Math.round(progress)}%`}
-              </span>
-            </div>
-            <div className="h-2 w-full bg-secondary rounded-full overflow-hidden border border-border p-0.5">
-              <div
-                className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-1000 ease-out shadow-[0_0_8px_rgba(var(--color-primary),0.2)]"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1">
-            {task.steps.map((step, index) => (
-              <div
-                key={step.id}
-                className={cn(
-                  "flex-1 h-1.5 rounded-full transition-all duration-500",
-                  step.status === "completed"
-                    ? "bg-primary shadow-sm"
-                    : step.status === "in-progress"
-                    ? "bg-primary/40 animate-pulse"
-                    : "bg-secondary"
-                )}
-                title={`第 ${index + 1} 步: ${step.title}`}
-              />
-            ))}
-          </div>
-
-          <div className="flex items-center justify-between pt-2">
-            <Badge
-              variant="secondary"
-              className="bg-primary/10 hover:bg-primary/20 text-primary text-[9px] font-black tracking-widest px-2.5 py-0.5 border border-primary/20 rounded-lg uppercase"
-            >
-              {totalSteps} 个阶段
-            </Badge>
-            <div className="flex -space-x-2">
-              {task.steps.slice(0, 4).map((step, i) => (
+          <CardContent className="p-6 pt-4 space-y-6">
+            <div className="space-y-3">
+              <div className="flex justify-between items-end">
+                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">
+                  完成进度
+                </span>
+                <span className="text-sm font-black text-primary">
+                  {progress === 100 ? "已就绪" : `${Math.round(progress)}%`}
+                </span>
+              </div>
+              <div className="h-2 w-full bg-secondary rounded-full overflow-hidden border border-border p-0.5">
                 <div
-                  key={i}
+                  className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-1000 ease-out shadow-[0_0_8px_rgba(var(--color-primary),0.2)]"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1">
+              {task.steps.map((step, index) => (
+                <div
+                  key={step.id}
                   className={cn(
-                    "w-6 h-6 rounded-lg border-2 border-card flex items-center justify-center transition-all duration-300",
+                    "flex-1 h-1.5 rounded-full transition-all duration-500",
                     step.status === "completed"
-                      ? "bg-primary text-primary-foreground scale-110 z-10 shadow-sm"
-                      : "bg-secondary text-muted-foreground z-0"
+                      ? "bg-primary shadow-sm"
+                      : step.status === "in-progress"
+                      ? "bg-primary/40 animate-pulse"
+                      : "bg-secondary"
                   )}
-                >
-                  {step.status === "completed" ? (
-                    <CheckCircle2 className="w-3 h-3" />
-                  ) : (
-                    <span className="text-[8px] font-black">{i + 1}</span>
-                  )}
-                </div>
+                  title={`第 ${index + 1} 步: ${step.title}`}
+                />
               ))}
             </div>
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
+
+            <div className="flex items-center justify-between pt-2">
+              <Badge
+                variant="secondary"
+                className="bg-primary/10 hover:bg-primary/20 text-primary text-[9px] font-black tracking-widest px-2.5 py-0.5 border border-primary/20 rounded-lg uppercase"
+              >
+                {totalSteps} 个阶段
+              </Badge>
+              <div className="flex -space-x-2">
+                {task.steps.slice(0, 4).map((step, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      "w-6 h-6 rounded-lg border-2 border-card flex items-center justify-center transition-all duration-300",
+                      step.status === "completed"
+                        ? "bg-primary text-primary-foreground scale-110 z-10 shadow-sm"
+                        : "bg-secondary text-muted-foreground z-0"
+                    )}
+                  >
+                    {step.status === "completed" ? (
+                      <CheckCircle2 className="w-3 h-3" />
+                    ) : (
+                      <span className="text-[8px] font-black">{i + 1}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }

@@ -3,6 +3,7 @@ import type { Task, WorkflowStep, StoryboardItem } from "../types";
 
 export interface TaskContextType {
   tasks: Task[];
+  isLoading: boolean;
   addTask: (title: string) => Promise<Task>;
   deleteTask: (id: string) => Promise<void>;
   updateTask: (id: string, updates: Partial<Task>) => Promise<void>;
