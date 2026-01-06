@@ -5,8 +5,7 @@ import WorkflowStep from "../../components/WorkflowStep";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, Edit3, Check, X, LayoutDashboard } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { ChevronLeft, Edit3, Check, X } from "lucide-react";
 
 const useBingWallpaper = () => {
   const [wallpaper, setWallpaper] = useState<{
@@ -207,22 +206,6 @@ export default function Workflow() {
                 </Button>
               </div>
             )}
-            <div className="flex items-center gap-4 mt-2">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_var(--color-primary)]" />
-                <Badge
-                  variant="outline"
-                  className="text-[9px] h-5 font-black tracking-[0.15em] border-primary/20 bg-primary/5 text-primary px-2 rounded-md uppercase"
-                >
-                  核心架构-{task.id.slice(0, 8).toUpperCase()}
-                </Badge>
-              </div>
-              <div className="h-3 w-px bg-border" />
-              <p className="text-[9px] text-muted-foreground uppercase tracking-[0.2em] font-black opacity-40 flex items-center gap-1.5">
-                <LayoutDashboard className="w-3 h-3 text-primary" />
-                自主内容生成流水线
-              </p>
-            </div>
           </div>
 
           <div className="hidden xl:flex flex-col items-end gap-2 min-w-[200px]">
