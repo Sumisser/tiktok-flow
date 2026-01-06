@@ -109,18 +109,18 @@
 @layer utilities {
   .glass {
     @apply backdrop-blur-3xl border border-white/30 shadow-2xl;
-    background: rgba(240, 242, 245, 0.7);
+    background: rgba(255, 255, 255, 0.15); /* 极低透明度，透出背景深色 */
   }
   
   .glass-card {
-    @apply backdrop-blur-2xl border border-white/30 shadow-2xl transition-all duration-500 rounded-3xl;
-    background: rgba(240, 242, 245, 0.6);
+    @apply backdrop-blur-2xl border border-white/20 shadow-2xl transition-all duration-500 rounded-3xl;
+    background: rgba(255, 255, 255, 0.1); /* 更低透明度，显得更通透、更深邃 */
   }
   
   .glass-card:hover {
-    @apply border-white/40 shadow-primary/10;
-    background: rgba(240, 242, 245, 0.75);
-    transform: translateY(-4px) scale(1.01);
+    @apply border-white/40 shadow-white/5;
+    background: rgba(255, 255, 255, 0.15); /* Hover 时轻微增加亮度 */
+    transform: translateY(-4px) scale(1.005);
   }
 
   .text-neon {
