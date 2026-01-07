@@ -44,36 +44,39 @@ export const createDefaultSteps = (): WorkflowStep[] => [
     id: "step-2",
     type: "script",
     title: "剧本生成",
-    basePrompt: `你是一个专业的分镜脚本师和 AI 绘图提示词专家。请根据以下脚本，拆解为分镜脚本表格。
+    basePrompt: `你是一个深谙视听语言的分镜大师和AI绘画专家。请根据以下脚本文案，将其转化为一份画面感强、叙事连贯的分镜设计方案。
 
-**要求：**
-1. 每个分镜 3-5 秒
-2. 为每个分镜提供：
-   - 镜号
-   - 对应的脚本片段
-   - 关键帧图片生成提示词（用于 Midjourney/DALL-E/Flux 等 AI 绘图工具生成静态画面）
+**核心要求（请仔细阅读）：**
+1. **视听语言优先**：
+   - 不要机械地按句拆分脚本。请根据视觉叙事的需要，对脚本进行灵活调整（可以合并、拆分、缩减或适当扩充），优先保证画面的流畅性和故事感。
+   - 没必要让每一句文案都对应一个镜头，确保画面节奏舒适。
+2. **画面美学与构图**：
+   - 为每个分镜设计具有电影感或艺术感的构图（如：对角线构图、黄金分割、景深效果）。
+   - 即使是抽象的文案（如“思考”、“未来”），也要转化为具体的、有氛围感的视觉画面，而不是简单的图标堆砌。
+3. **提示词设计**：
+   - 英文提示词必须包含：主体描述 + 环境氛围 + 构图/光影 + 风格修饰词。
+4. **禁止生成图像**：
+   - 你是AI文案助手，**绝对不要**尝试生成实际的图片文件。
+5. **输出格式严格要求**：
+   - **必须**将生成的表格包裹在 Markdown 代码块中（使用 \`\`\`markdown ）。
+   - 确保表格语法正确，方便解析。
 
-**关键帧提示词结构（使用英文，逗号分隔，按权重排序）：**
+**关键帧提示词结构（英文，逗号分隔）：**
 
 采用以下指定的画面风格：
 
 **[画面风格指令将在此处由引擎自动注入]**
 
-1. **主提示词 prompt** - 核心描述，包含：
-   - 画面内容：人物动作、表情、环境细节
-   - 环境光影：god rays, lens flare, soft glow, realistic reflections
-   - 构图：cinematic composition, close-up / medium shot / wide shot
+1. **Subject (主体)**: Character action, expression, main object, detailed features
+2. **Environment (环境)**: Background details, weather, time of day, atmosphere
+3. **Composition & Lighting (构图与光影)**: Cinematic lighting, volumetric fog, depth of field, wide shot/close up, rule of thirds
+4. **Style & Quality (风格与质量)**: Masterpiece, 8k resolution, trending on ArtStation, highly detailed
 
-2. **质量标签**：masterpiece, high quality, highly detailed, 8k resolution, trending on ArtStation
-
-3. **负面提示词 negative_prompt**（避免出现的元素）：
-   deformed, ugly, blurry, low quality, messy lines, realistic photo, 3d render style, dark or horror mood
-
-**输出格式（使用 markdown 代码块）：**
+**输出格式（Markdown表格）：**
 \`\`\`markdown
 | 镜号 | 脚本 | 关键帧提示词 |
 |------|------|-------------|
-| 1 | 脚本片段... | masterpiece, high quality, realistic anime style... |
+| 1 | (调整后的脚本片段) | cinematic shot of..., soft lighting, 8k... |
 \`\`\`
 
 脚本内容：`,
@@ -85,16 +88,31 @@ export const createDefaultSteps = (): WorkflowStep[] => [
     id: "step-3",
     type: "storyboard",
     title: "分镜绘制",
-    basePrompt: `你是一个专业的 AI 绘图/视频提示词专家。请根据以下分镜脚本，为每个分镜生成：
-1. 关键帧图片生成提示词（适用于 Midjourney/DALL-E）
-2. 视频生成提示词（适用于 Runway/Pika）
+    basePrompt: `你是一个精通 AI 视频生成的提示词专家（熟悉 Runway/Pika/Kling/Luma）。
+请根据输入的“分镜脚本”和“图片提示词”，为每一个镜头生成对应的 **视频生成提示词**。
 
-要求：
-- 提示词要详细、具体
-- 包含画面构图、光线、色调
-- 符合短视频的视觉风格
+**关键背景（这一点非常重要）：**
+实际操作中，我们将使用**图生视频 (Image-to-Video)** 模式。
+这意味着：视频将严格基于上一步骤生成的静态图片进行生成。
 
-分镜内容：`,
+**提示词生成要求：**
+1. **去静态化**：不要浪费笔墨描述人物长相、服装、背景颜色等静态细节（因为图片已经定型了）。
+2. **重动态化**：你需要全神贯注于 **“动”**。
+   - **运镜 (Camera)**: 明确写出运镜方式 (e.g., Slow Zoom In, Pan Left, Tilt Up, Handheld camera shake, Drone flyover)。
+   - **主体动作 (Action)**: 描述具体的动作 (e.g., turning head, smiling, walking towards camera, waving hands)。
+   - **环境动态 (Atmosphere)**: 描述环境变化 (e.g., wind blowing hair, rain falling, clouds moving, flickering lights)。
+3. **语言**：请使用 **英文** 撰写视频提示词，因为主流视频模型对英文理解最好。
+
+**输出格式要求：**
+- **必须**包裹在 Markdown 代码块中（\`\`\`markdown）。
+- 使用 Markdown 表格格式。
+
+**表格结构：**
+| 镜号 | 脚本 | 视频生成提示词 (Motion & Camera) |
+|------|------|----------------------------------|
+| 1 | (保留原文) | Slow zoom in. The character slowly turns their head to look at the camera. Wind blowing hair gentle. |
+
+分镜内容如下：`,
     input: "",
     output: "",
     status: "pending",

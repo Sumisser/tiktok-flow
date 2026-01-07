@@ -83,6 +83,13 @@ export default function WorkflowStep({
     setOutput(step.output);
   }, [step.input, step.output]);
 
+  // 自动填充上一步的输出作为当前步骤的输入
+  useEffect(() => {
+    if (prevStepOutput && !input && stepNumber > 1) {
+      handleInputChange(prevStepOutput);
+    }
+  }, [prevStepOutput]);
+
   const handleInputChange = (value: string) => {
     setInput(value);
     onUpdate({ input: value, status: "in-progress" });
@@ -95,365 +102,118 @@ export default function WorkflowStep({
 
   const STYLE_CATEGORIES = [
     {
-      name: "热门推荐",
+      name: "🔥 热门推荐",
       styles: [
         {
           id: "anime",
           label: "🎬 写实动漫",
+          description:
+            "类似新海诚电影的高画质动漫风格。光影细腻、色彩清新、天空唯美，非常适合治愈系、情感类、剧情向的短视频。",
           prompt:
-            "Realistic Anime Style, Makoto Shinkai aesthetic, high-quality anime illustration, cinematic lighting",
+            "Realistic Anime Style, Makoto Shinkai aesthetic, high-quality anime illustration, cinematic lighting, detailed background, vibrant colors, lens flare",
         },
         {
-          id: "3d",
-          label: "🧊 3D 渲染",
+          id: "chinese_ink",
+          label: "🖌️ 水墨国风",
+          description:
+            "中国传统水墨画风格。留白意境、墨色晕染、山水意象，适合历史故事、传统文化、诗词歌赋类内容。",
           prompt:
-            "3D render, Pixar/Disney style, C4D, Octane render, volumetric lighting, soft shadows",
+            "Traditional Chinese Ink Painting, watercolor style, ethereal atmosphere, ink wash, minimalist, zen aesthetics, calligraphy brush strokes, ancient chinese style",
+        },
+        {
+          id: "pixar",
+          label: "🧸 皮克斯 3D",
+          description:
+            "迪士尼/皮克斯动画电影风格。角色生动可爱，材质细腻逼真，暖色调打光，适合亲子教育、叙事故事、轻松娱乐类内容。",
+          prompt:
+            "Pixar style 3D render, Disney animation style, cute characters, expressive, octane render, volumetric lighting, soft textures, 3d cartoon",
         },
         {
           id: "film",
           label: "📸 电影写实",
+          description:
+            "好莱坞大片质感。真实摄影风格，强调景深虚化、自然光感和胶片颗粒，适合悬疑、犯罪、纪录片或严肃剧情。",
           prompt:
-            "Cinematic realism, photorealistic, 35mm lens, depth of field, natural lighting, grain",
-        },
-        {
-          id: "ghibli",
-          label: "🍃 吉卜力",
-          prompt:
-            "Studio Ghibli style, hand-drawn illustration, lush nature, nostalgic watercolor textures",
-        },
-        {
-          id: "cyber",
-          label: "🌆 赛博霓虹",
-          prompt:
-            "Cyberpunk neon, futuristic city, rainy night, violet and teal lighting, high tech",
+            "Cinematic realism, photorealistic, 35mm lens, depth of field, natural lighting, film grain, color graded, 8k, movie scene",
         },
       ],
     },
     {
-      name: "动画次元",
+      name: "🎨 插画艺术",
       styles: [
         {
-          id: "shinkai",
-          label: "✨ 新海诚",
+          id: "flat",
+          label: "📐 扁平插画",
+          description:
+            "现代矢量插画风格。线条极简，色块鲜明，无多余细节，非常适合知识科普、商业演示、概念解释类内容。",
           prompt:
-            "Makoto Shinkai style, breathtaking sky, cinematic lighting, lens flare, hyper-detailed backgrounds",
+            "Flat illustration, vector art, minimalist, bold colors, clean lines, corporate memphis style, geometric shapes, behance style",
         },
         {
-          id: "niji",
-          label: "🌈 Niji 6",
+          id: "watercolor",
+          label: "💧 梦幻水彩",
+          description:
+            "柔和的水彩晕染效果。色彩淡雅，边缘柔和，具有艺术感和梦幻氛围，适合情感独白、散文诗歌。",
           prompt:
-            "Niji style version 6, cute, expressive, stylized anime, vibrant colors, clean lines",
+            "Watercolor painting, soft edges, artistic style, wet on wet, pastel colors, dreamy atmosphere, paper texture, hand painted",
         },
         {
-          id: "manga",
-          label: "🖋️ 黑白漫画",
+          id: "sketch",
+          label: "✏️ 铅笔素描",
+          description:
+            "黑白铅笔手绘风格。朴素自然，有岁月的痕迹，适合回忆录、手账风、怀旧故事。",
           prompt:
-            "B&W Manga style, pen and ink, high contrast, speed lines, expressive hatching",
-        },
-        {
-          id: "disney2d",
-          label: "🏰 迪士尼 2D",
-          prompt:
-            "Classic Disney 2D animation style, hand-drawn, expressive characters, magical atmosphere",
-        },
-        {
-          id: "spiderman",
-          label: "🕷️ 蜘蛛侠元宇宙",
-          prompt:
-            "Into the Spider-Verse style, halftone patterns, chromatic aberration, comic book aesthetics",
-        },
-        {
-          id: "retro_anime",
-          label: "📺 90s 复古番",
-          prompt:
-            "90s retro anime style, lo-fi aesthetic, VHS grain, muted colors, classic cel shaded",
+            "Pencil sketch, graphite drawing, hand drawn, rough lines, shading, black and white, sketchbook style",
         },
       ],
     },
     {
-      name: "数字材质",
+      name: "🧊 3D与材质",
       styles: [
         {
           id: "clay",
-          label: "🧸 黏土动画",
+          label: "🧱 黏土动画",
+          description:
+            "手工黏土定格动画质感。有指纹痕迹和材质感，显得笨拙可爱，适合创意短片、定格动画。",
           prompt:
-            "Claymation style, handmade texture, stop-motion aesthetic, soft studio lighting",
+            "Claymation style, handmade texture, stop-motion aesthetic, soft studio lighting, plasticine material, fingerprint details, aardman style",
         },
         {
-          id: "ue5",
-          label: "🎮 虚幻引擎",
+          id: "cyber",
+          label: "🌆 赛博朋克",
+          description:
+            "未来科幻风格。高对比度霓虹色（紫/青），雨夜城市，机械元素，适合科技资讯、未来预言、酷炫展示。",
           prompt:
-            "Unreal Engine 5 render, ray tracing, cinematic game environment, high fidelity",
-        },
-        {
-          id: "voxel",
-          label: "📦 体素艺术",
-          prompt:
-            "Voxel art, Minecraft style, 3D pixel design, vibrant blocky textures",
-        },
-        {
-          id: "poly",
-          label: "📐 低多边形",
-          prompt:
-            "Low poly art style, geometric, clean edges, artistic lighting",
-        },
-        {
-          id: "paper",
-          label: "✂️ 剪纸拼贴",
-          prompt:
-            "Paper cut art, layered paper texture, handcrafted look, soft shadows, 3D paper craft",
-        },
-        {
-          id: "glass",
-          label: "💎 磨砂玻璃",
-          prompt:
-            "Frosted glass aesthetic, glassmorphism, transparent layers, soft refractions, elegant",
+            "Cyberpunk neon, futuristic city, rainy night, violet and teal lighting, high tech, blade runner aesthetic, glow effects, sci-fi",
         },
         {
           id: "origami",
-          label: "� 折纸艺术",
+          label: "📄 折纸艺术",
+          description:
+            "纸张折叠效果。几何切面鲜明，光影硬朗，有一种独特的形式美感，适合寓言故事、创意展示。",
           prompt:
-            "Origami style, folded paper textures, sharp creases, clean geometric look",
+            "Origami style, folded paper textures, sharp creases, clean geometric look, paper craft, 3d render, studio lighting",
         },
       ],
     },
     {
-      name: "专业摄影",
+      name: "📷 摄影胶片",
       styles: [
         {
           id: "vintage",
           label: "🎞️ 复古胶片",
+          description:
+            "90年代老照片质感。色调偏暖，有褪色感和噪点，充满怀旧情绪，适合讲述过去的故事。",
           prompt:
-            "Vintage film photography, Kodak Portra 400, warm tones, slight light leak",
-        },
-        {
-          id: "polaroid",
-          label: "🖼️ 拍立得",
-          prompt:
-            "Polaroid photography style, instant film look, washed out colors, vintage border",
+            "Vintage film photography, Kodak Portra 400, warm tones, slight light leak, nostalgic, film grain, retro aesthetic, 90s vibes",
         },
         {
           id: "noir",
-          label: "� 黑色电影",
+          label: "🕵️ 黑色电影",
+          description:
+            "高反差黑白摄影。光影对比强烈，营造神秘、压抑或悬疑的氛围，适合侦探故事、惊悚片。",
           prompt:
-            "Film Noir style, black and white, dramatic shadows, moody lighting, smoke",
-        },
-        {
-          id: "lomo",
-          label: "🎨 Lomo 摄影",
-          prompt:
-            "Lomography style, oversaturated colors, vignette, high contrast, artistic blur",
-        },
-        {
-          id: "portra",
-          label: "👤 柔焦人像",
-          prompt:
-            "Professional portrait photography, shallow depth of field, soft skin tones, catching light in eyes",
-        },
-        {
-          id: "infra",
-          label: "❄️ 红外摄影",
-          prompt:
-            "Infrared photography, white foliage, dark sky, surreal ethereal landscape",
-        },
-      ],
-    },
-    {
-      name: "创意镜头",
-      styles: [
-        {
-          id: "drone",
-          label: "🚁 航拍视角",
-          prompt:
-            "Aerial photography, drone view, high angle, vast landscape, cinematic scope",
-        },
-        {
-          id: "macro",
-          label: "🔍 微距世界",
-          prompt:
-            "Macro photography, extreme detail, blurry background, sharp focus, droplets, textures",
-        },
-        {
-          id: "tilt",
-          label: "🧸 移轴摄影",
-          prompt:
-            "Tilt-shift photography, miniature model effect, blurred top and bottom, vibrant colors",
-        },
-        {
-          id: "fisheye",
-          label: "👁️ 鱼眼镜头",
-          prompt:
-            "Fisheye lens perspective, distorted wide angle, spherical view, unique artistic look",
-        },
-        {
-          id: "long_exp",
-          label: "� 长曝光",
-          prompt:
-            "Long exposure photography, light trails, silky water, motion blur, nighttime city lights",
-        },
-        {
-          id: "silhouete",
-          label: "👤 剪影艺术",
-          prompt:
-            "Silhouette photography, dark subject against bright light, high contrast, golden hour",
-        },
-      ],
-    },
-    {
-      name: "古典艺术",
-      styles: [
-        {
-          id: "oil",
-          label: "🎨 古典油画",
-          prompt:
-            "Classic oil painting, thick brushstrokes, impasto, dramatic lighting, Rembrandt aesthetic",
-        },
-        {
-          id: "watercolor",
-          label: "🖌️ 柔美水彩",
-          prompt:
-            "Watercolor illustration, soft bleeding colors, paper texture, delicate details",
-        },
-        {
-          id: "ink",
-          label: "�️ 水墨意境",
-          prompt:
-            "Traditional Chinese ink wash, minimalist, elegant brushwork, ethereal atmosphere",
-        },
-        {
-          id: "ukiyo",
-          label: "🌊 浮世绘",
-          prompt:
-            "Ukiyo-e style, woodblock print, traditional Japanese art, flat colors, bold outlines",
-        },
-        {
-          id: "statue",
-          label: "🗿 大理石像",
-          prompt:
-            "Neoclassical marble sculpture style, smooth white texture, dramatic museum lighting",
-        },
-        {
-          id: "fresco",
-          label: "⛪ 壁画艺术",
-          prompt:
-            "Ancient fresco painting style, weathered texture, historical aesthetic, mural feel",
-        },
-      ],
-    },
-    {
-      name: "绘本插画",
-      styles: [
-        {
-          id: "pencil",
-          label: "✏️ 铅笔素描",
-          prompt:
-            "Pencil sketch, graphite texture, cross-hatching, artistic hand-drawn look",
-        },
-        {
-          id: "gouache",
-          label: "🎨 设色粉彩",
-          prompt:
-            "Gouache painting style, vibrant opaque colors, matte finish, artistic illustration",
-        },
-        {
-          id: "crayon",
-          label: "🖍️ 蜡笔涂鸦",
-          prompt:
-            "Crayon drawing, childlike texture, rough strokes, vibrant and playful",
-        },
-        {
-          id: "comic",
-          label: "💥 美漫风格",
-          prompt:
-            "Western comic book style, bold ink lines, Ben-Day dots, high action feel",
-        },
-        {
-          id: "pop",
-          label: "� 波普艺术",
-          prompt:
-            "Pop art, Andy Warhol style, bold colors, halftone patterns, high contrast",
-        },
-        {
-          id: "fairytale",
-          label: "🧚 梦幻绘本",
-          prompt:
-            "Fairytale book illustration, whimsical, soft glow, magical storytelling aesthetic",
-        },
-      ],
-    },
-    {
-      name: "科幻潮流",
-      styles: [
-        {
-          id: "vapor",
-          label: "🌈 蒸汽波",
-          prompt:
-            "Vaporwave aesthetic, 80s retro, pastel colors, glitch art, surreal neon",
-        },
-        {
-          id: "synth",
-          label: "🎹 赛博合成",
-          prompt:
-            "Synthwave style, retro-futuristic, wireframe sun, chrome textures, dark purple",
-        },
-        {
-          id: "glitch",
-          label: "📺 故障艺术",
-          prompt:
-            "Glitch art, digital noise, chromatic aberration, distorted scanlines",
-        },
-        {
-          id: "punk",
-          label: "⚙️ 蒸汽朋克",
-          prompt:
-            "Steampunk aesthetic, brass gears, Victorian era, industrial, sepia tones",
-        },
-        {
-          id: "hologram",
-          label: "✨ 全息投影",
-          prompt:
-            "Holographic projection, glowing blue lines, semi-transparent, futuristic interface look",
-        },
-        {
-          id: "biopunk",
-          label: "🧬 生物朋克",
-          prompt:
-            "Biopunk aesthetic, organic technology, glowing neon veins, surreal fusion",
-        },
-      ],
-    },
-    {
-      name: "极简设计",
-      styles: [
-        {
-          id: "minimal",
-          label: "⬜ 极简主义",
-          prompt:
-            "Minimalist design, clean lines, simple shapes, monochromatic, significant negative space",
-        },
-        {
-          id: "flat",
-          label: "📏 扁平矢量",
-          prompt:
-            "Flat design illustration, vector art, modern corporate style, clean and professional",
-        },
-        {
-          id: "ios",
-          label: "🍎 现代移动",
-          prompt:
-            "Modern app interface aesthetic, clean glassmorphism, soft gradients, iOS style",
-        },
-        {
-          id: "bauhaus",
-          label: "📐 包豪斯",
-          prompt:
-            "Bauhaus style, geometric shapes, primary colors, architectural composition",
-        },
-        {
-          id: "abstract",
-          label: "🌀 抽象表现",
-          prompt:
-            "Abstract expressionism, organic shapes, fluid composition, artistic and conceptual",
+            "Film Noir style, black and white, dramatic shadows, moody lighting, silhouette, mystery, contrast, detective movie",
         },
       ],
     },
@@ -461,6 +221,10 @@ export default function WorkflowStep({
 
   const [selectedStyle, setSelectedStyle] = useState(
     STYLE_CATEGORIES[0].styles[0].id
+  );
+
+  const selectedStyleConfig = STYLE_CATEGORIES.flatMap((c) => c.styles).find(
+    (s) => s.id === selectedStyle
   );
 
   const getFullPrompt = () => {
@@ -951,6 +715,30 @@ export default function WorkflowStep({
                         </TabsContent>
                       ))}
                     </Tabs>
+                    {/* 风格描述信息展示 */}
+                    {selectedStyleConfig && (
+                      <div className="mt-3 px-4 py-3 bg-primary/5 border border-primary/10 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-1">
+                        <div className="p-1.5 bg-primary/10 rounded-full mt-0.5">
+                          <Lightbulb className="w-3.5 h-3.5 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-bold text-primary">
+                              {selectedStyleConfig.label
+                                .split(" ")
+                                .slice(1)
+                                .join(" ")}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground bg-black/5 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                              Style Preview
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-foreground/70 leading-relaxed">
+                            {selectedStyleConfig.description}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* 动作栏：视图切换 & 一键生成 */}
