@@ -20,7 +20,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Calendar, Trash2, Clapperboard, CheckCircle2 } from "lucide-react";
+import {
+  Calendar,
+  Trash2,
+  Clapperboard,
+  CheckCircle2,
+  Tag,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TaskCardProps {
@@ -64,8 +70,9 @@ export default function TaskCard({ task, onDelete }: TaskCardProps) {
   return (
     <div className="relative group">
       {/* 隐藏的删除按钮 - 完全脱离底层导航流 */}
+      {/* 隐藏的删除按钮 - 完全脱离底层导航流 */}
       <div
-        className="absolute top-8 right-8 z-30 pointer-events-auto"
+        className="absolute top-6 right-6 z-30 pointer-events-auto"
         onClick={(e) => {
           e.stopPropagation();
           e.preventDefault();
@@ -86,12 +93,31 @@ export default function TaskCard({ task, onDelete }: TaskCardProps) {
         className="block h-full cursor-pointer active:scale-[0.99] transition-all duration-300 pointer-events-auto"
       >
         <Card className="glass-card border-border hover:border-primary/50 transition-all duration-500 overflow-hidden relative shadow-lg h-full">
-          {/* 动态发光背景 */}
-          <div className="absolute -right-10 -top-10 w-32 h-32 bg-primary/5 blur-[50px] group-hover:bg-primary/10 transition-all duration-500" />
+          {/* 动态发光背景或图片预览 */}
+          {task.storyboards?.[0]?.imageUrl ? (
+            <>
+              <div
+                className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
+                style={{
+                  backgroundImage: `url(${task.storyboards[0].imageUrl})`,
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/95 to-background/40" />
+            </>
+          ) : (
+            <div className="absolute -right-10 -top-10 w-32 h-32 bg-primary/5 blur-[50px] group-hover:bg-primary/10 transition-all duration-500" />
+          )}
 
-          <CardHeader className="p-6 pb-2">
+          <CardHeader className="p-6 pb-2 relative z-10">
             <div className="flex justify-between items-start mb-4 pr-12">
-              <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 border border-border text-primary shadow-sm group-hover:scale-110 transition-transform duration-500">
+              <div
+                className={cn(
+                  "p-2.5 rounded-xl border transition-transform duration-500 group-hover:scale-110 shadow-sm",
+                  task.storyboards?.[0]?.imageUrl
+                    ? "bg-black/40 border-white/10 text-white backdrop-blur-md"
+                    : "bg-gradient-to-br from-primary/10 to-accent/10 border-border text-primary"
+                )}
+              >
                 <Clapperboard className="w-5 h-5" />
               </div>
             </div>
@@ -102,6 +128,20 @@ export default function TaskCard({ task, onDelete }: TaskCardProps) {
               <Calendar className="w-3 h-3 text-primary/60" />
               {formatDate(task.updatedAt)}
             </CardDescription>
+            {task.tags && task.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                {task.tags.map((tag, i) => (
+                  <Badge
+                    key={i}
+                    variant="outline"
+                    className="text-[9px] px-1.5 py-0 h-4 bg-primary/5 text-primary/70 border-primary/20 rounded-md"
+                  >
+                    <Tag className="w-2.5 h-2.5 mr-1" />
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </CardHeader>
 
           <CardContent className="p-6 pt-4 space-y-6">

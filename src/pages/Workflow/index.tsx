@@ -5,7 +5,8 @@ import WorkflowStep from "../../components/WorkflowStep";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, Edit3, Check, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ChevronLeft, Edit3, Check, X, Home, Tag } from "lucide-react";
 
 export default function Workflow() {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +20,8 @@ export default function Workflow() {
   } = useTasks();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState("");
+  const [isAddingTag, setIsAddingTag] = useState(false);
+  const [tagInput, setTagInput] = useState("");
 
   const task = getTask(id || "");
 
@@ -137,7 +140,7 @@ export default function Workflow() {
             className="rounded-xl hover:bg-primary/10 shrink-0 h-10 w-10 border border-border group transition-all shadow-sm"
           >
             <Link to="/">
-              <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+              <Home className="w-5 h-5 group-hover:scale-110 transition-transform" />
             </Link>
           </Button>
 
@@ -167,18 +170,85 @@ export default function Workflow() {
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center gap-3 group">
-                <h1 className="text-2xl font-black tracking-tight truncate text-gradient text-neon">
-                  {task.title}
-                </h1>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsEditingTitle(true)}
-                  className="w-9 h-9 md:opacity-0 group-hover:opacity-100 transition-all rounded-xl hover:bg-primary/5 hover:text-primary border border-border/50"
-                >
-                  <Edit3 className="w-4 h-4" />
-                </Button>
+              <div className="space-y-2">
+                <div className="flex items-center gap-3 group">
+                  <h1 className="text-2xl font-black tracking-tight truncate text-gradient text-neon">
+                    {task.title}
+                  </h1>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsEditingTitle(true)}
+                    className="w-9 h-9 md:opacity-0 group-hover:opacity-100 transition-all rounded-xl hover:bg-primary/5 hover:text-primary border border-border/50"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                {/* 标签管理区域 */}
+                <div className="flex flex-wrap items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-500">
+                  {task.tags?.map((tag, index) => (
+                    <Badge
+                      key={index}
+                      variant="secondary"
+                      className="gap-1 pl-2.5 pr-1.5 py-0.5 h-6 text-[10px] bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors cursor-default"
+                    >
+                      {tag}
+                      <button
+                        onClick={() => {
+                          const newTags = task.tags?.filter(
+                            (_, i) => i !== index
+                          );
+                          updateTask(task.id, { tags: newTags });
+                        }}
+                        className="ml-1 hover:bg-primary/20 rounded-full p-0.5 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))}
+
+                  <div className="relative group/tag">
+                    {isAddingTag ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={tagInput}
+                          onChange={(e) => setTagInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && tagInput.trim()) {
+                              const newTags = [
+                                ...(task.tags || []),
+                                tagInput.trim(),
+                              ];
+                              updateTask(task.id, { tags: newTags });
+                              setTagInput("");
+                              setIsAddingTag(false);
+                            } else if (e.key === "Escape") {
+                              setIsAddingTag(false);
+                              setTagInput("");
+                            }
+                          }}
+                          autoFocus
+                          onBlur={() => {
+                            if (!tagInput.trim()) setIsAddingTag(false);
+                          }}
+                          placeholder="输入标签..."
+                          className="h-6 w-24 text-xs bg-black/20 border-white/10 px-2 rounded-lg"
+                        />
+                      </div>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsAddingTag(true)}
+                        className="h-6 px-2 text-[10px] font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 border border-transparent hover:border-primary/20 rounded-lg transition-all"
+                      >
+                        <Tag className="w-3 h-3 mr-1.5" />
+                        添加标签
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>

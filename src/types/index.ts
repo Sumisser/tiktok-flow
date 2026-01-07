@@ -6,6 +6,7 @@ export interface Task {
   updatedAt: string;
   steps: WorkflowStep[];
   storyboards: StoryboardItem[];
+  tags?: string[];
 }
 
 // 工作流步骤类型
@@ -29,6 +30,8 @@ export interface StoryboardItem {
   script: string;
   imagePrompt: string;
   imageUrl: string;
+  videoPrompt?: string;
+  videoUrl?: string;
 }
 
 // 分镜表格行（旧版兼容）

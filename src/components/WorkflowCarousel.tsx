@@ -31,19 +31,10 @@ export default function WorkflowCarousel({
 
   return (
     <div className="space-y-6">
-      {/* 轮播内容区 */}
-      <div className="overflow-hidden">
-        <div
-          className="flex transition-transform duration-500 ease-in-out"
-          style={{ transform: `translateX(-${activeIndex * 100}%)` }}
-        >
-          {childrenArray.map((child, index) => (
-            <div key={index} className="w-full flex-shrink-0 px-4 md:px-12 lg:px-24">
-              <div className="max-w-7xl mx-auto">
-                {child}
-              </div>
-            </div>
-          ))}
+      {/* 内容展示区 - 仅渲染当前步骤以避免高度塌陷问题 */}
+      <div className="min-h-[60vh] animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="w-full px-4 md:px-12 lg:px-24">
+          <div className="max-w-7xl mx-auto">{childrenArray[activeIndex]}</div>
         </div>
       </div>
 

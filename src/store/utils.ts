@@ -5,7 +5,7 @@ export const createDefaultSteps = (): WorkflowStep[] => [
   {
     id: "step-1",
     type: "idea",
-    title: "💡 想法输入",
+    title: "创意构思",
     basePrompt: `你是一个深谙抖音、小红书爆款内容规律的短视频文案高手。请根据用户的想法，写出一段让人忍不住看完的短视频文案。
 
 **爆款文案核心技巧：**
@@ -36,7 +36,7 @@ export const createDefaultSteps = (): WorkflowStep[] => [
   {
     id: "step-2",
     type: "script",
-    title: "📝 分镜脚本",
+    title: "剧本生成",
     basePrompt: `你是一个专业的分镜脚本师和 AI 绘图提示词专家。请根据以下脚本，拆解为分镜脚本表格。
 
 **要求：**
@@ -77,7 +77,7 @@ export const createDefaultSteps = (): WorkflowStep[] => [
   {
     id: "step-3",
     type: "storyboard",
-    title: "🎬 视觉提示词",
+    title: "分镜绘制",
     basePrompt: `你是一个专业的 AI 绘图/视频提示词专家。请根据以下分镜脚本，为每个分镜生成：
 1. 关键帧图片生成提示词（适用于 Midjourney/DALL-E）
 2. 视频生成提示词（适用于 Runway/Pika）

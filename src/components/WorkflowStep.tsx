@@ -6,15 +6,15 @@ import type {
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import StoryboardEditor from "./StoryboardEditor";
+import VideoGenerationView from "./VideoGenerationView";
 import PromptSidebar from "./PromptSidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   ChevronDown,
-  Copy,
   Check,
   RotateCcw,
   ArrowLeftRight,
@@ -27,6 +27,11 @@ import {
   CheckCircle2,
   CircleDashed,
   Clock,
+  Lightbulb,
+  Image as ImageIcon,
+  Wand2,
+  FileCode,
+  LayoutGrid,
 } from "lucide-react";
 import {
   Collapsible,
@@ -70,6 +75,7 @@ export default function WorkflowStep({
   const [isCopied, setIsCopied] = useState(false);
   const [isPromptSidebarOpen, setIsPromptSidebarOpen] = useState(false);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [isStoryboardRawMode, setIsStoryboardRawMode] = useState(false);
 
   // Sync state
   useEffect(() => {
@@ -91,130 +97,404 @@ export default function WorkflowStep({
     {
       name: "热门推荐",
       styles: [
-        { id: "anime", label: "🎬 写实动漫", prompt: "Realistic Anime Style, Makoto Shinkai aesthetic, high-quality anime illustration, cinematic lighting" },
-        { id: "3d", label: "🧊 3D 渲染", prompt: "3D render, Pixar/Disney style, C4D, Octane render, volumetric lighting, soft shadows" },
-        { id: "film", label: "📸 电影写实", prompt: "Cinematic realism, photorealistic, 35mm lens, depth of field, natural lighting, grain" },
-        { id: "ghibli", label: "🍃 吉卜力", prompt: "Studio Ghibli style, hand-drawn illustration, lush nature, nostalgic watercolor textures" },
-        { id: "cyber", label: "🌆 赛博霓虹", prompt: "Cyberpunk neon, futuristic city, rainy night, violet and teal lighting, high tech" },
-      ]
+        {
+          id: "anime",
+          label: "🎬 写实动漫",
+          prompt:
+            "Realistic Anime Style, Makoto Shinkai aesthetic, high-quality anime illustration, cinematic lighting",
+        },
+        {
+          id: "3d",
+          label: "🧊 3D 渲染",
+          prompt:
+            "3D render, Pixar/Disney style, C4D, Octane render, volumetric lighting, soft shadows",
+        },
+        {
+          id: "film",
+          label: "📸 电影写实",
+          prompt:
+            "Cinematic realism, photorealistic, 35mm lens, depth of field, natural lighting, grain",
+        },
+        {
+          id: "ghibli",
+          label: "🍃 吉卜力",
+          prompt:
+            "Studio Ghibli style, hand-drawn illustration, lush nature, nostalgic watercolor textures",
+        },
+        {
+          id: "cyber",
+          label: "🌆 赛博霓虹",
+          prompt:
+            "Cyberpunk neon, futuristic city, rainy night, violet and teal lighting, high tech",
+        },
+      ],
     },
     {
       name: "动画次元",
       styles: [
-        { id: "shinkai", label: "✨ 新海诚", prompt: "Makoto Shinkai style, breathtaking sky, cinematic lighting, lens flare, hyper-detailed backgrounds" },
-        { id: "niji", label: "🌈 Niji 6", prompt: "Niji style version 6, cute, expressive, stylized anime, vibrant colors, clean lines" },
-        { id: "manga", label: "🖋️ 黑白漫画", prompt: "B&W Manga style, pen and ink, high contrast, speed lines, expressive hatching" },
-        { id: "disney2d", label: "🏰 迪士尼 2D", prompt: "Classic Disney 2D animation style, hand-drawn, expressive characters, magical atmosphere" },
-        { id: "spiderman", label: "🕷️ 蜘蛛侠元宇宙", prompt: "Into the Spider-Verse style, halftone patterns, chromatic aberration, comic book aesthetics" },
-        { id: "retro_anime", label: "📺 90s 复古番", prompt: "90s retro anime style, lo-fi aesthetic, VHS grain, muted colors, classic cel shaded" },
-      ]
+        {
+          id: "shinkai",
+          label: "✨ 新海诚",
+          prompt:
+            "Makoto Shinkai style, breathtaking sky, cinematic lighting, lens flare, hyper-detailed backgrounds",
+        },
+        {
+          id: "niji",
+          label: "🌈 Niji 6",
+          prompt:
+            "Niji style version 6, cute, expressive, stylized anime, vibrant colors, clean lines",
+        },
+        {
+          id: "manga",
+          label: "🖋️ 黑白漫画",
+          prompt:
+            "B&W Manga style, pen and ink, high contrast, speed lines, expressive hatching",
+        },
+        {
+          id: "disney2d",
+          label: "🏰 迪士尼 2D",
+          prompt:
+            "Classic Disney 2D animation style, hand-drawn, expressive characters, magical atmosphere",
+        },
+        {
+          id: "spiderman",
+          label: "🕷️ 蜘蛛侠元宇宙",
+          prompt:
+            "Into the Spider-Verse style, halftone patterns, chromatic aberration, comic book aesthetics",
+        },
+        {
+          id: "retro_anime",
+          label: "📺 90s 复古番",
+          prompt:
+            "90s retro anime style, lo-fi aesthetic, VHS grain, muted colors, classic cel shaded",
+        },
+      ],
     },
     {
       name: "数字材质",
       styles: [
-        { id: "clay", label: "🧸 黏土动画", prompt: "Claymation style, handmade texture, stop-motion aesthetic, soft studio lighting" },
-        { id: "ue5", label: "🎮 虚幻引擎", prompt: "Unreal Engine 5 render, ray tracing, cinematic game environment, high fidelity" },
-        { id: "voxel", label: "📦 体素艺术", prompt: "Voxel art, Minecraft style, 3D pixel design, vibrant blocky textures" },
-        { id: "poly", label: "📐 低多边形", prompt: "Low poly art style, geometric, clean edges, artistic lighting" },
-        { id: "paper", label: "✂️ 剪纸拼贴", prompt: "Paper cut art, layered paper texture, handcrafted look, soft shadows, 3D paper craft" },
-        { id: "glass", label: "💎 磨砂玻璃", prompt: "Frosted glass aesthetic, glassmorphism, transparent layers, soft refractions, elegant" },
-        { id: "origami", label: "� 折纸艺术", prompt: "Origami style, folded paper textures, sharp creases, clean geometric look" },
-      ]
+        {
+          id: "clay",
+          label: "🧸 黏土动画",
+          prompt:
+            "Claymation style, handmade texture, stop-motion aesthetic, soft studio lighting",
+        },
+        {
+          id: "ue5",
+          label: "🎮 虚幻引擎",
+          prompt:
+            "Unreal Engine 5 render, ray tracing, cinematic game environment, high fidelity",
+        },
+        {
+          id: "voxel",
+          label: "📦 体素艺术",
+          prompt:
+            "Voxel art, Minecraft style, 3D pixel design, vibrant blocky textures",
+        },
+        {
+          id: "poly",
+          label: "📐 低多边形",
+          prompt:
+            "Low poly art style, geometric, clean edges, artistic lighting",
+        },
+        {
+          id: "paper",
+          label: "✂️ 剪纸拼贴",
+          prompt:
+            "Paper cut art, layered paper texture, handcrafted look, soft shadows, 3D paper craft",
+        },
+        {
+          id: "glass",
+          label: "💎 磨砂玻璃",
+          prompt:
+            "Frosted glass aesthetic, glassmorphism, transparent layers, soft refractions, elegant",
+        },
+        {
+          id: "origami",
+          label: "� 折纸艺术",
+          prompt:
+            "Origami style, folded paper textures, sharp creases, clean geometric look",
+        },
+      ],
     },
     {
       name: "专业摄影",
       styles: [
-        { id: "vintage", label: "🎞️ 复古胶片", prompt: "Vintage film photography, Kodak Portra 400, warm tones, slight light leak" },
-        { id: "polaroid", label: "🖼️ 拍立得", prompt: "Polaroid photography style, instant film look, washed out colors, vintage border" },
-        { id: "noir", label: "� 黑色电影", prompt: "Film Noir style, black and white, dramatic shadows, moody lighting, smoke" },
-        { id: "lomo", label: "🎨 Lomo 摄影", prompt: "Lomography style, oversaturated colors, vignette, high contrast, artistic blur" },
-        { id: "portra", label: "👤 柔焦人像", prompt: "Professional portrait photography, shallow depth of field, soft skin tones, catching light in eyes" },
-        { id: "infra", label: "❄️ 红外摄影", prompt: "Infrared photography, white foliage, dark sky, surreal ethereal landscape" },
-      ]
+        {
+          id: "vintage",
+          label: "🎞️ 复古胶片",
+          prompt:
+            "Vintage film photography, Kodak Portra 400, warm tones, slight light leak",
+        },
+        {
+          id: "polaroid",
+          label: "🖼️ 拍立得",
+          prompt:
+            "Polaroid photography style, instant film look, washed out colors, vintage border",
+        },
+        {
+          id: "noir",
+          label: "� 黑色电影",
+          prompt:
+            "Film Noir style, black and white, dramatic shadows, moody lighting, smoke",
+        },
+        {
+          id: "lomo",
+          label: "🎨 Lomo 摄影",
+          prompt:
+            "Lomography style, oversaturated colors, vignette, high contrast, artistic blur",
+        },
+        {
+          id: "portra",
+          label: "👤 柔焦人像",
+          prompt:
+            "Professional portrait photography, shallow depth of field, soft skin tones, catching light in eyes",
+        },
+        {
+          id: "infra",
+          label: "❄️ 红外摄影",
+          prompt:
+            "Infrared photography, white foliage, dark sky, surreal ethereal landscape",
+        },
+      ],
     },
     {
       name: "创意镜头",
       styles: [
-        { id: "drone", label: "🚁 航拍视角", prompt: "Aerial photography, drone view, high angle, vast landscape, cinematic scope" },
-        { id: "macro", label: "🔍 微距世界", prompt: "Macro photography, extreme detail, blurry background, sharp focus, droplets, textures" },
-        { id: "tilt", label: "🧸 移轴摄影", prompt: "Tilt-shift photography, miniature model effect, blurred top and bottom, vibrant colors" },
-        { id: "fisheye", label: "👁️ 鱼眼镜头", prompt: "Fisheye lens perspective, distorted wide angle, spherical view, unique artistic look" },
-        { id: "long_exp", label: "� 长曝光", prompt: "Long exposure photography, light trails, silky water, motion blur, nighttime city lights" },
-        { id: "silhouete", label: "👤 剪影艺术", prompt: "Silhouette photography, dark subject against bright light, high contrast, golden hour" },
-      ]
+        {
+          id: "drone",
+          label: "🚁 航拍视角",
+          prompt:
+            "Aerial photography, drone view, high angle, vast landscape, cinematic scope",
+        },
+        {
+          id: "macro",
+          label: "🔍 微距世界",
+          prompt:
+            "Macro photography, extreme detail, blurry background, sharp focus, droplets, textures",
+        },
+        {
+          id: "tilt",
+          label: "🧸 移轴摄影",
+          prompt:
+            "Tilt-shift photography, miniature model effect, blurred top and bottom, vibrant colors",
+        },
+        {
+          id: "fisheye",
+          label: "👁️ 鱼眼镜头",
+          prompt:
+            "Fisheye lens perspective, distorted wide angle, spherical view, unique artistic look",
+        },
+        {
+          id: "long_exp",
+          label: "� 长曝光",
+          prompt:
+            "Long exposure photography, light trails, silky water, motion blur, nighttime city lights",
+        },
+        {
+          id: "silhouete",
+          label: "👤 剪影艺术",
+          prompt:
+            "Silhouette photography, dark subject against bright light, high contrast, golden hour",
+        },
+      ],
     },
     {
       name: "古典艺术",
       styles: [
-        { id: "oil", label: "🎨 古典油画", prompt: "Classic oil painting, thick brushstrokes, impasto, dramatic lighting, Rembrandt aesthetic" },
-        { id: "watercolor", label: "🖌️ 柔美水彩", prompt: "Watercolor illustration, soft bleeding colors, paper texture, delicate details" },
-        { id: "ink", label: "�️ 水墨意境", prompt: "Traditional Chinese ink wash, minimalist, elegant brushwork, ethereal atmosphere" },
-        { id: "ukiyo", label: "🌊 浮世绘", prompt: "Ukiyo-e style, woodblock print, traditional Japanese art, flat colors, bold outlines" },
-        { id: "statue", label: "🗿 大理石像", prompt: "Neoclassical marble sculpture style, smooth white texture, dramatic museum lighting" },
-        { id: "fresco", label: "⛪ 壁画艺术", prompt: "Ancient fresco painting style, weathered texture, historical aesthetic, mural feel" },
-      ]
+        {
+          id: "oil",
+          label: "🎨 古典油画",
+          prompt:
+            "Classic oil painting, thick brushstrokes, impasto, dramatic lighting, Rembrandt aesthetic",
+        },
+        {
+          id: "watercolor",
+          label: "🖌️ 柔美水彩",
+          prompt:
+            "Watercolor illustration, soft bleeding colors, paper texture, delicate details",
+        },
+        {
+          id: "ink",
+          label: "�️ 水墨意境",
+          prompt:
+            "Traditional Chinese ink wash, minimalist, elegant brushwork, ethereal atmosphere",
+        },
+        {
+          id: "ukiyo",
+          label: "🌊 浮世绘",
+          prompt:
+            "Ukiyo-e style, woodblock print, traditional Japanese art, flat colors, bold outlines",
+        },
+        {
+          id: "statue",
+          label: "🗿 大理石像",
+          prompt:
+            "Neoclassical marble sculpture style, smooth white texture, dramatic museum lighting",
+        },
+        {
+          id: "fresco",
+          label: "⛪ 壁画艺术",
+          prompt:
+            "Ancient fresco painting style, weathered texture, historical aesthetic, mural feel",
+        },
+      ],
     },
     {
       name: "绘本插画",
       styles: [
-        { id: "pencil", label: "✏️ 铅笔素描", prompt: "Pencil sketch, graphite texture, cross-hatching, artistic hand-drawn look" },
-        { id: "gouache", label: "🎨 设色粉彩", prompt: "Gouache painting style, vibrant opaque colors, matte finish, artistic illustration" },
-        { id: "crayon", label: "🖍️ 蜡笔涂鸦", prompt: "Crayon drawing, childlike texture, rough strokes, vibrant and playful" },
-        { id: "comic", label: "💥 美漫风格", prompt: "Western comic book style, bold ink lines, Ben-Day dots, high action feel" },
-        { id: "pop", label: "� 波普艺术", prompt: "Pop art, Andy Warhol style, bold colors, halftone patterns, high contrast" },
-        { id: "fairytale", label: "🧚 梦幻绘本", prompt: "Fairytale book illustration, whimsical, soft glow, magical storytelling aesthetic" },
-      ]
+        {
+          id: "pencil",
+          label: "✏️ 铅笔素描",
+          prompt:
+            "Pencil sketch, graphite texture, cross-hatching, artistic hand-drawn look",
+        },
+        {
+          id: "gouache",
+          label: "🎨 设色粉彩",
+          prompt:
+            "Gouache painting style, vibrant opaque colors, matte finish, artistic illustration",
+        },
+        {
+          id: "crayon",
+          label: "🖍️ 蜡笔涂鸦",
+          prompt:
+            "Crayon drawing, childlike texture, rough strokes, vibrant and playful",
+        },
+        {
+          id: "comic",
+          label: "💥 美漫风格",
+          prompt:
+            "Western comic book style, bold ink lines, Ben-Day dots, high action feel",
+        },
+        {
+          id: "pop",
+          label: "� 波普艺术",
+          prompt:
+            "Pop art, Andy Warhol style, bold colors, halftone patterns, high contrast",
+        },
+        {
+          id: "fairytale",
+          label: "🧚 梦幻绘本",
+          prompt:
+            "Fairytale book illustration, whimsical, soft glow, magical storytelling aesthetic",
+        },
+      ],
     },
     {
       name: "科幻潮流",
       styles: [
-        { id: "vapor", label: "🌈 蒸汽波", prompt: "Vaporwave aesthetic, 80s retro, pastel colors, glitch art, surreal neon" },
-        { id: "synth", label: "🎹 赛博合成", prompt: "Synthwave style, retro-futuristic, wireframe sun, chrome textures, dark purple" },
-        { id: "glitch", label: "📺 故障艺术", prompt: "Glitch art, digital noise, chromatic aberration, distorted scanlines" },
-        { id: "punk", label: "⚙️ 蒸汽朋克", prompt: "Steampunk aesthetic, brass gears, Victorian era, industrial, sepia tones" },
-        { id: "hologram", label: "✨ 全息投影", prompt: "Holographic projection, glowing blue lines, semi-transparent, futuristic interface look" },
-        { id: "biopunk", label: "🧬 生物朋克", prompt: "Biopunk aesthetic, organic technology, glowing neon veins, surreal fusion" },
-      ]
+        {
+          id: "vapor",
+          label: "🌈 蒸汽波",
+          prompt:
+            "Vaporwave aesthetic, 80s retro, pastel colors, glitch art, surreal neon",
+        },
+        {
+          id: "synth",
+          label: "🎹 赛博合成",
+          prompt:
+            "Synthwave style, retro-futuristic, wireframe sun, chrome textures, dark purple",
+        },
+        {
+          id: "glitch",
+          label: "📺 故障艺术",
+          prompt:
+            "Glitch art, digital noise, chromatic aberration, distorted scanlines",
+        },
+        {
+          id: "punk",
+          label: "⚙️ 蒸汽朋克",
+          prompt:
+            "Steampunk aesthetic, brass gears, Victorian era, industrial, sepia tones",
+        },
+        {
+          id: "hologram",
+          label: "✨ 全息投影",
+          prompt:
+            "Holographic projection, glowing blue lines, semi-transparent, futuristic interface look",
+        },
+        {
+          id: "biopunk",
+          label: "🧬 生物朋克",
+          prompt:
+            "Biopunk aesthetic, organic technology, glowing neon veins, surreal fusion",
+        },
+      ],
     },
     {
       name: "极简设计",
       styles: [
-        { id: "minimal", label: "⬜ 极简主义", prompt: "Minimalist design, clean lines, simple shapes, monochromatic, significant negative space" },
-        { id: "flat", label: "📏 扁平矢量", prompt: "Flat design illustration, vector art, modern corporate style, clean and professional" },
-        { id: "ios", label: "🍎 现代移动", prompt: "Modern app interface aesthetic, clean glassmorphism, soft gradients, iOS style" },
-        { id: "bauhaus", label: "📐 包豪斯", prompt: "Bauhaus style, geometric shapes, primary colors, architectural composition" },
-        { id: "abstract", label: "🌀 抽象表现", prompt: "Abstract expressionism, organic shapes, fluid composition, artistic and conceptual" },
-      ]
-    }
+        {
+          id: "minimal",
+          label: "⬜ 极简主义",
+          prompt:
+            "Minimalist design, clean lines, simple shapes, monochromatic, significant negative space",
+        },
+        {
+          id: "flat",
+          label: "📏 扁平矢量",
+          prompt:
+            "Flat design illustration, vector art, modern corporate style, clean and professional",
+        },
+        {
+          id: "ios",
+          label: "🍎 现代移动",
+          prompt:
+            "Modern app interface aesthetic, clean glassmorphism, soft gradients, iOS style",
+        },
+        {
+          id: "bauhaus",
+          label: "📐 包豪斯",
+          prompt:
+            "Bauhaus style, geometric shapes, primary colors, architectural composition",
+        },
+        {
+          id: "abstract",
+          label: "🌀 抽象表现",
+          prompt:
+            "Abstract expressionism, organic shapes, fluid composition, artistic and conceptual",
+        },
+      ],
+    },
   ];
 
-  const [selectedStyle, setSelectedStyle] = useState(STYLE_CATEGORIES[0].styles[0].id);
+  const [selectedStyle, setSelectedStyle] = useState(
+    STYLE_CATEGORIES[0].styles[0].id
+  );
 
   const getFullPrompt = () => {
     let stylePrompt = "";
     for (const cat of STYLE_CATEGORIES) {
-      const found = cat.styles.find(s => s.id === selectedStyle);
+      const found = cat.styles.find((s) => s.id === selectedStyle);
       if (found) {
         stylePrompt = found.prompt;
         break;
       }
     }
-    
+
     // 生成风格指令区块
     const styleInstruction = `**重要：请强制采用以下画面风格进行创作：**\n${stylePrompt}`;
 
     if (step.type === "script") {
       let finalBasePrompt = step.basePrompt;
-      
+
       const placeholder = "**[画面风格指令将在此处由引擎自动注入]**";
       if (finalBasePrompt.includes(placeholder)) {
         // 1. 优先替换专门设置的占位符
-        finalBasePrompt = finalBasePrompt.replace(placeholder, styleInstruction);
+        finalBasePrompt = finalBasePrompt.replace(
+          placeholder,
+          styleInstruction
+        );
       } else {
         // 2. 兼容逻辑：检测并替换旧版硬编码的“写实动漫”规则块
-        const oldStyleBlockRegex = /采用 \*\*写实动漫风格[\s\S]*?(?=\d\. \*\*主提示词)/;
+        const oldStyleBlockRegex =
+          /采用 \*\*写实动漫风格[\s\S]*?(?=\d\. \*\*主提示词)/;
         if (oldStyleBlockRegex.test(finalBasePrompt)) {
-          finalBasePrompt = finalBasePrompt.replace(oldStyleBlockRegex, `采用以下指定的画面风格：\n\n${styleInstruction}\n\n`);
+          finalBasePrompt = finalBasePrompt.replace(
+            oldStyleBlockRegex,
+            `采用以下指定的画面风格：\n\n${styleInstruction}\n\n`
+          );
         } else {
           // 3. 兜底：如果既没有占位符也不是旧版，则直接追加
           finalBasePrompt = finalBasePrompt + "\n\n" + styleInstruction;
@@ -257,30 +537,22 @@ export default function WorkflowStep({
     setResetDialogOpen(false);
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "已完成";
-      case "in-progress":
-        return "进行中";
-      case "pending":
-        return "待处理";
-      default:
-        return status;
-    }
-  };
-
   return (
     <div className="relative pb-16 last:pb-4 group">
-
       <Collapsible
-        open={(step.type === "idea" || step.type === "script") ? true : isExpanded}
-        onOpenChange={(step.type === "idea" || step.type === "script") ? () => {} : setIsExpanded}
+        open={
+          step.type === "idea" || step.type === "script" ? true : isExpanded
+        }
+        onOpenChange={
+          step.type === "idea" || step.type === "script"
+            ? () => {}
+            : setIsExpanded
+        }
       >
         <Card
           className={cn(
             "transition-all duration-500 overflow-hidden relative",
-            (step.type === "idea" || step.type === "script" || isExpanded)
+            step.type === "idea" || step.type === "script" || isExpanded
               ? "glass-card border-primary/20 ring-1 ring-primary/10 shadow-2xl"
               : "bg-black/40 backdrop-blur-md border border-white/10 hover:bg-black/50 hover:border-white/20 shadow-sm"
           )}
@@ -294,24 +566,39 @@ export default function WorkflowStep({
             <div
               className={cn(
                 "p-5 flex items-center justify-between group/header select-none",
-                (step.type !== "idea" && step.type !== "script") && "cursor-pointer"
+                step.type !== "idea" &&
+                  step.type !== "script" &&
+                  "cursor-pointer"
               )}
             >
               <div className="flex items-center gap-5">
-                <span className="text-3xl filter drop-shadow-lg opacity-80 group-hover/header:opacity-100 transition-all duration-500 transform group-hover/header:scale-110">
-                  {step.title.split(" ")[0]}
-                </span>
+                <div
+                  className={cn(
+                    "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-lg",
+                    step.type === "idea" || step.type === "script" || isExpanded
+                      ? "bg-primary text-primary-foreground shadow-primary/25 scale-110"
+                      : "bg-white/5 text-white/40 group-hover/header:bg-white/10 group-hover/header:text-white/60"
+                  )}
+                >
+                  {step.type === "idea" && <Lightbulb className="w-6 h-6" />}
+                  {step.type === "script" && <FileText className="w-6 h-6" />}
+                  {step.type === "storyboard" && (
+                    <ImageIcon className="w-6 h-6" />
+                  )}
+                </div>
                 <div className="min-w-0">
                   <h3 className="text-lg font-black flex items-center gap-3">
                     <span
                       className={cn(
                         "truncate transition-colors duration-300",
-                        (step.type === "idea" || step.type === "script" || isExpanded)
+                        step.type === "idea" ||
+                          step.type === "script" ||
+                          isExpanded
                           ? "text-primary text-neon"
                           : "text-foreground group-hover/header:text-primary transition-colors"
                       )}
                     >
-                      {step.title.split(" ").slice(1).join(" ")}
+                      {step.title}
                     </span>
                     <Button
                       variant="ghost"
@@ -329,28 +616,37 @@ export default function WorkflowStep({
                       {step.status === "completed" && (
                         <div className="flex items-center gap-1.5 text-primary bg-primary/10 px-2 py-1 rounded-md border border-primary/20">
                           <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span className="text-[10px] font-black uppercase tracking-widest">Done</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest">
+                            Done
+                          </span>
                         </div>
                       )}
                       {step.status === "in-progress" && (
                         <div className="flex items-center gap-1.5 text-amber-500 bg-amber-500/10 px-2 py-1 rounded-md border border-amber-500/20">
                           <CircleDashed className="w-3.5 h-3.5 animate-spin" />
-                          <span className="text-[10px] font-black uppercase tracking-widest">Doing</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest">
+                            Doing
+                          </span>
                         </div>
                       )}
                       {step.status === "pending" && (
                         <div className="flex items-center gap-1.5 text-muted-foreground bg-secondary/50 px-2 py-1 rounded-md border border-border">
                           <Clock className="w-3.5 h-3.5" />
-                          <span className="text-[10px] font-black uppercase tracking-widest">Wait</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest">
+                            Wait
+                          </span>
                         </div>
                       )}
                     </div>
                   </h3>
-                  {step.type !== "idea" && step.type !== "script" && !isExpanded && output && (
-                    <p className="text-xs text-muted-foreground line-clamp-1 mt-1 font-medium tracking-tight">
-                      {output.substring(0, 150)}...
-                    </p>
-                  )}
+                  {step.type !== "idea" &&
+                    step.type !== "script" &&
+                    !isExpanded &&
+                    output && (
+                      <p className="text-xs text-muted-foreground line-clamp-1 mt-1 font-medium tracking-tight">
+                        {output.substring(0, 150)}...
+                      </p>
+                    )}
                 </div>
               </div>
 
@@ -368,7 +664,7 @@ export default function WorkflowStep({
                     <RotateCcw className="w-3.5 h-3.5" />
                   </Button>
                 )}
-                {(step.type !== "idea" && step.type !== "script") && (
+                {step.type !== "idea" && step.type !== "script" && (
                   <div
                     className={cn(
                       "p-1.5 rounded-xl bg-black/20 border border-white/10 transition-all duration-500",
@@ -385,7 +681,12 @@ export default function WorkflowStep({
           </CollapsibleTrigger>
 
           <CollapsibleContent>
-            <CardContent className={cn("p-6 pt-0 animate-in fade-in slide-in-from-top-4 duration-500", step.type === "script" ? "space-y-4" : "space-y-8")}>
+            <CardContent
+              className={cn(
+                "p-6 pt-0 animate-in fade-in slide-in-from-top-4 duration-500",
+                step.type === "script" ? "space-y-4" : "space-y-8"
+              )}
+            >
               {/* 第一步或第三步显示配置部分 */}
               {step.type !== "script" && (
                 <div className="space-y-6">
@@ -434,29 +735,40 @@ export default function WorkflowStep({
                     />
                   </div>
 
-                  <Button
-                    onClick={handleCopyPrompt}
-                    disabled={step.type === "idea" ? !input : (!input && !prevStepOutput)}
-                    className={cn(
-                      "w-full rounded-2xl text-[16px] font-black tracking-[0.1em] gap-4 transition-all duration-300 shadow-2xl uppercase",
-                      step.type === "idea" ? "h-12" : "h-16",
-                      (input || (step.type !== "idea" && prevStepOutput))
-                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] border-t border-white/20"
-                        : "bg-black/20 text-white/20 pointer-events-none border border-white/5"
-                    )}
-                  >
-                    {isCopied ? (
-                      <Check className="w-6 h-6 animate-bounce" />
-                    ) : (
-                      <Copy className="w-6 h-6" />
-                    )}
-                    {isCopied ? "提示词已就绪" : "生成 AI 提示词"}
-                  </Button>
+                  {/* 动作栏：生成提示词 */}
+                  <div className="flex justify-end pt-2">
+                    <Button
+                      onClick={handleCopyPrompt}
+                      disabled={
+                        step.type === "idea"
+                          ? !input
+                          : !input && !prevStepOutput
+                      }
+                      className={cn(
+                        "h-10 px-6 rounded-xl text-xs font-black tracking-widest transition-all duration-300 shadow-lg uppercase",
+                        input || (step.type !== "idea" && prevStepOutput)
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105"
+                          : "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {isCopied ? (
+                        <>
+                          <Check className="w-4 h-4 mr-2" />
+                          已复制
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 className="w-4 h-4 mr-2" />
+                          生成 AI 提示词
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               )}
 
               {/* 第一步或第三步显示 AI 交互部分 */}
-              {step.type !== "script" && (
+              {step.type === "idea" && (
                 <div className="space-y-6">
                   {step.type !== "idea" ? (
                     <>
@@ -550,7 +862,7 @@ export default function WorkflowStep({
                           {output ? "覆盖粘贴" : "粘贴内容"}
                         </Button>
                       </div>
-                      
+
                       <div className="h-24 bg-black/20 border border-white/5 rounded-lg p-3 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 hover:scrollbar-thumb-white/20">
                         {output ? (
                           <p className="text-xs font-mono text-white/70 whitespace-pre-wrap leading-relaxed break-all">
@@ -581,8 +893,11 @@ export default function WorkflowStep({
                         {STYLE_CATEGORIES.length} 个分类
                       </div>
                     </div>
-                    
-                    <Tabs defaultValue={STYLE_CATEGORIES[0].name} className="w-full">
+
+                    <Tabs
+                      defaultValue={STYLE_CATEGORIES[0].name}
+                      className="w-full"
+                    >
                       <div className="relative mb-4">
                         <TabsList className="w-full h-9 bg-black/40 border border-white/5 p-1 rounded-xl flex justify-start overflow-x-auto no-scrollbar mask-fade-right">
                           {STYLE_CATEGORIES.map((category) => (
@@ -598,7 +913,11 @@ export default function WorkflowStep({
                       </div>
 
                       {STYLE_CATEGORIES.map((category) => (
-                        <TabsContent key={category.name} value={category.name} className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+                        <TabsContent
+                          key={category.name}
+                          value={category.name}
+                          className="mt-0 focus-visible:outline-none focus-visible:ring-0"
+                        >
                           <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
                             {category.styles.map((style) => (
                               <button
@@ -613,8 +932,15 @@ export default function WorkflowStep({
                               >
                                 {style.label.includes(" ") ? (
                                   <>
-                                    <span className="text-xs">{style.label.split(" ")[0]}</span>
-                                    <span>{style.label.split(" ").slice(1).join(" ")}</span>
+                                    <span className="text-xs">
+                                      {style.label.split(" ")[0]}
+                                    </span>
+                                    <span>
+                                      {style.label
+                                        .split(" ")
+                                        .slice(1)
+                                        .join(" ")}
+                                    </span>
                                   </>
                                 ) : (
                                   style.label
@@ -627,45 +953,76 @@ export default function WorkflowStep({
                     </Tabs>
                   </div>
 
-                  <Button
-                    onClick={handleCopyPrompt}
-                    className={cn(
-                      "w-full h-12 rounded-xl text-sm font-black tracking-[0.1em] gap-3 transition-all duration-300 shadow-xl uppercase border-t border-white/20",
-                      prevStepOutput 
-                        ? "bg-primary text-primary-foreground shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]"
-                        : "bg-black/20 text-white/20 pointer-events-none border border-white/5"
-                    )}
-                  >
-                    {isCopied ? <Check className="w-5 h-5 animate-bounce" /> : <Copy className="w-5 h-5" />}
-                    {isCopied ? "提示词已就绪" : "一键生成提示词"}
-                  </Button>
-
-                  <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-                    <div className="flex justify-end mb-4">
+                  {/* 动作栏：视图切换 & 一键生成 */}
+                  <div className="flex justify-between items-center pt-2">
+                    {/* 左侧：视图切换 */}
+                    <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={async () => {
-                          try {
-                            const text = await navigator.clipboard.readText();
-                            if (text) handleOutputChange(text);
-                          } catch (err) {
-                            console.error("Paste failed", err);
-                          }
-                        }}
-                        className="h-8 text-[11px] font-black text-primary/70 hover:text-primary hover:bg-primary/10 px-4 rounded-xl transition-all uppercase tracking-widest border border-primary/20"
+                        onClick={() =>
+                          setIsStoryboardRawMode(!isStoryboardRawMode)
+                        }
+                        className={cn(
+                          "h-9 px-3 text-xs font-bold uppercase tracking-wider transition-all border",
+                          isStoryboardRawMode
+                            ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                            : "text-muted-foreground border-transparent hover:bg-white/5 hover:text-foreground"
+                        )}
                       >
-                        <ClipboardPaste className="w-4 h-4 mr-2" />
-                        同步 AI 结果
+                        {isStoryboardRawMode ? (
+                          <>
+                            <LayoutGrid className="w-3.5 h-3.5 mr-2" />
+                            预览视图
+                          </>
+                        ) : (
+                          <>
+                            <FileCode className="w-3.5 h-3.5 mr-2" />
+                            源码编辑
+                          </>
+                        )}
                       </Button>
                     </div>
+
+                    {/* 右侧：一键生成 */}
+                    <Button
+                      onClick={handleCopyPrompt}
+                      className={cn(
+                        "h-10 px-6 rounded-xl text-xs font-black tracking-widest transition-all duration-300 shadow-lg uppercase",
+                        prevStepOutput
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105"
+                          : "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {isCopied ? (
+                        <Check className="w-4 h-4 mr-2" />
+                      ) : (
+                        <Wand2 className="w-4 h-4 mr-2" />
+                      )}
+                      {isCopied ? "已生成" : "一键生成提示词"}
+                    </Button>
+                  </div>
+
+                  <div className="animate-in fade-in slide-in-from-top-4 duration-500">
                     <StoryboardEditor
                       taskId={taskId}
                       output={output || prevStepOutput}
                       storyboards={storyboards}
                       onUpdateStoryboards={onUpdateStoryboards}
+                      isRawMode={isStoryboardRawMode}
+                      setIsRawMode={setIsStoryboardRawMode}
                     />
                   </div>
+                </div>
+              )}
+
+              {/* 第三步专属布局 (Video Generation) */}
+              {step.type === "storyboard" && (
+                <div className="pt-2">
+                  <VideoGenerationView
+                    storyboards={storyboards}
+                    onUpdateStoryboards={onUpdateStoryboards}
+                  />
                 </div>
               )}
 

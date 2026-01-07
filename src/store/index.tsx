@@ -51,6 +51,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
       updatedAt: now,
       steps: createDefaultSteps(),
       storyboards: [],
+      tags: [],
     };
 
     const updatedTasks = [newTask, ...tasks];

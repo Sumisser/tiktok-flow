@@ -131,9 +131,14 @@ export default function Home() {
     }
   };
 
-  const filteredTasks = tasks.filter((task) =>
-    task.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredTasks = tasks.filter((task) => {
+    const searchLower = searchQuery.toLowerCase();
+    const matchTitle = task.title.toLowerCase().includes(searchLower);
+    const matchTags = task.tags?.some((tag) =>
+      tag.toLowerCase().includes(searchLower)
+    );
+    return matchTitle || matchTags;
+  });
 
   const hasTasks = tasks.length > 0;
 
