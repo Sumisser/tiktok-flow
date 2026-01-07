@@ -77,3 +77,39 @@ export async function deleteStoryboardImage(imageUrl: string): Promise<void> {
     // 不抛出错误，因为删除失败不应该阻止其他操作
   }
 }
+
+/**
+ * 删除任务关联的所有图片文件
+ * @param taskId - 任务ID
+ */
+export async function deleteTaskImages(taskId: string): Promise<void> {
+  try {
+    // 1. 列出该任务目录下的所有文件
+    const { data: files, error: listError } = await supabase.storage
+      .from(BUCKET_NAME)
+      .list(taskId);
+
+    if (listError) {
+      console.error("Error listing task images:", listError);
+      return;
+    }
+
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    // 2. 构造文件路径列表
+    const filesToRemove = files.map((file) => `${taskId}/${file.name}`);
+
+    // 3. 批量删除文件
+    const { error: removeError } = await supabase.storage
+      .from(BUCKET_NAME)
+      .remove(filesToRemove);
+
+    if (removeError) {
+      console.error("Error removing task images:", removeError);
+    }
+  } catch (error) {
+    console.error("Failed to delete task images room storage:", error);
+  }
+}

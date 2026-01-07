@@ -60,9 +60,18 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteTask = async (id: string) => {
+    // 找到要删除的任务，检查是否有图片需要清理
+    const taskToDelete = tasks.find((t) => t.id === id);
+
     const updatedTasks = tasks.filter((task) => task.id !== id);
     setTasks(updatedTasks);
     await deleteTaskById(id);
+
+    // 如果任务存在，异步清理存储中的图片
+    if (taskToDelete) {
+      const { deleteTaskImages } = await import("../lib/storage");
+      await deleteTaskImages(id);
+    }
   };
 
   const updateTask = async (id: string, updates: Partial<Task>) => {
