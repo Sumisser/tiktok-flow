@@ -204,20 +204,21 @@ export default function WorkflowStep({
     }
 
     // 生成风格指令区块
-    const styleInstruction = `**重要：请强制采用以下画面风格进行创作：**\n${stylePrompt}`;
+    // const styleInstruction = `**重要：请强制采用以下画面风格进行创作：**\n${stylePrompt}`;
 
     let finalBasePrompt = step.basePrompt;
 
     // 如果没有输入，直接返回空或基础提示词
     if (!input.trim()) return "";
 
-    const placeholder = "**[画面风格指令将在此处由引擎自动注入]**";
-    if (finalBasePrompt.includes(placeholder)) {
+    const stylePlaceholder = "[STYLE_INSTRUCTION]";
+    if (finalBasePrompt.includes(stylePlaceholder)) {
       // 1. 优先替换专门设置的占位符
-      finalBasePrompt = finalBasePrompt.replace(placeholder, styleInstruction);
+      finalBasePrompt = finalBasePrompt.replace(stylePlaceholder, stylePrompt);
     } else {
       // 2. 兜底：直接追加
-      finalBasePrompt = finalBasePrompt + "\n\n" + styleInstruction;
+      finalBasePrompt =
+        finalBasePrompt + "\n\n" + `**画面风格要求：**\n${stylePrompt}`;
     }
 
     // 3. 注入用户输入
