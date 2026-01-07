@@ -18,16 +18,26 @@ export const createDefaultSteps = (): WorkflowStep[] => [
 **核心创作要求：**
 
 1.  **文案（Script）**：
-    - **Hook**：开头必须用反常识、强冲突或悬念问题抓住观众（黄金3秒）。
-    - **内容**：拒绝空洞说教，每一句都要提供情绪价值或信息增量。
-    - **口语化**：禁止使用“综上所述”、“首先”等僵硬连接词，像朋友聊天一样自然。
+    - **极度丰富**：如果不满足于用户的简单输入，**必须进行大幅度的创意扩展和细节脑补**。
+    - **时长控制**：总时长控制在 **2-4 分钟**（约 500-1000 字），确保内容极中充实，细节丰富。
+    - **Hook（前3秒）**：必须用反常识、强冲突、悬念问题或痛点场景开场，禁止平铺直叙。
+    - **口语化**：像朋友面对面聊天一样自然，多用短句、语气词，禁止使用书面语。
+    - **结构参考（建议但非强制，请按需选择）**：
+        *   **故事叙事**：悬念开场(Hook) -> 冲突铺垫 -> 危机/高潮 -> 反转/结局 -> 价值升华。
+        *   **知识干货**：痛点直击 -> 核心观点抛出 -> 3个关键步骤/证据 -> 行动号召(CTA)。
+        *   **情感共鸣**：具体场景带入 -> 情绪渲染 -> 核心金句 -> 普遍共鸣点 -> 开放式结尾。
 
-2.  **画面提示词（Image Prompt）**：
+2.  **分镜数量（Shot Count）**：
+    - **必须生成 12-20 个镜头**。禁止只生成少于 10 个镜头。
+    - 每个镜头的文案要足够长，包含丰富的信息量。
+
+3.  **画面提示词（Image Prompt）**：
     - 必须为 **英文**。
-    - 结构：Subject + Environment + Composition + Lighting + Style.
+    - 结构：Subject + Action/Context + Environment + Lighting + Camera Angle + Style.
+    - 确保画面主体连续，场景转换合理。
     - 风格占位符：请在 prompt 末尾保留 \`[STYLE]\` 标记，以便引擎后续注入统一风格。
 
-3.  **视频生成提示词（Video Prompt）**：
+4.  **视频生成提示词（Video Prompt）**：
     - 必须为 **英文**。
     - 必须针对 **图生视频 (Image-to-Video)** 场景。
     - 重点描述 **动态 (Motion)** 和 **运镜 (Camera Movement)**。
@@ -35,16 +45,18 @@ export const createDefaultSteps = (): WorkflowStep[] => [
 
 **输出格式严格要求：**
 
-请直接输出一个 Markdown 代码块，包含且仅包含以下表格：
+请直接输出一个 Markdown 代码块，包含且仅包含以下表格（确保生成 8 行以上）：
 
 \`\`\`markdown
 | 镜号 | 脚本文案 | 画面生成提示词 (Image Prompt) | 视频生成提示词 (Video Prompt) |
 |------|----------|-------------------------------|------------------------------|
-| 1 | (悬念开头文案) | A close up of [Subject], mysterious lighting, cinematic composition... [STYLE] | Slow zoom in, emphasis on eye movement, cinematic lighting changes |
-| 2 | (承接文案) | Wide shot of [Environment], detailed background... [STYLE] | Pan right, diverse crowd moving, atmospheric smoke |
+| 1 | (悬念开头文案，字数要足) | A close up of [Subject], mysterious lighting... [STYLE] | Slow zoom in, emphasis on eye movement |
+| ... | ... | ... | ... |
+| 8 | (结尾升华文案) | Wide shot of [Environment]... [STYLE] | Pan right, diverse crowd moving |
 \`\`\`
 
-**用户想法/主题：**`,
+**用户想法/主题：**
+[USER_INPUT]`,
     input: "",
     output: "",
     status: "pending",

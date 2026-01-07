@@ -44,10 +44,6 @@ interface WorkflowStepProps {
 export default function WorkflowStep({
   taskId,
   step,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  stepNumber,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  prevStepOutput,
   onUpdate,
   storyboards,
   onUpdateStoryboards,
@@ -224,7 +220,16 @@ export default function WorkflowStep({
       finalBasePrompt = finalBasePrompt + "\n\n" + styleInstruction;
     }
 
-    return (finalBasePrompt + "\n\n" + input).trim();
+    // 3. 注入用户输入
+    const inputPlaceholder = "[USER_INPUT]";
+    if (finalBasePrompt.includes(inputPlaceholder)) {
+      finalBasePrompt = finalBasePrompt.replace(inputPlaceholder, input);
+    } else {
+      // 兜底：如果模板中没有占位符，还是追加在最后
+      finalBasePrompt = finalBasePrompt + "\n" + input;
+    }
+
+    return finalBasePrompt.trim();
   };
 
   const handleCopyPrompt = async () => {
