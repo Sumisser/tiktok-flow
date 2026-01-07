@@ -3,41 +3,22 @@ import type {
   WorkflowStep as WorkflowStepType,
   StoryboardItem,
 } from "../types";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import StoryboardEditor from "./StoryboardEditor";
-import VideoGenerationView from "./VideoGenerationView";
 import PromptSidebar from "./PromptSidebar";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-  ChevronDown,
   Check,
   RotateCcw,
-  ArrowLeftRight,
-  FileText,
-  Bot,
-  Eye,
-  Edit2,
   ListTodo,
-  ClipboardPaste,
-  CheckCircle2,
-  CircleDashed,
-  Clock,
   Lightbulb,
-  Image as ImageIcon,
   Wand2,
   FileCode,
   LayoutGrid,
 } from "lucide-react";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -63,7 +44,9 @@ interface WorkflowStepProps {
 export default function WorkflowStep({
   taskId,
   step,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   stepNumber,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   prevStepOutput,
   onUpdate,
   storyboards,
@@ -71,7 +54,6 @@ export default function WorkflowStep({
 }: WorkflowStepProps) {
   const [input, setInput] = useState(step.input);
   const [output, setOutput] = useState(step.output);
-  const [isExpanded, setIsExpanded] = useState(step.status !== "completed");
   const [isCopied, setIsCopied] = useState(false);
   const [isPromptSidebarOpen, setIsPromptSidebarOpen] = useState(false);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
@@ -83,21 +65,9 @@ export default function WorkflowStep({
     setOutput(step.output);
   }, [step.input, step.output]);
 
-  // 自动填充上一步的输出作为当前步骤的输入
-  useEffect(() => {
-    if (prevStepOutput && !input && stepNumber > 1) {
-      handleInputChange(prevStepOutput);
-    }
-  }, [prevStepOutput]);
-
   const handleInputChange = (value: string) => {
     setInput(value);
     onUpdate({ input: value, status: "in-progress" });
-  };
-
-  const handleOutputChange = (value: string) => {
-    setOutput(value);
-    onUpdate({ output: value, status: value ? "completed" : "in-progress" });
   };
 
   const STYLE_CATEGORIES = [
@@ -240,52 +210,32 @@ export default function WorkflowStep({
     // 生成风格指令区块
     const styleInstruction = `**重要：请强制采用以下画面风格进行创作：**\n${stylePrompt}`;
 
-    if (step.type === "script") {
-      let finalBasePrompt = step.basePrompt;
+    let finalBasePrompt = step.basePrompt;
 
-      const placeholder = "**[画面风格指令将在此处由引擎自动注入]**";
-      if (finalBasePrompt.includes(placeholder)) {
-        // 1. 优先替换专门设置的占位符
-        finalBasePrompt = finalBasePrompt.replace(
-          placeholder,
-          styleInstruction
-        );
-      } else {
-        // 2. 兼容逻辑：检测并替换旧版硬编码的“写实动漫”规则块
-        const oldStyleBlockRegex =
-          /采用 \*\*写实动漫风格[\s\S]*?(?=\d\. \*\*主提示词)/;
-        if (oldStyleBlockRegex.test(finalBasePrompt)) {
-          finalBasePrompt = finalBasePrompt.replace(
-            oldStyleBlockRegex,
-            `采用以下指定的画面风格：\n\n${styleInstruction}\n\n`
-          );
-        } else {
-          // 3. 兜底：如果既没有占位符也不是旧版，则直接追加
-          finalBasePrompt = finalBasePrompt + "\n\n" + styleInstruction;
-        }
-      }
+    // 如果没有输入，直接返回空或基础提示词
+    if (!input.trim()) return "";
 
-      // 只依赖于上一步输出 + 已经融合了风格的 BasePrompt
-      return (finalBasePrompt + "\n\n" + (prevStepOutput || "")).trim();
+    const placeholder = "**[画面风格指令将在此处由引擎自动注入]**";
+    if (finalBasePrompt.includes(placeholder)) {
+      // 1. 优先替换专门设置的占位符
+      finalBasePrompt = finalBasePrompt.replace(placeholder, styleInstruction);
+    } else {
+      // 2. 兜底：直接追加
+      finalBasePrompt = finalBasePrompt + "\n\n" + styleInstruction;
     }
-    const currentInput = input || "";
-    return (step.basePrompt + "\n\n" + currentInput).trim();
+
+    return (finalBasePrompt + "\n\n" + input).trim();
   };
 
   const handleCopyPrompt = async () => {
+    if (!input.trim()) return;
     try {
       await navigator.clipboard.writeText(getFullPrompt());
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
+      onUpdate({ status: "in-progress" });
     } catch (err) {
       console.error("复制失败:", err);
-    }
-  };
-
-  const handleMarkComplete = () => {
-    if (output) {
-      onUpdate({ status: "completed" });
-      setIsExpanded(false);
     }
   };
 
@@ -297,539 +247,232 @@ export default function WorkflowStep({
     setInput("");
     setOutput("");
     onUpdate({ input: "", output: "", status: "pending" });
-    setIsExpanded(true);
+    onUpdateStoryboards([]);
     setResetDialogOpen(false);
   };
 
+  // 始终展开，因为是单页面模式
   return (
-    <div className="relative pb-16 last:pb-4 group">
-      <Collapsible
-        open={
-          step.type === "idea" || step.type === "script" ? true : isExpanded
-        }
-        onOpenChange={
-          step.type === "idea" || step.type === "script"
-            ? () => {}
-            : setIsExpanded
-        }
-      >
-        <Card
-          className={cn(
-            "transition-all duration-500 overflow-hidden relative",
-            step.type === "idea" || step.type === "script" || isExpanded
-              ? "glass-card border-primary/20 ring-1 ring-primary/10 shadow-2xl"
-              : "bg-black/40 backdrop-blur-md border border-white/10 hover:bg-black/50 hover:border-white/20 shadow-sm"
-          )}
-        >
-          {/* AI 扫描线动画 (仅在展开时显示) */}
-          {(step.type === "idea" || step.type === "script" || isExpanded) && (
-            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-20 animate-[scan_3s_linear_infinite]" />
-          )}
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <Card className="glass-card border-primary/20 ring-1 ring-primary/10 shadow-2xl relative overflow-hidden">
+        {/* 顶部装饰 */}
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
 
-          <CollapsibleTrigger asChild>
-            <div
-              className={cn(
-                "p-5 flex items-center justify-between group/header select-none",
-                step.type !== "idea" &&
-                  step.type !== "script" &&
-                  "cursor-pointer"
-              )}
+        <CardHeader className="p-6 border-b border-white/5 flex flex-row items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-inner">
+              <ListTodo className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-white tracking-wide">
+                创意分镜生成
+              </h2>
+              <p className="text-xs text-muted-foreground font-medium">
+                输入你的想法，AI 将自动为你生成分镜脚本、画面提示词和视频提示词
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsPromptSidebarOpen(true);
+              }}
+              className="h-8 text-xs font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg px-3 transition-all"
             >
-              <div className="flex items-center gap-5">
-                <div
-                  className={cn(
-                    "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-lg",
-                    step.type === "idea" || step.type === "script" || isExpanded
-                      ? "bg-primary text-primary-foreground shadow-primary/25 scale-110"
-                      : "bg-white/5 text-white/40 group-hover/header:bg-white/10 group-hover/header:text-white/60"
-                  )}
-                >
-                  {step.type === "idea" && <Lightbulb className="w-6 h-6" />}
-                  {step.type === "script" && <FileText className="w-6 h-6" />}
-                  {step.type === "storyboard" && (
-                    <ImageIcon className="w-6 h-6" />
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <h3 className="text-lg font-black flex items-center gap-3">
-                    <span
-                      className={cn(
-                        "truncate transition-colors duration-300",
-                        step.type === "idea" ||
-                          step.type === "script" ||
-                          isExpanded
-                          ? "text-primary text-neon"
-                          : "text-foreground group-hover/header:text-primary transition-colors"
-                      )}
-                    >
-                      {step.title}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsPromptSidebarOpen(true);
-                      }}
-                      className="h-7 text-[10px] font-black tracking-widest text-primary/70 hover:text-primary bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded-lg px-2.5 transition-all uppercase"
-                    >
-                      <ListTodo className="w-3.5 h-3.5 mr-1.5" />
-                      引擎
-                    </Button>
-                    <div className="flex items-center">
-                      {step.status === "completed" && (
-                        <div className="flex items-center gap-1.5 text-primary bg-primary/10 px-2 py-1 rounded-md border border-primary/20">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span className="text-[10px] font-black uppercase tracking-widest">
-                            Done
-                          </span>
-                        </div>
-                      )}
-                      {step.status === "in-progress" && (
-                        <div className="flex items-center gap-1.5 text-amber-500 bg-amber-500/10 px-2 py-1 rounded-md border border-amber-500/20">
-                          <CircleDashed className="w-3.5 h-3.5 animate-spin" />
-                          <span className="text-[10px] font-black uppercase tracking-widest">
-                            Doing
-                          </span>
-                        </div>
-                      )}
-                      {step.status === "pending" && (
-                        <div className="flex items-center gap-1.5 text-muted-foreground bg-secondary/50 px-2 py-1 rounded-md border border-border">
-                          <Clock className="w-3.5 h-3.5" />
-                          <span className="text-[10px] font-black uppercase tracking-widest">
-                            Wait
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </h3>
-                  {step.type !== "idea" &&
-                    step.type !== "script" &&
-                    !isExpanded &&
-                    output && (
-                      <p className="text-xs text-muted-foreground line-clamp-1 mt-1 font-medium tracking-tight">
-                        {output.substring(0, 150)}...
-                      </p>
-                    )}
-                </div>
-              </div>
+              <ListTodo className="w-3.5 h-3.5 mr-1.5" />
+              查看 System Prompt
+            </Button>
 
-              <div className="flex items-center gap-3 shrink-0">
-                {step.status === "completed" && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleResetClick();
-                    }}
-                    className="h-9 w-9 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                  </Button>
-                )}
-                {step.type !== "idea" && step.type !== "script" && (
-                  <div
-                    className={cn(
-                      "p-1.5 rounded-xl bg-black/20 border border-white/10 transition-all duration-500",
-                      isExpanded
-                        ? "rotate-0 bg-primary/10 border-primary/20 text-primary"
-                        : "-rotate-90"
-                    )}
-                  >
-                    <ChevronDown className="w-4 h-4" />
-                  </div>
-                )}
+            {step.status !== "pending" && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleResetClick}
+                className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-6 space-y-8">
+          {/* 1. 创意输入区域 */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+              输入创意
+            </div>
+            <Textarea
+              value={input}
+              onChange={(e) => handleInputChange(e.target.value)}
+              placeholder="例如：一个年轻人在下雨的城市街道上奔跑，突然回头看到了..."
+              className="min-h-[120px] bg-black/20 border-white/10 focus:border-primary/50 focus:ring-primary/20 placeholder:text-white/20 resize-none rounded-xl p-5 text-sm leading-relaxed font-medium transition-all shadow-inner text-white"
+            />
+          </div>
+
+          {/* 2. 风格选择区域 */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                选择风格
               </div>
             </div>
-          </CollapsibleTrigger>
 
-          <CollapsibleContent>
-            <CardContent
+            <div className="bg-black/20 border border-white/5 rounded-2xl p-4">
+              <Tabs defaultValue={STYLE_CATEGORIES[0].name} className="w-full">
+                <div className="relative mb-4">
+                  <TabsList className="w-full h-9 bg-black/30 border border-white/5 p-1 rounded-xl flex justify-start overflow-x-auto no-scrollbar">
+                    {STYLE_CATEGORIES.map((category) => (
+                      <TabsTrigger
+                        key={category.name}
+                        value={category.name}
+                        className="px-4 py-1.5 text-[10px] font-black rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300 whitespace-nowrap"
+                      >
+                        {category.name}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </div>
+
+                {STYLE_CATEGORIES.map((category) => (
+                  <TabsContent
+                    key={category.name}
+                    value={category.name}
+                    className="mt-0 focus-visible:outline-none focus-visible:ring-0"
+                  >
+                    <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
+                      {category.styles.map((style) => (
+                        <button
+                          key={style.id}
+                          onClick={() => setSelectedStyle(style.id)}
+                          className={cn(
+                            "px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all duration-300 border uppercase tracking-tighter flex items-center gap-2",
+                            selectedStyle === style.id
+                              ? "bg-primary/20 text-primary border-primary/50 shadow-lg shadow-primary/5 scale-[1.02]"
+                              : "bg-white/5 text-white/40 border-white/5 hover:border-white/10 hover:text-white/60"
+                          )}
+                        >
+                          {style.label.includes(" ") ? (
+                            <>
+                              <span className="text-xs">
+                                {style.label.split(" ")[0]}
+                              </span>
+                              <span>
+                                {style.label.split(" ").slice(1).join(" ")}
+                              </span>
+                            </>
+                          ) : (
+                            style.label
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </TabsContent>
+                ))}
+              </Tabs>
+
+              {/* 风格描述信息展示 */}
+              {selectedStyleConfig && (
+                <div className="mt-4 px-4 py-3 bg-primary/5 border border-primary/10 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-1">
+                  <div className="p-1.5 bg-primary/10 rounded-full mt-0.5">
+                    <Lightbulb className="w-3.5 h-3.5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-bold text-primary">
+                        {selectedStyleConfig.label
+                          .split(" ")
+                          .slice(1)
+                          .join(" ")}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground bg-black/5 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                        Style Preview
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-foreground/70 leading-relaxed">
+                      {selectedStyleConfig.description}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 3. 生成按钮区域 */}
+          <div className="flex justify-end pt-4 border-t border-white/5">
+            <Button
+              onClick={handleCopyPrompt}
+              disabled={!input.trim()}
               className={cn(
-                "p-6 pt-0 animate-in fade-in slide-in-from-top-4 duration-500",
-                step.type === "script" ? "space-y-4" : "space-y-8"
+                "h-12 px-8 rounded-xl text-sm font-black tracking-widest transition-all duration-300 shadow-lg uppercase",
+                input.trim()
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-[1.02] hover:shadow-primary/20"
+                  : "bg-muted text-muted-foreground"
               )}
             >
-              {/* 第一步或第三步显示配置部分 */}
-              {step.type !== "script" && (
-                <div className="space-y-6">
-                  {step.type !== "idea" && (
-                    <div className="flex items-center justify-between border-b border-border/50 pb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-primary/10 text-primary border border-primary/20">
-                          <Edit2 className="w-4 h-4" />
-                        </div>
-                        <div className="space-y-0.5">
-                          <span className="text-[10px] font-black text-primary/70 uppercase tracking-[0.3em]">
-                            模块-01
-                          </span>
-                          <p className="text-xs font-bold text-foreground">
-                            输入参数
-                          </p>
-                        </div>
-                      </div>
-                      {prevStepOutput && !input && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleInputChange(prevStepOutput)}
-                          className="h-9 text-[11px] font-bold text-primary border-primary/30 hover:bg-primary/10 rounded-xl px-4 transition-all shadow-lg shadow-primary/5"
-                        >
-                          <ArrowLeftRight className="w-3.5 h-3.5 mr-2" />
-                          连接上一步输出
-                        </Button>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="relative group/input">
-                    <Textarea
-                      value={input}
-                      onChange={(e) => handleInputChange(e.target.value)}
-                      placeholder={
-                        stepNumber === 1
-                          ? "请输入你的想法、剧本主题或原始素材内容..."
-                          : "请输入内容或在此基础上进行调整..."
-                      }
-                      className={cn(
-                        "bg-black/20 border-white/10 focus:border-primary/50 focus:ring-primary/20 placeholder:text-white/30 resize-none rounded-2xl p-6 text-sm leading-relaxed font-medium transition-all shadow-inner text-white",
-                        step.type === "idea" ? "min-h-[100px]" : "min-h-[160px]"
-                      )}
-                    />
-                  </div>
-
-                  {/* 动作栏：生成提示词 */}
-                  <div className="flex justify-end pt-2">
-                    <Button
-                      onClick={handleCopyPrompt}
-                      disabled={
-                        step.type === "idea"
-                          ? !input
-                          : !input && !prevStepOutput
-                      }
-                      className={cn(
-                        "h-10 px-6 rounded-xl text-xs font-black tracking-widest transition-all duration-300 shadow-lg uppercase",
-                        input || (step.type !== "idea" && prevStepOutput)
-                          ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105"
-                          : "bg-muted text-muted-foreground"
-                      )}
-                    >
-                      {isCopied ? (
-                        <>
-                          <Check className="w-4 h-4 mr-2" />
-                          已复制
-                        </>
-                      ) : (
-                        <>
-                          <Wand2 className="w-4 h-4 mr-2" />
-                          生成 AI 提示词
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
+              {isCopied ? (
+                <>
+                  <Check className="w-5 h-5 mr-2" />
+                  已生成提示词
+                </>
+              ) : (
+                <>
+                  <Wand2 className="w-5 h-5 mr-2" />
+                  生成 AI 提示词
+                </>
               )}
+            </Button>
+          </div>
 
-              {/* 第一步或第三步显示 AI 交互部分 */}
-              {step.type === "idea" && (
-                <div className="space-y-6">
-                  {step.type !== "idea" ? (
-                    <>
-                      <div className="flex items-center gap-3 border-b border-border/50 pb-4">
-                        <div className="p-2 rounded-lg bg-accent/10 text-accent border border-accent/20">
-                          <Bot className="w-4 h-4" />
-                        </div>
-                        <div className="space-y-0.5">
-                          <span className="text-[10px] font-black text-primary/70 uppercase tracking-[0.3em]">
-                            模块-02
-                          </span>
-                          <p className="text-xs font-bold text-foreground">
-                            AI 执行输出
-                          </p>
-                        </div>
-                      </div>
+          {/* 4. 分镜输出区域 */}
+          <div className="space-y-4 pt-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                分镜结果
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsStoryboardRawMode(!isStoryboardRawMode)}
+                className={cn(
+                  "h-8 px-3 text-[10px] font-bold uppercase tracking-wider transition-all border",
+                  isStoryboardRawMode
+                    ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                    : "text-muted-foreground border-transparent hover:bg-white/5 hover:text-foreground"
+                )}
+              >
+                {isStoryboardRawMode ? (
+                  <>
+                    <LayoutGrid className="w-3.5 h-3.5 mr-2" />
+                    预览视图
+                  </>
+                ) : (
+                  <>
+                    <FileCode className="w-3.5 h-3.5 mr-2" />
+                    源码编辑
+                  </>
+                )}
+              </Button>
+            </div>
 
-                      <Tabs defaultValue="edit" className="w-full">
-                        <div className="flex items-center justify-between mb-4">
-                          <TabsList className="bg-black/20 border border-white/10 h-11 p-1 rounded-xl">
-                            <TabsTrigger
-                              value="edit"
-                              className="text-xs font-black h-9 px-6 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm decoration-transparent uppercase tracking-wider transition-all"
-                            >
-                              <Edit2 className="w-4 h-4 mr-2" />
-                              编辑器
-                            </TabsTrigger>
-                            <TabsTrigger
-                              value="preview"
-                              className="text-xs font-black h-9 px-6 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm uppercase tracking-wider text-white/40 data-[state=active]:text-white"
-                              disabled={!output}
-                            >
-                              <Eye className="w-4 h-4 mr-2" />
-                              预览
-                            </TabsTrigger>
-                          </TabsList>
-
-                          <div className="flex items-center gap-2.5 text-[10px] text-muted-foreground font-black italic tracking-[0.2em] uppercase">
-                            <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--color-primary),0.5)]" />
-                            实时 AI 同步中
-                          </div>
-                        </div>
-
-                        <TabsContent
-                          value="edit"
-                          className="mt-0 ring-offset-background outline-none"
-                        >
-                          <Textarea
-                            value={output}
-                            onChange={(e) => handleOutputChange(e.target.value)}
-                            placeholder="在此粘贴 AI 的响应内容..."
-                            className="min-h-[260px] bg-black/20 border-white/10 focus:border-accent/50 focus:ring-accent/20 placeholder:text-white/30 resize-none font-mono rounded-2xl p-8 text-sm leading-relaxed text-white"
-                          />
-                        </TabsContent>
-
-                        <TabsContent value="preview" className="mt-0">
-                          <div className="w-full min-h-[260px] p-10 bg-white rounded-2xl border border-border shadow-inner overflow-hidden relative">
-                            <div className="absolute top-0 right-0 p-4 opacity-5">
-                              <Bot className="w-40 h-40" />
-                            </div>
-                            <div className="prose prose-sm max-w-none relative z-10">
-                              <Markdown remarkPlugins={[remarkGfm]}>
-                                {output}
-                              </Markdown>
-                            </div>
-                          </div>
-                        </TabsContent>
-                      </Tabs>
-                    </>
-                  ) : (
-                    <div className="space-y-3 pt-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-primary/50" />
-                          AI 响应数据
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={async () => {
-                            try {
-                              const text = await navigator.clipboard.readText();
-                              if (text) handleOutputChange(text);
-                            } catch (err) {
-                              console.error("Paste failed", err);
-                            }
-                          }}
-                          className="h-6 text-[10px] font-bold text-primary hover:text-primary hover:bg-primary/10 px-3 rounded-lg transition-all"
-                        >
-                          <ClipboardPaste className="w-3 h-3 mr-1.5" />
-                          {output ? "覆盖粘贴" : "粘贴内容"}
-                        </Button>
-                      </div>
-
-                      <div className="h-24 bg-black/20 border border-white/5 rounded-lg p-3 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 hover:scrollbar-thumb-white/20">
-                        {output ? (
-                          <p className="text-xs font-mono text-white/70 whitespace-pre-wrap leading-relaxed break-all">
-                            {output}
-                          </p>
-                        ) : (
-                          <p className="text-xs text-white/20 italic select-none flex items-center h-full justify-center">
-                            等待粘贴 AI 响应内容...
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* 第二步专属布局 */}
-              {step.type === "script" && (
-                <div className="space-y-4 pt-2">
-                  {/* 风格选择标签 - 使用 Tab 切换 */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-[10px] font-black text-primary/70 uppercase tracking-[0.2em]">
-                        <div className="w-1 h-1 rounded-full bg-primary" />
-                        视觉风格定制
-                      </div>
-                      <div className="text-[9px] font-bold text-white/20 uppercase tracking-tighter bg-white/5 px-2 py-0.5 rounded-md">
-                        {STYLE_CATEGORIES.length} 个分类
-                      </div>
-                    </div>
-
-                    <Tabs
-                      defaultValue={STYLE_CATEGORIES[0].name}
-                      className="w-full"
-                    >
-                      <div className="relative mb-4">
-                        <TabsList className="w-full h-9 bg-black/40 border border-white/5 p-1 rounded-xl flex justify-start overflow-x-auto no-scrollbar mask-fade-right">
-                          {STYLE_CATEGORIES.map((category) => (
-                            <TabsTrigger
-                              key={category.name}
-                              value={category.name}
-                              className="px-4 py-1.5 text-[10px] font-black rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300 whitespace-nowrap"
-                            >
-                              {category.name}
-                            </TabsTrigger>
-                          ))}
-                        </TabsList>
-                      </div>
-
-                      {STYLE_CATEGORIES.map((category) => (
-                        <TabsContent
-                          key={category.name}
-                          value={category.name}
-                          className="mt-0 focus-visible:outline-none focus-visible:ring-0"
-                        >
-                          <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
-                            {category.styles.map((style) => (
-                              <button
-                                key={style.id}
-                                onClick={() => setSelectedStyle(style.id)}
-                                className={cn(
-                                  "px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all duration-300 border uppercase tracking-tighter flex items-center gap-2",
-                                  selectedStyle === style.id
-                                    ? "bg-primary/20 text-primary border-primary/50 shadow-lg shadow-primary/5 scale-[1.02]"
-                                    : "bg-black/20 text-white/30 border-white/5 hover:border-white/10 hover:text-white/60"
-                                )}
-                              >
-                                {style.label.includes(" ") ? (
-                                  <>
-                                    <span className="text-xs">
-                                      {style.label.split(" ")[0]}
-                                    </span>
-                                    <span>
-                                      {style.label
-                                        .split(" ")
-                                        .slice(1)
-                                        .join(" ")}
-                                    </span>
-                                  </>
-                                ) : (
-                                  style.label
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        </TabsContent>
-                      ))}
-                    </Tabs>
-                    {/* 风格描述信息展示 */}
-                    {selectedStyleConfig && (
-                      <div className="mt-3 px-4 py-3 bg-primary/5 border border-primary/10 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-1">
-                        <div className="p-1.5 bg-primary/10 rounded-full mt-0.5">
-                          <Lightbulb className="w-3.5 h-3.5 text-primary" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-bold text-primary">
-                              {selectedStyleConfig.label
-                                .split(" ")
-                                .slice(1)
-                                .join(" ")}
-                            </span>
-                            <span className="text-[10px] text-muted-foreground bg-black/5 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                              Style Preview
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-foreground/70 leading-relaxed">
-                            {selectedStyleConfig.description}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 动作栏：视图切换 & 一键生成 */}
-                  <div className="flex justify-between items-center pt-2">
-                    {/* 左侧：视图切换 */}
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          setIsStoryboardRawMode(!isStoryboardRawMode)
-                        }
-                        className={cn(
-                          "h-9 px-3 text-xs font-bold uppercase tracking-wider transition-all border",
-                          isStoryboardRawMode
-                            ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
-                            : "text-muted-foreground border-transparent hover:bg-white/5 hover:text-foreground"
-                        )}
-                      >
-                        {isStoryboardRawMode ? (
-                          <>
-                            <LayoutGrid className="w-3.5 h-3.5 mr-2" />
-                            预览视图
-                          </>
-                        ) : (
-                          <>
-                            <FileCode className="w-3.5 h-3.5 mr-2" />
-                            源码编辑
-                          </>
-                        )}
-                      </Button>
-                    </div>
-
-                    {/* 右侧：一键生成 */}
-                    <Button
-                      onClick={handleCopyPrompt}
-                      className={cn(
-                        "h-10 px-6 rounded-xl text-xs font-black tracking-widest transition-all duration-300 shadow-lg uppercase",
-                        prevStepOutput
-                          ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105"
-                          : "bg-muted text-muted-foreground"
-                      )}
-                    >
-                      {isCopied ? (
-                        <Check className="w-4 h-4 mr-2" />
-                      ) : (
-                        <Wand2 className="w-4 h-4 mr-2" />
-                      )}
-                      {isCopied ? "已生成" : "一键生成提示词"}
-                    </Button>
-                  </div>
-
-                  <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-                    <StoryboardEditor
-                      taskId={taskId}
-                      output={output || prevStepOutput}
-                      storyboards={storyboards}
-                      onUpdateStoryboards={onUpdateStoryboards}
-                      isRawMode={isStoryboardRawMode}
-                      setIsRawMode={setIsStoryboardRawMode}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* 第三步专属布局 (Video Generation) */}
-              {step.type === "storyboard" && (
-                <div className="pt-2">
-                  <VideoGenerationView
-                    storyboards={storyboards}
-                    onUpdateStoryboards={onUpdateStoryboards}
-                  />
-                </div>
-              )}
-
-              {/* 操作按钮部分 */}
-              {output && step.status !== "completed" && (
-                <div className="pt-8 transition-all animate-in slide-in-from-bottom-4">
-                  <Button
-                    onClick={handleMarkComplete}
-                    className="w-full h-16 rounded-2xl text-[16px] font-black shadow-xl shadow-primary/20 bg-gradient-to-r from-primary via-primary to-accent hover:shadow-primary/30 transition-all duration-500 hover:scale-[1.01] active:scale-[0.99] gap-4 uppercase border-t border-white/20"
-                  >
-                    <Check className="w-6 h-6 border-2 border-primary-foreground rounded-full p-0.5" />
-                    存入工作流
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>
+            <StoryboardEditor
+              taskId={taskId}
+              output={output}
+              storyboards={storyboards}
+              onUpdateStoryboards={onUpdateStoryboards}
+              isRawMode={isStoryboardRawMode}
+              setIsRawMode={setIsStoryboardRawMode}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       <PromptSidebar
         isOpen={isPromptSidebarOpen}

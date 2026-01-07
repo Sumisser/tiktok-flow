@@ -1,6 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { useTasks } from "../../store/hooks";
-import WorkflowCarousel from "../../components/WorkflowCarousel";
+
 import WorkflowStep from "../../components/WorkflowStep";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -105,12 +105,12 @@ export default function Workflow() {
     }
   };
 
-  const completedCount = task.steps.filter(
-    (s) => s.status === "completed"
-  ).length;
-  const progressPercent = Math.round(
-    (completedCount / task.steps.length) * 100
-  );
+  // const completedCount = task.steps.filter(
+  //   (s) => s.status === "completed"
+  // ).length;
+  // const progressPercent = Math.round(
+  //   (completedCount / task.steps.length) * 100
+  // );
 
   return (
     <div className="min-h-screen pb-32 relative text-white">
@@ -128,7 +128,7 @@ export default function Workflow() {
         </>
       )}
       {/* 头部 */}
-      <header className="sticky top-0 z-50 glass border-b border-primary/20 py-3 px-6 mb-12 overflow-hidden">
+      <header className="fixed top-0 left-0 right-0 border-b border-primary/20 py-3 px-6  overflow-hidden z-20 bg-background/80 backdrop-blur-md">
         {/* 头部装饰背景 */}
         <div className="absolute top-0 left-1/4 w-64 h-full bg-primary/10 blur-[100px] -z-10 animate-pulse" />
 
@@ -252,44 +252,31 @@ export default function Workflow() {
               </div>
             )}
           </div>
-
-          <div className="hidden xl:flex flex-col items-end gap-2 min-w-[200px]">
-            <div className="flex justify-between w-full text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 px-1">
-              <span>流水线状态</span>
-              <span className="text-primary font-black animate-pulse">
-                {progressPercent}% 同步中
-              </span>
-            </div>
-            <div className="w-full h-2 bg-secondary rounded-full overflow-hidden border border-border shadow-inner p-0.5">
-              <div
-                className="h-full bg-gradient-to-r from-primary via-primary to-accent rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(var(--color-primary),0.2)]"
-                style={{
-                  width: `${progressPercent}%`,
-                }}
-              />
-            </div>
-          </div>
         </div>
       </header>
 
       {/* 主要内容 */}
-      <main className="w-full overflow-x-hidden">
-        <WorkflowCarousel steps={task.steps}>
-          {task.steps.map((step, index) => (
-            <WorkflowStep
-              key={step.id}
-              taskId={task.id}
-              step={step}
-              stepNumber={index + 1}
-              prevStepOutput={index > 0 ? task.steps[index - 1].output : ""}
-              onUpdate={(updates) => updateStep(task.id, step.id, updates)}
-              storyboards={task.storyboards || []}
-              onUpdateStoryboards={(storyboards) =>
-                updateStoryboards(task.id, storyboards)
-              }
-            />
-          ))}
-        </WorkflowCarousel>
+      <main className="w-full overflow-x-hidden pb-12 mt-36">
+        <div className="w-full px-4 md:px-12 lg:px-24">
+          <div className="max-w-7xl mx-auto space-y-12">
+            {task.steps.length > 0 && (
+              <WorkflowStep
+                key={task.steps[0].id}
+                taskId={task.id}
+                step={task.steps[0]}
+                stepNumber={1}
+                prevStepOutput="" // Single step workflow doesn't need prev output
+                onUpdate={(updates) =>
+                  updateStep(task.id, task.steps[0].id, updates)
+                }
+                storyboards={task.storyboards || []}
+                onUpdateStoryboards={(storyboards) =>
+                  updateStoryboards(task.id, storyboards)
+                }
+              />
+            )}
+          </div>
+        </div>
       </main>
     </div>
   );

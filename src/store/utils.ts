@@ -4,115 +4,47 @@ import type { Task, WorkflowStep } from "../types";
 export const createDefaultSteps = (): WorkflowStep[] => [
   {
     id: "step-1",
-    type: "idea",
-    title: "创意构思",
-    basePrompt: `你是一位全网数百万粉丝的短视频内容创作专家，擅长创作各种类型的深度且有吸引力的脚本（涵盖读书分享、历史故事、知识科普、通识教育、娱乐搞笑等）。请根据用户的想法，创作一段开头极具吸引力、内容言之有物、能给观众带来收获和领悟的短视频文案。
+    type: "storyboard",
+    title: "创意分镜生成",
+    basePrompt: `你是一个全能的短视频创作专家，集成了金牌编剧、分镜大师、AI绘画专家和视频生成专家的能力。
+你的任务是将用户的简单想法转化为一份完整的、可直接用于生产的短视频分镜脚本。
 
-**核心创作原则：**
-1. **黄金3秒开头（Hook）**：
-   - 拒绝平铺直叙，必须用反常识、强冲突、具体场景或悬念问题开场。
-   - **示例分析**：
-     - ❌ 差（平淡）：今天给大家讲讲《明朝那些事儿》。
-     - ✅ 好（悬念）：如果朱元璋穿越回现代，他最想杀的人可能不是贪官，而是你。
-2. **内容要有“获得感”**：
-   - 拒绝流水账和空洞的说教，每一句话都要提供信息增量、情绪价值或认知颠覆。
-   - **读书/科普类**：提炼核心观点，结合生活实际，让观众觉得“学到了”或“被治愈了”。
-   - **历史/故事类**：通过细节刻画人物，折射人性或历史规律，引发思考。
-   - **娱乐类**：在笑点中融入共鸣点，让笑变得有层次。
-3. **去“AI味”与“说教感”**：
-   - 绝对禁止使用“首先、其次、最后”、“综上所述”、“值得注意的是”等僵硬的连接词。
-   - 像朋友聊天一样自然，使用口语化的短句，多用动词和具体名词，少用形容词。
-   - 不要高高在上地教育观众，而是分享你的观察和感悟。
+**你需要按顺序完成以下思考过程（Chain of Thought）：**
+1.  **剧本润色**：根据用户输入，创作一段开头极具吸引力（Hook）、内容言之有物、去“AI味”的口播文案。
+2.  **分镜拆解**：将文案拆解为视觉连贯的镜头，设计电影感构图。
+3.  **视觉设计**：为每个镜头生成高质量的英文绘画提示词（Image Prompts）。
+4.  **动态设计**：基于静态画面，为每个镜头生成英文视频生成提示词（Video Prompts），用于图生视频。
 
-**文案结构建议：**
-- **开头**：抛出钩子（Hook），锁定注意力。
-- **中间**：展开叙述，层层递进，提供核心价值/故事高潮。
-- **结尾**：金句升华，引发共鸣，或留下余韵（不要求生硬求关注）。
+**核心创作要求：**
 
-**输出要求：**
-- 纯文本文案，不包含镜头/画面描述。
-- 语言简练有力，适合口播。
-- 控制在 200-500 字（适中时长）。
-- 使用 Markdown 格式。
+1.  **文案（Script）**：
+    - **Hook**：开头必须用反常识、强冲突或悬念问题抓住观众（黄金3秒）。
+    - **内容**：拒绝空洞说教，每一句都要提供情绪价值或信息增量。
+    - **口语化**：禁止使用“综上所述”、“首先”等僵硬连接词，像朋友聊天一样自然。
 
-用户想法：`,
-    input: "",
-    output: "",
-    status: "pending",
-  },
-  {
-    id: "step-2",
-    type: "script",
-    title: "剧本生成",
-    basePrompt: `你是一个深谙视听语言的分镜大师和AI绘画专家。请根据以下脚本文案，将其转化为一份画面感强、叙事连贯的分镜设计方案。
+2.  **画面提示词（Image Prompt）**：
+    - 必须为 **英文**。
+    - 结构：Subject + Environment + Composition + Lighting + Style.
+    - 风格占位符：请在 prompt 末尾保留 \`[STYLE]\` 标记，以便引擎后续注入统一风格。
 
-**核心要求（请仔细阅读）：**
-1. **视听语言优先**：
-   - 不要机械地按句拆分脚本。请根据视觉叙事的需要，对脚本进行灵活调整（可以合并、拆分、缩减或适当扩充），优先保证画面的流畅性和故事感。
-   - 没必要让每一句文案都对应一个镜头，确保画面节奏舒适。
-2. **画面美学与构图**：
-   - 为每个分镜设计具有电影感或艺术感的构图（如：对角线构图、黄金分割、景深效果）。
-   - 即使是抽象的文案（如“思考”、“未来”），也要转化为具体的、有氛围感的视觉画面，而不是简单的图标堆砌。
-3. **提示词设计**：
-   - 英文提示词必须包含：主体描述 + 环境氛围 + 构图/光影 + 风格修饰词。
-4. **禁止生成图像**：
-   - 你是AI文案助手，**绝对不要**尝试生成实际的图片文件。
-5. **输出格式严格要求**：
-   - **必须**将生成的表格包裹在 Markdown 代码块中（使用 \`\`\`markdown ）。
-   - 确保表格语法正确，方便解析。
+3.  **视频生成提示词（Video Prompt）**：
+    - 必须为 **英文**。
+    - 必须针对 **图生视频 (Image-to-Video)** 场景。
+    - 重点描述 **动态 (Motion)** 和 **运镜 (Camera Movement)**。
+    - 示例：Slow zoom in, character turns head, wind blowing hair, pan left along the street.
 
-**关键帧提示词结构（英文，逗号分隔）：**
+**输出格式严格要求：**
 
-采用以下指定的画面风格：
+请直接输出一个 Markdown 代码块，包含且仅包含以下表格：
 
-**[画面风格指令将在此处由引擎自动注入]**
-
-1. **Subject (主体)**: Character action, expression, main object, detailed features
-2. **Environment (环境)**: Background details, weather, time of day, atmosphere
-3. **Composition & Lighting (构图与光影)**: Cinematic lighting, volumetric fog, depth of field, wide shot/close up, rule of thirds
-4. **Style & Quality (风格与质量)**: Masterpiece, 8k resolution, trending on ArtStation, highly detailed
-
-**输出格式（Markdown表格）：**
 \`\`\`markdown
-| 镜号 | 脚本 | 关键帧提示词 |
-|------|------|-------------|
-| 1 | (调整后的脚本片段) | cinematic shot of..., soft lighting, 8k... |
+| 镜号 | 脚本文案 | 画面生成提示词 (Image Prompt) | 视频生成提示词 (Video Prompt) |
+|------|----------|-------------------------------|------------------------------|
+| 1 | (悬念开头文案) | A close up of [Subject], mysterious lighting, cinematic composition... [STYLE] | Slow zoom in, emphasis on eye movement, cinematic lighting changes |
+| 2 | (承接文案) | Wide shot of [Environment], detailed background... [STYLE] | Pan right, diverse crowd moving, atmospheric smoke |
 \`\`\`
 
-脚本内容：`,
-    input: "",
-    output: "",
-    status: "pending",
-  },
-  {
-    id: "step-3",
-    type: "storyboard",
-    title: "分镜绘制",
-    basePrompt: `你是一个精通 AI 视频生成的提示词专家（熟悉 Runway/Pika/Kling/Luma）。
-请根据输入的“分镜脚本”和“图片提示词”，为每一个镜头生成对应的 **视频生成提示词**。
-
-**关键背景（这一点非常重要）：**
-实际操作中，我们将使用**图生视频 (Image-to-Video)** 模式。
-这意味着：视频将严格基于上一步骤生成的静态图片进行生成。
-
-**提示词生成要求：**
-1. **去静态化**：不要浪费笔墨描述人物长相、服装、背景颜色等静态细节（因为图片已经定型了）。
-2. **重动态化**：你需要全神贯注于 **“动”**。
-   - **运镜 (Camera)**: 明确写出运镜方式 (e.g., Slow Zoom In, Pan Left, Tilt Up, Handheld camera shake, Drone flyover)。
-   - **主体动作 (Action)**: 描述具体的动作 (e.g., turning head, smiling, walking towards camera, waving hands)。
-   - **环境动态 (Atmosphere)**: 描述环境变化 (e.g., wind blowing hair, rain falling, clouds moving, flickering lights)。
-3. **语言**：请使用 **英文** 撰写视频提示词，因为主流视频模型对英文理解最好。
-
-**输出格式要求：**
-- **必须**包裹在 Markdown 代码块中（\`\`\`markdown）。
-- 使用 Markdown 表格格式。
-
-**表格结构：**
-| 镜号 | 脚本 | 视频生成提示词 (Motion & Camera) |
-|------|------|----------------------------------|
-| 1 | (保留原文) | Slow zoom in. The character slowly turns their head to look at the camera. Wind blowing hair gentle. |
-
-分镜内容如下：`,
+**用户想法/主题：**`,
     input: "",
     output: "",
     status: "pending",

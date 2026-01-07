@@ -46,6 +46,47 @@ export async function uploadStoryboardImage(
 }
 
 /**
+ * 上传视频到 Supabase Storage
+ * @param file - 视频文件
+ * @param taskId - 任务ID
+ * @param shotNumber - 镜号
+ * @returns 视频的公开访问 URL
+ */
+export async function uploadStoryboardVideo(
+  file: File,
+  taskId: string,
+  shotNumber: number
+): Promise<string> {
+  try {
+    const timestamp = Date.now();
+    const fileExt = file.name.split(".").pop();
+    // 使用 video 前缀以示区别，或者直接混用也可以，这里加个 video- 前缀
+    const fileName = `${taskId}/video-${shotNumber}-${timestamp}.${fileExt}`;
+
+    const { data, error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(fileName, file, {
+        cacheControl: "3600",
+        upsert: true,
+      });
+
+    if (error) {
+      console.error("Error uploading video:", error);
+      throw error;
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from(BUCKET_NAME).getPublicUrl(data.path);
+
+    return publicUrl;
+  } catch (error) {
+    console.error("Failed to upload storyboard video:", error);
+    throw error;
+  }
+}
+
+/**
  * 删除 Supabase Storage 中的图片
  * @param imageUrl - 图片的公开访问 URL
  */
