@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { GoogleGenAI } from "@google/genai";
+import { ai } from "@/lib/gemini";
+import { toast } from "sonner";
 import type {
   WorkflowStep as WorkflowStepType,
   StoryboardItem,
@@ -250,12 +251,8 @@ export default function WorkflowStep({
     // 2. 调用 AI 模型
     setIsGenerating(true);
     try {
-      // 尝试从环境变量获取 Key，如果没有则尝试使用空配置（用户示例用法）
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      const ai = new GoogleGenAI({ apiKey });
-
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-2.0-flash-exp",
         contents: getFullPrompt(),
       });
 
