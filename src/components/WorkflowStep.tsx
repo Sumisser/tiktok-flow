@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { GoogleGenAI } from "@google/genai";
 import type {
   WorkflowStep as WorkflowStepType,
   StoryboardItem,
@@ -54,6 +55,7 @@ export default function WorkflowStep({
   const [isPromptSidebarOpen, setIsPromptSidebarOpen] = useState(false);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [isStoryboardRawMode, setIsStoryboardRawMode] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Sync state
   useEffect(() => {
@@ -233,15 +235,44 @@ export default function WorkflowStep({
     return finalBasePrompt.trim();
   };
 
-  const handleCopyPrompt = async () => {
+  const handleGenerate = async () => {
     if (!input.trim()) return;
+
+    // 1. 复制提示词
     try {
       await navigator.clipboard.writeText(getFullPrompt());
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
-      onUpdate({ status: "in-progress" });
     } catch (err) {
       console.error("复制失败:", err);
+    }
+
+    // 2. 调用 AI 模型
+    setIsGenerating(true);
+    try {
+      // 尝试从环境变量获取 Key，如果没有则尝试使用空配置（用户示例用法）
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      const ai = new GoogleGenAI({ apiKey });
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: getFullPrompt(),
+      });
+
+      // 根据用户提供的示例，直接访问 result.text
+      // 注意：这里假设 SDK 返回的结构符合用户提供的示例
+      // 如果 SDK 返回的是 standard structure，可能需要 response.response.text()
+      // 但根据用户提供的 import { GoogleGenAI } from "@google/genai" (新 SDK)，直接访问 .text 是可能的
+      const text = response.text;
+
+      if (text) {
+        setOutput(text);
+        onUpdate({ output: text, status: "in-progress" });
+      }
+    } catch (error) {
+      console.error("AI 生成失败:", error);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -411,26 +442,36 @@ export default function WorkflowStep({
           </div>
 
           {/* 3. 生成按钮区域 */}
-          <div className="flex justify-end pt-4 border-t border-white/5">
+          <div className="pt-6 border-t border-white/5 w-full">
             <Button
-              onClick={handleCopyPrompt}
-              disabled={!input.trim()}
+              onClick={handleGenerate}
+              disabled={!input.trim() || isGenerating}
               className={cn(
-                "h-12 px-8 rounded-xl text-sm font-black tracking-widest transition-all duration-300 shadow-lg uppercase",
-                input.trim()
-                  ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-[1.02] hover:shadow-primary/20"
+                "w-full h-14 rounded-xl text-sm font-black tracking-widest transition-all duration-300 shadow-lg uppercase relative overflow-hidden group",
+                input.trim() && !isGenerating
+                  ? "bg-gradient-to-r from-primary to-violet-600 text-white hover:scale-[1.01] hover:shadow-primary/25 border border-white/10"
                   : "bg-muted text-muted-foreground"
               )}
             >
-              {isCopied ? (
+              <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+              {isGenerating ? (
                 <>
-                  <Check className="w-5 h-5 mr-2" />
-                  已生成提示词
+                  <div className="flex items-center gap-3">
+                    <span className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                    </span>
+                    <span>正在进行 AI 创意构思...</span>
+                  </div>
+                </>
+              ) : isCopied ? (
+                <>
+                  <Check className="w-5 h-5 mr-3" />
+                  已复制提示词 (即将开始)
                 </>
               ) : (
                 <>
-                  <Wand2 className="w-5 h-5 mr-2" />
-                  生成 AI 提示词
+                  <Wand2 className="w-5 h-5 mr-3" />✨ AI 一键生成影片分镜
                 </>
               )}
             </Button>
@@ -468,14 +509,35 @@ export default function WorkflowStep({
               </Button>
             </div>
 
-            <StoryboardEditor
-              taskId={taskId}
-              output={output}
-              storyboards={storyboards}
-              onUpdateStoryboards={onUpdateStoryboards}
-              isRawMode={isStoryboardRawMode}
-              setIsRawMode={setIsStoryboardRawMode}
-            />
+            {isGenerating ? (
+              <div className="h-[400px] w-full rounded-xl border border-white/5 bg-black/20 flex flex-col items-center justify-center gap-6 animate-pulse relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-transparent skew-y-12 translate-x-[-100%] animate-[shimmer_2s_infinite]" />
+
+                <div className="relative z-10 p-6 rounded-full bg-primary/10 ring-1 ring-primary/20">
+                  <Wand2 className="w-10 h-10 text-primary animate-[spin_3s_linear_infinite]" />
+                </div>
+
+                <div className="space-y-2 text-center relative z-10">
+                  <h3 className="text-base font-bold text-white tracking-wide">
+                    正在创作分镜脚本
+                  </h3>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-xs text-white/40">分析场景描述...</p>
+                    <p className="text-xs text-white/40">构思画面构图...</p>
+                    <p className="text-xs text-white/40">生成标准分镜...</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <StoryboardEditor
+                taskId={taskId}
+                output={output}
+                storyboards={storyboards}
+                onUpdateStoryboards={onUpdateStoryboards}
+                isRawMode={isStoryboardRawMode}
+                setIsRawMode={setIsStoryboardRawMode}
+              />
+            )}
           </div>
         </CardContent>
       </Card>
