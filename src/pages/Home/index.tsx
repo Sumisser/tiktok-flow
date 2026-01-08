@@ -221,13 +221,13 @@ export default function Home() {
           )}
           {/* Unsplash 归属信息 */}
           {wallpaperAttribution && (
-            <div className="flex items-center gap-1.5 text-[10px] text-white/40 animate-in fade-in duration-1000">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-full text-[10px] text-white/80 drop-shadow-md animate-in fade-in duration-1000">
               <span>Photo by</span>
               <a
                 href={wallpaperAttribution.photographerUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium hover:text-white/80 transition-colors"
+                className="font-medium hover:text-white transition-colors"
               >
                 {wallpaperAttribution.photographerName}
               </a>
@@ -236,7 +236,7 @@ export default function Home() {
                 href={wallpaperAttribution.unsplashUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium hover:text-white/80 transition-colors"
+                className="font-medium hover:text-white transition-colors"
               >
                 Unsplash
               </a>

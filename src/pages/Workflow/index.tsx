@@ -252,13 +252,13 @@ export default function Workflow() {
 
                   {/* Unsplash 归属信息 */}
                   {wallpaperAttribution && (
-                    <div className="flex items-center gap-1.5 ml-4 pl-4 border-l border-white/10 text-[10px] text-white/40">
+                    <div className="flex items-center gap-1.5 ml-3 px-3 py-1 bg-black/40 backdrop-blur-md rounded-full text-[10px] text-white/80 drop-shadow-md">
                       <span>Photo by</span>
                       <a
                         href={wallpaperAttribution.photographerUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-medium hover:text-white/80 transition-colors"
+                        className="font-medium hover:text-white transition-colors"
                       >
                         {wallpaperAttribution.photographerName}
                       </a>
@@ -267,7 +267,7 @@ export default function Workflow() {
                         href={wallpaperAttribution.unsplashUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-medium hover:text-white/80 transition-colors"
+                        className="font-medium hover:text-white transition-colors"
                       >
                         Unsplash
                       </a>
