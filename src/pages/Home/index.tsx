@@ -219,6 +219,29 @@ export default function Home() {
               </span>
             </div>
           )}
+          {/* Unsplash 归属信息 */}
+          {wallpaperAttribution && (
+            <div className="flex items-center gap-1.5 text-[10px] text-white/40 animate-in fade-in duration-1000">
+              <span>Photo by</span>
+              <a
+                href={wallpaperAttribution.photographerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium hover:text-white/80 transition-colors"
+              >
+                {wallpaperAttribution.photographerName}
+              </a>
+              <span>on</span>
+              <a
+                href={wallpaperAttribution.unsplashUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium hover:text-white/80 transition-colors"
+              >
+                Unsplash
+              </a>
+            </div>
+          )}
         </div>
       </header>
 
@@ -368,32 +391,6 @@ export default function Home() {
           )}
         </div>
       </footer>
-
-      {/* Unsplash 归属信息 */}
-      {wallpaperAttribution && (
-        <div className="fixed bottom-3 right-4 z-50 pointer-events-auto">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-black/30 backdrop-blur-md rounded-full text-[10px] text-white/60 hover:text-white/90 transition-colors">
-            <span>Photo by</span>
-            <a
-              href={wallpaperAttribution.photographerUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium underline underline-offset-2 hover:text-white"
-            >
-              {wallpaperAttribution.photographerName}
-            </a>
-            <span>on</span>
-            <a
-              href={wallpaperAttribution.unsplashUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium underline underline-offset-2 hover:text-white"
-            >
-              Unsplash
-            </a>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
