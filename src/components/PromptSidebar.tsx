@@ -1,70 +1,124 @@
+import { useState, useEffect } from "react";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetDescription,
+  SheetFooter,
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Cpu, Info } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Cpu, Info, Save, RotateCcw } from "lucide-react";
+import { toast } from "sonner";
 
 interface PromptSidebarProps {
   isOpen: boolean;
   onClose: () => void;
   basePrompt: string;
+  onSave: (newPrompt: string) => void;
 }
 
 export default function PromptSidebar({
   isOpen,
   onClose,
   basePrompt,
+  onSave,
 }: PromptSidebarProps) {
+  const [prompt, setPrompt] = useState(basePrompt);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  useEffect(() => {
+    setPrompt(basePrompt);
+    setHasChanges(false);
+  }, [basePrompt, isOpen]);
+
+  const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setPrompt(e.target.value);
+    setHasChanges(e.target.value !== basePrompt);
+  };
+
+  const handleSave = () => {
+    onSave(prompt);
+    setHasChanges(false);
+    toast.success("系统提示词已更新");
+    onClose();
+  };
+
+  const handleReset = () => {
+    setPrompt(basePrompt);
+    setHasChanges(false);
+  };
+
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-[90vw] sm:max-w-2xl glass border-l border-border flex flex-col p-0 shadow-2xl">
-        <SheetHeader className="p-8 border-b border-border/50 space-y-2 relative overflow-hidden">
+      <SheetContent
+        className="w-[90vw] sm:max-w-2xl glass border-l border-border flex flex-col p-0 shadow-2xl"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <SheetHeader className="px-5 py-4 border-b border-border/50 relative overflow-hidden shrink-0">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl -z-10" />
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/10">
-              <Cpu className="w-6 h-6" />
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/10">
+              <Cpu className="w-5 h-5" />
             </div>
             <div>
-              <SheetTitle className="text-2xl font-black tracking-tighter text-neon">
+              <SheetTitle className="text-lg font-black tracking-tighter text-neon">
                 提示词引擎
               </SheetTitle>
-              <SheetDescription className="text-muted-foreground/50 text-[10px] uppercase tracking-[0.3em] font-black flex items-center gap-2 mt-1">
-                AI 系统提示词架构
+              <SheetDescription className="text-muted-foreground/50 text-[10px] uppercase tracking-[0.2em] font-black flex items-center gap-2">
+                系统级指令配置
               </SheetDescription>
             </div>
           </div>
         </SheetHeader>
 
-        <ScrollArea className="flex-1 p-8">
-          <div className="relative group">
-            <div className="absolute -left-5 top-0 bottom-0 w-1 bg-gradient-to-b from-primary/30 via-primary/5 to-transparent rounded-full font-black" />
-            <pre className="text-sm text-foreground/80 whitespace-pre-wrap leading-relaxed font-mono pl-8 bg-secondary/50 p-8 rounded-[2.5rem] border border-border shadow-inner">
-              {basePrompt}
-            </pre>
-          </div>
-        </ScrollArea>
-
-        <div className="p-8 border-t border-border/50 bg-secondary/20">
-          <div className="flex items-start gap-4 p-5 rounded-[1.5rem] bg-white border border-border relative overflow-hidden shadow-sm">
-            <div className="absolute top-0 right-0 p-2 opacity-5">
-              <Info className="w-12 h-12" />
+        <div className="flex-1 overflow-hidden relative flex flex-col min-h-0">
+          <ScrollArea className="h-full w-full">
+            <div className="p-4 h-full">
+              <Textarea
+                value={prompt}
+                onChange={handlePromptChange}
+                className="w-full h-full min-h-[calc(100vh-200px)] font-mono text-sm leading-relaxed bg-secondary/30 border-border/50 focus:border-primary/50 focus:ring-primary/20 p-4 rounded-xl resize-none shadow-inner"
+                placeholder="在此输入系统提示词..."
+                spellCheck={false}
+              />
             </div>
-            <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <p className="text-xs font-black text-primary uppercase tracking-widest">
-                协议智能
-              </p>
-              <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
-                当前显示的是系统预设协议。它定义了 AI
-                的行为逻辑、输出精度以及结构化要求。在生成过程中，本协议将作为全局约束条件。
-              </p>
-            </div>
-          </div>
+          </ScrollArea>
         </div>
+
+        <SheetFooter className="p-4 border-t border-border/50 bg-secondary/10 shrink-0 gap-3 sm:justify-between flex-col sm:flex-row items-center">
+          <div className="flex items-center gap-2 w-full sm:w-auto p-2.5 rounded-xl bg-background/50 border border-border/50 backdrop-blur-sm">
+            <Info className="w-4 h-4 text-primary shrink-0" />
+            <p className="text-[10px] text-muted-foreground leading-tight">
+              修改将绑定至当前任务，影响后续生成结果。
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            {hasChanges && (
+              <Button
+                variant="outline"
+                onClick={handleReset}
+                size="sm"
+                className="flex-1 sm:flex-none h-9 rounded-xl"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                复原
+              </Button>
+            )}
+            <Button
+              onClick={handleSave}
+              disabled={!hasChanges}
+              size="sm"
+              className="flex-1 sm:flex-none h-9 rounded-xl font-bold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              保存配置
+            </Button>
+          </div>
+        </SheetFooter>
       </SheetContent>
     </Sheet>
   );

@@ -71,118 +71,95 @@ export default function WorkflowStep({
 
   const STYLE_CATEGORIES = [
     {
-      name: "🔥 热门推荐",
+      name: "✨ 精选风格",
       styles: [
         {
-          id: "anime",
-          label: "🎬 写实动漫",
+          id: "film_cinematic",
+          label: "🎬 电影质感",
           description:
-            "类似新海诚电影的高画质动漫风格。光影细腻、色彩清新、天空唯美，非常适合治愈系、情感类、剧情向的短视频。",
+            "好莱坞电影级画面。真实摄影，强烈的景深、自然光感和胶片颗粒，适合剧情、悬疑、纪录片。",
           prompt:
-            "Realistic Anime Style, Makoto Shinkai aesthetic, high-quality anime illustration, cinematic lighting, detailed background, vibrant colors, lens flare",
+            "Cinematic realism, photorealistic, 35mm lens, depth of field, natural lighting, film grain, color graded, 8k, movie scene",
+        },
+        {
+          id: "anime_shinkai",
+          label: "🌤️ 新海诚风",
+          description:
+            "唯美治愈的日系动漫风格。强调光影、天空 render、细腻的云层和清新的色彩，适合治愈、情感、青春类内容。",
+          prompt:
+            "Makoto Shinkai style, high-quality anime art, vibrant sky, clouds, cinematic lighting, lens flare, emotional atmosphere, detailed background",
+        },
+        {
+          id: "pixar_3d",
+          label: "🧸 皮克斯 3D",
+          description:
+            "迪士尼/皮克斯动画电影质感。角色圆润可爱，材质细腻，暖色调打光，适合亲子、叙事、轻松娱乐类。",
+          prompt:
+            "Pixar style 3D render, Disney animation style, cute characters, expressive, octane render, volumetric lighting, soft textures, 3d cartoon",
+        },
+        {
+          id: "unreal_engine",
+          label: "🎮 3A 游戏大作",
+          description:
+            "超写实游戏画面（黑神话/虚幻5）。极致的物理材质、光线追踪、动态天气，适合史诗、奇幻、动作类。",
+          prompt:
+            "Unreal Engine 5 render, AAA game screenshot, hyperrealistic, ray tracing, global illumination, detailed textures, 8k resolution, epic fantasy, Black Myth Wukong style",
+        },
+        {
+          id: "tech_commercial",
+          label: "📱 科技广告",
+          description:
+            "苹果/大疆风格产品广告。极简干净背景，冷色调，强调产品细节和高级感，适合数码、评测、科技资讯。",
+          prompt:
+            "High-tech commercial style, Apple aesthetic, clean background, studio lighting, sharp focus, minimalist, product photography, sleek design, 8k",
+        },
+        {
+          id: "documentary",
+          label: "📹 纪实摄影",
+          description:
+            "真实新闻/纪录片风格。自然光，手持摄影感，强调真实性和临场感，适合新闻资讯、生活记录、Vlog。",
+          prompt:
+            "Documentary photography, raw style, natural lighting, shot on 35mm, candid moments, slight motion blur, street photography style",
+        },
+        {
+          id: "fashion_studio",
+          label: "💃 时尚大片",
+          description:
+            "高端商业摄影。影棚布光，高对比度，干净利落，强调主体质感，适合美妆、时尚、产品展示。",
+          prompt:
+            "High fashion photography, studio lighting, clean background, sharp focus, professional color grading, vogue style, commercial advertisement",
+        },
+        {
+          id: "anime_retro",
+          label: "📼 90s 复古动漫",
+          description:
+            "90年代赛璐璐风格。线条硬朗，赛博朋克或粉彩配色，适合怀旧、蒸汽波、情绪类内容。",
+          prompt:
+            "90s retro anime style, cel shading, vhs glitch effect, neon colors, sailor moon aesthetic, evangelion style, lo-fi vibes",
         },
         {
           id: "chinese_ink",
           label: "🖌️ 水墨国风",
           description:
-            "中国传统水墨画风格。留白意境、墨色晕染、山水意象，适合历史故事、传统文化、诗词歌赋类内容。",
+            "中国传统水墨画意境。留白、墨色晕染、山水意象，适合历史、古风、文化传播类。",
           prompt:
-            "Traditional Chinese Ink Painting, watercolor style, ethereal atmosphere, ink wash, minimalist, zen aesthetics, calligraphy brush strokes, ancient chinese style",
+            "Traditional Chinese Ink Painting, watercolor style, ethereal atmosphere, ink wash, minimalist, zen aesthetics, calligraphy brush strokes",
         },
         {
-          id: "pixar",
-          label: "🧸 皮克斯 3D",
-          description:
-            "迪士尼/皮克斯动画电影风格。角色生动可爱，材质细腻逼真，暖色调打光，适合亲子教育、叙事故事、轻松娱乐类内容。",
-          prompt:
-            "Pixar style 3D render, Disney animation style, cute characters, expressive, octane render, volumetric lighting, soft textures, 3d cartoon",
-        },
-        {
-          id: "film",
-          label: "📸 电影写实",
-          description:
-            "好莱坞大片质感。真实摄影风格，强调景深虚化、自然光感和胶片颗粒，适合悬疑、犯罪、纪录片或严肃剧情。",
-          prompt:
-            "Cinematic realism, photorealistic, 35mm lens, depth of field, natural lighting, film grain, color graded, 8k, movie scene",
-        },
-      ],
-    },
-    {
-      name: "🎨 插画艺术",
-      styles: [
-        {
-          id: "flat",
-          label: "📐 扁平插画",
-          description:
-            "现代矢量插画风格。线条极简，色块鲜明，无多余细节，非常适合知识科普、商业演示、概念解释类内容。",
-          prompt:
-            "Flat illustration, vector art, minimalist, bold colors, clean lines, corporate memphis style, geometric shapes, behance style",
-        },
-        {
-          id: "watercolor",
-          label: "💧 梦幻水彩",
-          description:
-            "柔和的水彩晕染效果。色彩淡雅，边缘柔和，具有艺术感和梦幻氛围，适合情感独白、散文诗歌。",
-          prompt:
-            "Watercolor painting, soft edges, artistic style, wet on wet, pastel colors, dreamy atmosphere, paper texture, hand painted",
-        },
-        {
-          id: "sketch",
-          label: "✏️ 铅笔素描",
-          description:
-            "黑白铅笔手绘风格。朴素自然，有岁月的痕迹，适合回忆录、手账风、怀旧故事。",
-          prompt:
-            "Pencil sketch, graphite drawing, hand drawn, rough lines, shading, black and white, sketchbook style",
-        },
-      ],
-    },
-    {
-      name: "🧊 3D与材质",
-      styles: [
-        {
-          id: "clay",
-          label: "🧱 黏土动画",
-          description:
-            "手工黏土定格动画质感。有指纹痕迹和材质感，显得笨拙可爱，适合创意短片、定格动画。",
-          prompt:
-            "Claymation style, handmade texture, stop-motion aesthetic, soft studio lighting, plasticine material, fingerprint details, aardman style",
-        },
-        {
-          id: "cyber",
+          id: "cyberpunk",
           label: "🌆 赛博朋克",
           description:
-            "未来科幻风格。高对比度霓虹色（紫/青），雨夜城市，机械元素，适合科技资讯、未来预言、酷炫展示。",
+            "未来科幻。高对比度霓虹色（紫/青），雨夜城市，机械元素，适合科技、游戏、未来话题。",
           prompt:
-            "Cyberpunk neon, futuristic city, rainy night, violet and teal lighting, high tech, blade runner aesthetic, glow effects, sci-fi",
+            "Cyberpunk neon, futuristic city, rainy night, violet and teal lighting, high tech, blade runner aesthetic, glow effects, sci-fi concept art",
         },
         {
-          id: "origami",
-          label: "📄 折纸艺术",
+          id: "claymation",
+          label: "🧱 黏土动画",
           description:
-            "纸张折叠效果。几何切面鲜明，光影硬朗，有一种独特的形式美感，适合寓言故事、创意展示。",
+            "手工黏土定格动画。有指纹痕迹和材质感，笨拙可爱，适合创意短片、手工DIY内容。",
           prompt:
-            "Origami style, folded paper textures, sharp creases, clean geometric look, paper craft, 3d render, studio lighting",
-        },
-      ],
-    },
-    {
-      name: "📷 摄影胶片",
-      styles: [
-        {
-          id: "vintage",
-          label: "🎞️ 复古胶片",
-          description:
-            "90年代老照片质感。色调偏暖，有褪色感和噪点，充满怀旧情绪，适合讲述过去的故事。",
-          prompt:
-            "Vintage film photography, Kodak Portra 400, warm tones, slight light leak, nostalgic, film grain, retro aesthetic, 90s vibes",
-        },
-        {
-          id: "noir",
-          label: "🕵️ 黑色电影",
-          description:
-            "高反差黑白摄影。光影对比强烈，营造神秘、压抑或悬疑的氛围，适合侦探故事、惊悚片。",
-          prompt:
-            "Film Noir style, black and white, dramatic shadows, moody lighting, silhouette, mystery, contrast, detective movie",
+            "Claymation style, handmade texture, stop-motion aesthetic, soft studio lighting, plasticine material, fingerprint details, aardman style",
         },
       ],
     },
@@ -252,7 +229,7 @@ export default function WorkflowStep({
     setIsGenerating(true);
     try {
       const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash-exp",
+        model: "gemini-3-flash-preview",
         contents: getFullPrompt(),
       });
 
@@ -541,6 +518,7 @@ export default function WorkflowStep({
         isOpen={isPromptSidebarOpen}
         onClose={() => setIsPromptSidebarOpen(false)}
         basePrompt={step.basePrompt}
+        onSave={(newPrompt) => onUpdate({ basePrompt: newPrompt })}
       />
 
       {/* 重置确认对话框 */}
