@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { ai } from "@/lib/gemini";
-import { toast } from "sonner";
+
 import type {
   WorkflowStep as WorkflowStepType,
   StoryboardItem,

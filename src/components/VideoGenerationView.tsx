@@ -55,6 +55,7 @@ export default function VideoGenerationView({
       setCopiedId(id);
       setTimeout(() => setCopiedId(null), 1500);
     } catch (error) {
+      console.error("Copy failed:", error);
       toast.error("复制失败");
     }
   };
