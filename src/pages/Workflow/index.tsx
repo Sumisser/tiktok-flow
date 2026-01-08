@@ -170,8 +170,8 @@ export default function Workflow() {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-2">
-                <div className="flex items-center gap-3 group">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 group min-w-0">
                   <h1 className="text-2xl font-black tracking-tight truncate text-gradient text-neon">
                     {task.title}
                   </h1>
@@ -185,8 +185,8 @@ export default function Workflow() {
                   </Button>
                 </div>
 
-                {/* 标签管理区域 */}
-                <div className="flex flex-wrap items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-500">
+                {/* 标签管理区域 - 居中对齐 */}
+                <div className="flex flex-wrap items-center justify-end gap-2 animate-in fade-in slide-in-from-right-4 duration-500 shrink-0">
                   {task.tags?.map((tag, index) => (
                     <Badge
                       key={index}

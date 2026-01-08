@@ -354,29 +354,27 @@ export default function WorkflowStep({
 
           {/* 2. 风格选择区域 */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                选择风格
-              </div>
-            </div>
-
-            <div className="bg-black/20 border border-white/5 rounded-2xl p-4">
-              <Tabs defaultValue={STYLE_CATEGORIES[0].name} className="w-full">
-                <div className="relative mb-4">
-                  <TabsList className="w-full h-9 bg-black/30 border border-white/5 p-1 rounded-xl flex justify-start overflow-x-auto no-scrollbar">
-                    {STYLE_CATEGORIES.map((category) => (
-                      <TabsTrigger
-                        key={category.name}
-                        value={category.name}
-                        className="px-4 py-1.5 text-[10px] font-black rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300 whitespace-nowrap"
-                      >
-                        {category.name}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
+            <Tabs defaultValue={STYLE_CATEGORIES[0].name} className="w-full">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  选择风格
                 </div>
 
+                <TabsList className="h-9 bg-black/30 border border-white/5 p-1 rounded-xl flex justify-start overflow-x-auto no-scrollbar w-auto ml-4">
+                  {STYLE_CATEGORIES.map((category) => (
+                    <TabsTrigger
+                      key={category.name}
+                      value={category.name}
+                      className="px-4 py-1.5 text-[10px] font-black rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300 whitespace-nowrap"
+                    >
+                      {category.name}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
+
+              <div className="bg-black/20 border border-white/5 rounded-2xl p-4 mt-4">
                 {STYLE_CATEGORIES.map((category) => (
                   <TabsContent
                     key={category.name}
@@ -412,33 +410,33 @@ export default function WorkflowStep({
                     </div>
                   </TabsContent>
                 ))}
-              </Tabs>
 
-              {/* 风格描述信息展示 */}
-              {selectedStyleConfig && (
-                <div className="mt-4 px-4 py-3 bg-primary/5 border border-primary/10 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-1">
-                  <div className="p-1.5 bg-primary/10 rounded-full mt-0.5">
-                    <Lightbulb className="w-3.5 h-3.5 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-bold text-primary">
-                        {selectedStyleConfig.label
-                          .split(" ")
-                          .slice(1)
-                          .join(" ")}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground bg-black/5 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                        Style Preview
-                      </span>
+                {/* 风格描述信息展示 */}
+                {selectedStyleConfig && (
+                  <div className="mt-4 px-4 py-3 bg-primary/5 border border-primary/10 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-1">
+                    <div className="p-1.5 bg-primary/10 rounded-full mt-0.5">
+                      <Lightbulb className="w-3.5 h-3.5 text-primary" />
                     </div>
-                    <p className="text-[11px] text-foreground/70 leading-relaxed">
-                      {selectedStyleConfig.description}
-                    </p>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-bold text-primary">
+                          {selectedStyleConfig.label
+                            .split(" ")
+                            .slice(1)
+                            .join(" ")}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground bg-black/5 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                          Style Preview
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-foreground/70 leading-relaxed">
+                        {selectedStyleConfig.description}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            </Tabs>
           </div>
 
           {/* 3. 生成按钮区域 */}
