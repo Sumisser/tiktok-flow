@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, type ReactNode } from "react";
 import type { Task, WorkflowStep, StoryboardItem } from "../types";
 import { getAllTasks, saveTask, deleteTaskById } from "./db";
-import { TaskContext } from "./context";
+import { TaskContext, type WallpaperAttribution } from "./context";
 import {
   createDefaultSteps,
   hydrateTasksWithPrompts,
@@ -14,19 +14,27 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [wallpaperUrl, setWallpaperUrl] = useState<string | null>(null);
+  const [wallpaperAttribution, setWallpaperAttribution] =
+    useState<WallpaperAttribution | null>(null);
   const isInitializedRef = useRef(false);
 
   // 初始化壁纸 - 使用 Unsplash API
   useEffect(() => {
     const fetchWallpaper = async () => {
-      const url = await getRandomWallpaper("nature landscape");
-      if (url) {
-        setWallpaperUrl(url);
+      const data = await getRandomWallpaper("nature landscape");
+      if (data) {
+        setWallpaperUrl(data.url);
+        setWallpaperAttribution({
+          photographerName: data.photographerName,
+          photographerUrl: data.photographerUrl,
+          unsplashUrl: data.unsplashUrl,
+        });
       } else {
-        // 如果 Unsplash API 失败，使用备用壁纸
+        // 如果 Unsplash API 失败，使用备用壁纸（无归属信息）
         setWallpaperUrl(
           `https://bing.biturl.top/?resolution=1920&format=image&index=random&_t=${Date.now()}`
         );
+        setWallpaperAttribution(null);
       }
     };
     fetchWallpaper();
@@ -156,6 +164,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         updateStep,
         updateStoryboards,
         wallpaperUrl,
+        wallpaperAttribution,
       }}
     >
       {children}

@@ -92,7 +92,14 @@ const useQuote = () => {
 };
 
 export default function Home() {
-  const { tasks, isLoading, addTask, deleteTask, wallpaperUrl } = useTasks();
+  const {
+    tasks,
+    isLoading,
+    addTask,
+    deleteTask,
+    wallpaperUrl,
+    wallpaperAttribution,
+  } = useTasks();
   const navigate = useNavigate();
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
@@ -361,6 +368,32 @@ export default function Home() {
           )}
         </div>
       </footer>
+
+      {/* Unsplash 归属信息 */}
+      {wallpaperAttribution && (
+        <div className="fixed bottom-3 right-4 z-50 pointer-events-auto">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-black/30 backdrop-blur-md rounded-full text-[10px] text-white/60 hover:text-white/90 transition-colors">
+            <span>Photo by</span>
+            <a
+              href={wallpaperAttribution.photographerUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium underline underline-offset-2 hover:text-white"
+            >
+              {wallpaperAttribution.photographerName}
+            </a>
+            <span>on</span>
+            <a
+              href={wallpaperAttribution.unsplashUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium underline underline-offset-2 hover:text-white"
+            >
+              Unsplash
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

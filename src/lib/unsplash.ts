@@ -1,18 +1,37 @@
 import { createApi } from "unsplash-js";
 
+// 应用名称，用于 UTM 参数
+const APP_NAME = "tiktok_flow";
+
 // 创建 Unsplash API 实例
 const unsplash = createApi({
   accessKey: "moweyBVLsKlHQOCFiZyCTBu5TFJFLaqUpNc67Ml6HSw",
 });
 
+// 壁纸数据类型，包含图片 URL 和归属信息
+export interface WallpaperData {
+  url: string;
+  photographerName: string;
+  photographerUrl: string;
+  unsplashUrl: string;
+}
+
+/**
+ * 生成带 UTM 参数的 URL
+ */
+function addUtmParams(url: string): string {
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}utm_source=${APP_NAME}&utm_medium=referral`;
+}
+
 /**
  * 获取随机壁纸图片
  * @param query 可选的搜索关键词，用于获取特定主题的图片
- * @returns 返回图片的 URL 或 null
+ * @returns 返回壁纸数据（图片 URL 和归属信息）或 null
  */
 export async function getRandomWallpaper(
   query?: string
-): Promise<string | null> {
+): Promise<WallpaperData | null> {
   try {
     const result = await unsplash.photos.getRandom({
       query: query || "nature landscape",
@@ -27,8 +46,14 @@ export async function getRandomWallpaper(
         : result.response;
 
       // 使用 raw URL 并指定宽度参数获取 1920px 宽度的高质量壁纸
-      // raw URL 支持自定义参数: w (宽度), h (高度), q (质量 0-100), fit (裁剪方式)
-      return `${photo.urls.raw}&w=1920&q=80&fit=max`;
+      const imageUrl = `${photo.urls.raw}&w=1920&q=80&fit=max`;
+
+      return {
+        url: imageUrl,
+        photographerName: photo.user.name,
+        photographerUrl: addUtmParams(photo.user.links.html),
+        unsplashUrl: addUtmParams("https://unsplash.com"),
+      };
     }
 
     console.error("获取 Unsplash 图片失败:", result.errors);

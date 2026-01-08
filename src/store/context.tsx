@@ -1,6 +1,13 @@
 import { createContext } from "react";
 import type { Task, WorkflowStep, StoryboardItem } from "../types";
 
+// Unsplash 壁纸归属信息
+export interface WallpaperAttribution {
+  photographerName: string;
+  photographerUrl: string;
+  unsplashUrl: string;
+}
+
 export interface TaskContextType {
   tasks: Task[];
   isLoading: boolean;
@@ -18,6 +25,7 @@ export interface TaskContextType {
     storyboards: StoryboardItem[]
   ) => Promise<void>;
   wallpaperUrl: string | null;
+  wallpaperAttribution: WallpaperAttribution | null;
 }
 
 export const TaskContext = createContext<TaskContextType | null>(null);

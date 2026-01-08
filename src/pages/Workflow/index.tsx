@@ -17,6 +17,7 @@ export default function Workflow() {
     updateStoryboards,
     isLoading,
     wallpaperUrl,
+    wallpaperAttribution,
   } = useTasks();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState("");
@@ -278,6 +279,32 @@ export default function Workflow() {
           </div>
         </div>
       </main>
+
+      {/* Unsplash 归属信息 */}
+      {wallpaperAttribution && (
+        <div className="fixed bottom-3 right-4 z-50 pointer-events-auto">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-black/30 backdrop-blur-md rounded-full text-[10px] text-white/60 hover:text-white/90 transition-colors">
+            <span>Photo by</span>
+            <a
+              href={wallpaperAttribution.photographerUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium underline underline-offset-2 hover:text-white"
+            >
+              {wallpaperAttribution.photographerName}
+            </a>
+            <span>on</span>
+            <a
+              href={wallpaperAttribution.unsplashUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium underline underline-offset-2 hover:text-white"
+            >
+              Unsplash
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
