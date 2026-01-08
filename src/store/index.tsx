@@ -7,6 +7,7 @@ import {
   hydrateTasksWithPrompts,
   dehydrateTaskForStorage,
 } from "./utils";
+import { getRandomWallpaper } from "../lib/unsplash";
 
 // Provider 组件
 export function TaskProvider({ children }: { children: ReactNode }) {
@@ -15,10 +16,20 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   const [wallpaperUrl, setWallpaperUrl] = useState<string | null>(null);
   const isInitializedRef = useRef(false);
 
-  // 初始化壁纸
+  // 初始化壁纸 - 使用 Unsplash API
   useEffect(() => {
-    const randomUrl = `https://bing.biturl.top/?resolution=1920&format=image&index=random&_t=${Date.now()}`;
-    setWallpaperUrl(randomUrl);
+    const fetchWallpaper = async () => {
+      const url = await getRandomWallpaper("nature landscape");
+      if (url) {
+        setWallpaperUrl(url);
+      } else {
+        // 如果 Unsplash API 失败，使用备用壁纸
+        setWallpaperUrl(
+          `https://bing.biturl.top/?resolution=1920&format=image&index=random&_t=${Date.now()}`
+        );
+      }
+    };
+    fetchWallpaper();
   }, []);
 
   // 初始化：从 IndexedDB 加载数据

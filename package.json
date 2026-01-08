@@ -33,7 +33,8 @@
     "remark-gfm": "^4.0.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
-    "tailwindcss": "^4.1.18"
+    "tailwindcss": "^4.1.18",
+    "unsplash-js": "^7.0.20"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
