@@ -12,17 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import {
-  Check,
-  RotateCcw,
-  ListTodo,
-  Lightbulb,
-  Wand2,
-  FileCode,
-  LayoutGrid,
-  ArrowLeft,
-  ArrowRight,
-} from 'lucide-react';
+import { Check, ListTodo, Lightbulb, Wand2, ArrowRight } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -287,304 +277,232 @@ export default function WorkflowStep({
   };
 
   // 生成视图 - 创意输入 + 风格选择 + 生成按钮
-  const GeneratorView = () => (
-    <Card className="glass-card border-primary/20 ring-1 ring-primary/10 shadow-2xl relative overflow-hidden gap-0 py-0">
-      {/* 顶部装饰 */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
-
-      <CardHeader className="px-5 py-4 border-b border-white/5 flex flex-row items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary/10 text-primary border border-primary/20 shadow-inner">
-            <ListTodo className="w-4 h-4" />
-          </div>
-          <div>
-            <h2 className="text-base font-black text-white tracking-wide">
-              创意分镜生成
-            </h2>
-            <p className="text-[10px] text-muted-foreground font-medium leading-tight">
-              输入想法，AI 自动生成分镜脚本、画面提示词和视频提示词
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {storyboards.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowResultView(true)}
-              className="h-8 text-[10px] font-black uppercase tracking-widest text-primary border-primary/20 hover:bg-primary/10 rounded-lg px-3 transition-all"
-            >
-              查看结果
-              <ArrowRight className="w-3 h-3 ml-1.5" />
-            </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsPromptSidebarOpen(true);
-            }}
-            className="h-8 text-xs font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg px-3 transition-all"
-          >
-            <ListTodo className="w-3.5 h-3.5 mr-1.5" />
-            查看 System Prompt
-          </Button>
-        </div>
-      </CardHeader>
-
-      <CardContent className="px-6 py-6 space-y-6">
-        {/* 1. 创意输入区域 */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-            输入创意
-          </div>
-          <Textarea
-            value={input}
-            onChange={(e) => handleInputChange(e.target.value)}
-            placeholder="例如：一个年轻人在下雨的城市街道上奔跑，突然回头看到了..."
-            className="min-h-[140px] bg-black/20 border-white/10 focus:border-primary/50 focus:ring-primary/20 placeholder:text-white/20 resize-none rounded-xl p-4 text-sm leading-relaxed font-medium transition-all shadow-inner text-white"
-          />
-        </div>
-
-        {/* 2. 风格选择区域 */}
-        <div className="space-y-3">
-          <Tabs defaultValue={STYLE_CATEGORIES[0].name} className="w-full">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                选择风格
-              </div>
-
-              <TabsList className="h-9 bg-black/30 border border-white/5 p-1 rounded-xl flex justify-start overflow-x-auto no-scrollbar w-auto ml-4">
-                {STYLE_CATEGORIES.map((category) => (
-                  <TabsTrigger
-                    key={category.name}
-                    value={category.name}
-                    className="px-4 py-1.5 text-[10px] font-black rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300 whitespace-nowrap"
-                  >
-                    {category.name}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </div>
-
-            <div className="bg-black/20 border border-white/5 rounded-xl p-3 mt-3">
-              {STYLE_CATEGORIES.map((category) => (
-                <TabsContent
-                  key={category.name}
-                  value={category.name}
-                  className="mt-0 focus-visible:outline-none focus-visible:ring-0"
-                >
-                  <div className="flex flex-wrap gap-1.5 animate-in fade-in slide-in-from-left-2 duration-300">
-                    {category.styles.map((style) => (
-                      <button
-                        key={style.id}
-                        onClick={() => setSelectedStyle(style.id)}
-                        className={cn(
-                          'px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all duration-300 border uppercase tracking-tighter flex items-center gap-1.5',
-                          selectedStyle === style.id
-                            ? 'bg-primary/20 text-primary border-primary/50 shadow-lg shadow-primary/5 scale-[1.02]'
-                            : 'bg-white/5 text-white/40 border-white/5 hover:border-white/10 hover:text-white/60',
-                        )}
-                      >
-                        {style.label.includes(' ') ? (
-                          <>
-                            <span className="text-xs">
-                              {style.label.split(' ')[0]}
-                            </span>
-                            <span>
-                              {style.label.split(' ').slice(1).join(' ')}
-                            </span>
-                          </>
-                        ) : (
-                          style.label
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </TabsContent>
-              ))}
-
-              {/* 风格描述信息展示 */}
-              {selectedStyleConfig && (
-                <div className="mt-3 px-3 py-2 bg-primary/5 border border-primary/10 rounded-lg flex items-start gap-2 animate-in fade-in slide-in-from-top-1">
-                  <div className="p-1.5 bg-primary/10 rounded-full mt-0.5">
-                    <Lightbulb className="w-3.5 h-3.5 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-bold text-primary">
-                        {selectedStyleConfig.label
-                          .split(' ')
-                          .slice(1)
-                          .join(' ')}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground bg-black/5 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                        Style Preview
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-foreground/70 leading-relaxed">
-                      {selectedStyleConfig.description}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </Tabs>
-        </div>
-
-        {/* 3. 生成按钮区域 */}
-        <div className="pt-4 border-t border-white/5 w-full">
-          <Button
-            onClick={handleGenerate}
-            disabled={!input.trim() || isGenerating}
-            className={cn(
-              'w-full h-14 rounded-xl text-sm font-black tracking-widest transition-all duration-300 shadow-lg uppercase relative overflow-hidden group',
-              input.trim() && !isGenerating
-                ? 'bg-gradient-to-r from-primary to-violet-600 text-white hover:scale-[1.01] hover:shadow-primary/25 border border-white/10'
-                : 'bg-muted text-muted-foreground',
-            )}
-          >
-            <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-            {isGenerating ? (
-              <>
-                <div className="flex items-center gap-3">
-                  <span className="relative flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
-                  </span>
-                  <span>正在进行 AI 创意构思...</span>
-                </div>
-              </>
-            ) : isCopied ? (
-              <>
-                <Check className="w-5 h-5 mr-3" />
-                已复制提示词 (即将开始)
-              </>
-            ) : (
-              <>
-                <Wand2 className="w-5 h-5 mr-3" />✨ AI 一键生成影片分镜
-              </>
-            )}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  // 结果视图 - 分镜列表展示
-  const ResultView = () => (
-    <Card className="glass-card border-primary/20 ring-1 ring-primary/10 shadow-2xl relative overflow-hidden gap-0 py-0">
-      {/* 顶部装饰 */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
-
-      <CardHeader className="p-6 border-b border-white/5 flex flex-row items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowResultView(false)}
-            className="h-9 w-9 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <h2 className="text-lg font-black text-white tracking-wide">
-              分镜结果
-            </h2>
-            <p className="text-xs text-muted-foreground font-medium">
-              共 {storyboards.length} 个分镜 · 点击左侧箭头返回重新生成
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsStoryboardRawMode(!isStoryboardRawMode)}
-            className={cn(
-              'h-8 px-3 text-[10px] font-bold uppercase tracking-wider transition-all border',
-              isStoryboardRawMode
-                ? 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20'
-                : 'text-muted-foreground border-transparent hover:bg-white/5 hover:text-foreground',
-            )}
-          >
-            {isStoryboardRawMode ? (
-              <>
-                <LayoutGrid className="w-3.5 h-3.5 mr-2" />
-                预览视图
-              </>
-            ) : (
-              <>
-                <FileCode className="w-3.5 h-3.5 mr-2" />
-                源码编辑
-              </>
-            )}
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleResetClick}
-            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </Button>
-        </div>
-      </CardHeader>
-
-      <CardContent className="p-6">
-        <StoryboardEditor
-          taskId={taskId}
-          output={output}
-          storyboards={storyboards}
-          onUpdateStoryboards={onUpdateStoryboards}
-          isRawMode={isStoryboardRawMode}
-          setIsRawMode={setIsStoryboardRawMode}
-        />
-      </CardContent>
-    </Card>
-  );
-
-  // 生成中的加载视图
-  const LoadingView = () => (
-    <Card className="glass-card border-primary/20 ring-1 ring-primary/10 shadow-2xl relative overflow-hidden gap-0 py-0">
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
-      <CardContent className="p-0">
-        <div className="h-[400px] w-full flex flex-col items-center justify-center gap-6 animate-pulse relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-transparent skew-y-12 translate-x-[-100%] animate-[shimmer_2s_infinite]" />
-
-          <div className="relative z-10 p-6 rounded-full bg-primary/10 ring-1 ring-primary/20">
-            <Wand2 className="w-10 h-10 text-primary animate-[spin_3s_linear_infinite]" />
-          </div>
-
-          <div className="space-y-2 text-center relative z-10">
-            <h3 className="text-base font-bold text-white tracking-wide">
-              正在创作分镜脚本
-            </h3>
-            <div className="flex flex-col gap-1">
-              <p className="text-xs text-white/40">分析场景描述...</p>
-              <p className="text-xs text-white/40">构思画面构图...</p>
-              <p className="text-xs text-white/40">生成标准分镜...</p>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {isGenerating ? (
-        <LoadingView />
+        <Card className="glass-card border-primary/20 ring-1 ring-primary/10 shadow-2xl relative overflow-hidden gap-0 py-0">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
+          <CardContent className="p-0">
+            <div className="h-[400px] w-full flex flex-col items-center justify-center gap-6 animate-pulse relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-transparent skew-y-12 translate-x-[-100%] animate-[shimmer_2s_infinite]" />
+
+              <div className="relative z-10 p-6 rounded-full bg-primary/10 ring-1 ring-primary/20">
+                <Wand2 className="w-10 h-10 text-primary animate-[spin_3s_linear_infinite]" />
+              </div>
+
+              <div className="space-y-2 text-center relative z-10">
+                <h3 className="text-base font-bold text-white tracking-wide">
+                  正在创作分镜脚本
+                </h3>
+                <div className="flex flex-col gap-1">
+                  <p className="text-xs text-white/40">分析场景描述...</p>
+                  <p className="text-xs text-white/40">构思画面构图...</p>
+                  <p className="text-xs text-white/40">生成标准分镜...</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       ) : showResultView && storyboards.length > 0 ? (
-        <ResultView />
+        <div className="relative w-full">
+          <StoryboardEditor
+            taskId={taskId}
+            output={output}
+            storyboards={storyboards}
+            onUpdateStoryboards={onUpdateStoryboards}
+            isRawMode={isStoryboardRawMode}
+            setIsRawMode={setIsStoryboardRawMode}
+            onBack={() => setShowResultView(false)}
+            onReset={handleResetClick}
+          />
+        </div>
       ) : (
-        <GeneratorView />
+        <Card className="glass-card border-primary/20 ring-1 ring-primary/10 shadow-2xl relative overflow-hidden gap-0 py-0">
+          {/* 顶部装饰 */}
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
+
+          <CardHeader className="px-5 py-4 border-b border-white/5 flex flex-row items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary border border-primary/20 shadow-inner">
+                <ListTodo className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="text-base font-black text-white tracking-wide">
+                  创意分镜生成
+                </h2>
+                <p className="text-[10px] text-muted-foreground font-medium leading-tight">
+                  输入想法，AI 自动生成分镜脚本、画面提示词和视频提示词
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {storyboards.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowResultView(true)}
+                  className="h-8 text-[10px] font-black uppercase tracking-widest text-primary border-primary/20 hover:bg-primary/10 rounded-lg px-3 transition-all"
+                >
+                  查看结果
+                  <ArrowRight className="w-3 h-3 ml-1.5" />
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsPromptSidebarOpen(true);
+                }}
+                className="h-8 text-xs font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg px-3 transition-all"
+              >
+                <ListTodo className="w-3.5 h-3.5 mr-1.5" />
+                查看 System Prompt
+              </Button>
+            </div>
+          </CardHeader>
+
+          <CardContent className="px-6 py-6 space-y-6">
+            {/* 1. 创意输入区域 */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                输入创意
+              </div>
+              <Textarea
+                value={input}
+                onChange={(e) => handleInputChange(e.target.value)}
+                placeholder="例如：一个年轻人在下雨的城市街道上奔跑，突然回头看到了..."
+                className="min-h-[140px] bg-black/20 border-white/10 focus:border-primary/50 focus:ring-primary/20 placeholder:text-white/20 resize-none rounded-xl p-4 text-sm leading-relaxed font-medium transition-all shadow-inner text-white"
+              />
+            </div>
+
+            {/* 2. 风格选择区域 */}
+            <div className="space-y-3">
+              <Tabs defaultValue={STYLE_CATEGORIES[0].name} className="w-full">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    选择风格
+                  </div>
+
+                  <TabsList className="h-9 bg-black/30 border border-white/5 p-1 rounded-xl flex justify-start overflow-x-auto no-scrollbar w-auto ml-4">
+                    {STYLE_CATEGORIES.map((category) => (
+                      <TabsTrigger
+                        key={category.name}
+                        value={category.name}
+                        className="px-4 py-1.5 text-[10px] font-black rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300 whitespace-nowrap"
+                      >
+                        {category.name}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </div>
+
+                <div className="bg-black/20 border border-white/5 rounded-xl p-3 mt-3">
+                  {STYLE_CATEGORIES.map((category) => (
+                    <TabsContent
+                      key={category.name}
+                      value={category.name}
+                      className="mt-0 focus-visible:outline-none focus-visible:ring-0"
+                    >
+                      <div className="flex flex-wrap gap-1.5 animate-in fade-in slide-in-from-left-2 duration-300">
+                        {category.styles.map((style) => (
+                          <button
+                            key={style.id}
+                            onClick={() => setSelectedStyle(style.id)}
+                            className={cn(
+                              'px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all duration-300 border uppercase tracking-tighter flex items-center gap-1.5',
+                              selectedStyle === style.id
+                                ? 'bg-primary/20 text-primary border-primary/50 shadow-lg shadow-primary/5 scale-[1.02]'
+                                : 'bg-white/5 text-white/40 border-white/5 hover:border-white/10 hover:text-white/60',
+                            )}
+                          >
+                            {style.label.includes(' ') ? (
+                              <>
+                                <span className="text-xs">
+                                  {style.label.split(' ')[0]}
+                                </span>
+                                <span>
+                                  {style.label.split(' ').slice(1).join(' ')}
+                                </span>
+                              </>
+                            ) : (
+                              style.label
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </TabsContent>
+                  ))}
+
+                  {/* 风格描述信息展示 */}
+                  {selectedStyleConfig && (
+                    <div className="mt-3 px-3 py-2 bg-primary/5 border border-primary/10 rounded-lg flex items-start gap-2 animate-in fade-in slide-in-from-top-1">
+                      <div className="p-1.5 bg-primary/10 rounded-full mt-0.5">
+                        <Lightbulb className="w-3.5 h-3.5 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-bold text-primary">
+                            {selectedStyleConfig.label
+                              .split(' ')
+                              .slice(1)
+                              .join(' ')}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground bg-black/5 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                            Style Preview
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-foreground/70 leading-relaxed">
+                          {selectedStyleConfig.description}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </Tabs>
+            </div>
+
+            {/* 3. 生成按钮区域 */}
+            <div className="pt-4 border-t border-white/5 w-full">
+              <Button
+                onClick={handleGenerate}
+                disabled={!input.trim() || isGenerating}
+                className={cn(
+                  'w-full h-14 rounded-xl text-sm font-black tracking-widest transition-all duration-300 shadow-lg uppercase relative overflow-hidden group',
+                  input.trim() && !isGenerating
+                    ? 'bg-gradient-to-r from-primary to-violet-600 text-white hover:scale-[1.01] hover:shadow-primary/25 border border-white/10'
+                    : 'bg-muted text-muted-foreground',
+                )}
+              >
+                <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                {isGenerating ? (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <span className="relative flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                      </span>
+                      <span>正在进行 AI 创意构思...</span>
+                    </div>
+                  </>
+                ) : isCopied ? (
+                  <>
+                    <Check className="w-5 h-5 mr-3" />
+                    已复制提示词 (即将开始)
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="w-5 h-5 mr-3" />✨ AI 一键生成影片分镜
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       <PromptSidebar

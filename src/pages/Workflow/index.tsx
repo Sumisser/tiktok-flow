@@ -129,7 +129,7 @@ export default function Workflow() {
         </>
       )}
       {/* 头部 */}
-      <header className="fixed top-0 left-0 right-0 border-b border-primary/20 py-3 px-6  overflow-hidden z-20 bg-background/80 backdrop-blur-md">
+      <header className="fixed top-0 left-0 right-0 border-b border-primary/20 py-3 px-4 md:px-12 lg:px-24  overflow-hidden z-20 bg-background/80 backdrop-blur-md">
         {/* 头部装饰背景 */}
         <div className="absolute top-0 left-1/4 w-64 h-full bg-primary/10 blur-[100px] -z-10 animate-pulse" />
 

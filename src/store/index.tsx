@@ -158,7 +158,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   }, [tasks]);
 
   const updateStoryboards = useCallback(
-    (taskId: string, storyboards: StoryboardItem[]) => {
+    async (taskId: string, storyboards: StoryboardItem[]) => {
       // 立即更新本地状态
       setTasks((prevTasks) =>
         prevTasks.map((task) =>

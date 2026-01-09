@@ -335,8 +335,8 @@ export default function Home() {
           </section>
         ) : (
           /* 有任务状态：展示顶部对齐的画廊布局 */
-          <section className="pt-32 px-8 pb-40 max-w-7xl mx-auto animate-in slide-in-from-bottom-8 duration-700">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          <section className="pt-24 px-8 pb-40 max-w-[1600px] mx-auto animate-in slide-in-from-bottom-8 duration-700">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
               {filteredTasks.map((task) => (
                 <TaskCard key={task.id} task={task} onDelete={deleteTask} />
               ))}
