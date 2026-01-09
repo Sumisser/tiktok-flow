@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
-import type { WorkflowStep } from "../types";
+import React, { useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
+import type { WorkflowStep } from '../types';
 
 interface WorkflowCarouselProps {
   steps: WorkflowStep[];
@@ -16,17 +16,17 @@ export default function WorkflowCarousel({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft") {
+      if (e.key === 'ArrowLeft') {
         setActiveIndex((prev) => (prev > 0 ? prev - 1 : prev));
-      } else if (e.key === "ArrowRight") {
+      } else if (e.key === 'ArrowRight') {
         setActiveIndex((prev) =>
-          prev < childrenArray.length - 1 ? prev + 1 : prev
+          prev < childrenArray.length - 1 ? prev + 1 : prev,
         );
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [childrenArray.length]);
 
   return (
@@ -50,10 +50,10 @@ export default function WorkflowCarousel({
             >
               <div
                 className={cn(
-                  "h-1.5 rounded-full transition-all duration-500",
+                  'h-1.5 rounded-full transition-all duration-500',
                   activeIndex === index
-                    ? "w-12 bg-primary shadow-[0_0_15px_rgba(var(--color-primary),0.6)]"
-                    : "w-3 bg-primary/20 group-hover:bg-primary/40"
+                    ? 'w-12 bg-primary shadow-[0_0_15px_rgba(var(--color-primary),0.6)]'
+                    : 'w-3 bg-primary/20 group-hover:bg-primary/40',
                 )}
               />
             </button>

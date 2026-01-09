@@ -1,15 +1,15 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import type { Task } from "../types";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import type { Task } from '../types';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,9 +19,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Calendar, Trash2, Clapperboard, Tag } from "lucide-react";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/alert-dialog';
+import { Calendar, Trash2, Clapperboard, Tag } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface TaskCardProps {
   task: Task;
@@ -42,11 +42,11 @@ export default function TaskCard({ task, onDelete }: TaskCardProps) {
   // 格式化日期
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr || Date.now());
-    return date.toLocaleDateString("zh-CN", {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+    return date.toLocaleDateString('zh-CN', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
 
@@ -106,10 +106,10 @@ export default function TaskCard({ task, onDelete }: TaskCardProps) {
             <div className="flex justify-between items-start mb-4 pr-12">
               <div
                 className={cn(
-                  "p-2.5 rounded-xl border transition-transform duration-500 group-hover:scale-110 shadow-sm",
+                  'p-2.5 rounded-xl border transition-transform duration-500 group-hover:scale-110 shadow-sm',
                   task.storyboards?.[0]?.imageUrl
-                    ? "bg-black/40 border-white/10 text-white backdrop-blur-md"
-                    : "bg-gradient-to-br from-primary/10 to-accent/10 border-border text-primary"
+                    ? 'bg-black/40 border-white/10 text-white backdrop-blur-md'
+                    : 'bg-gradient-to-br from-primary/10 to-accent/10 border-border text-primary',
                 )}
               >
                 <Clapperboard className="w-5 h-5" />

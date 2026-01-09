@@ -1,8 +1,8 @@
-import { useTasks } from "../../store/hooks";
-import TaskCard from "../../components/TaskCard";
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Plus, X, Search, CloudRain } from "lucide-react";
+import { useTasks } from '../../store/hooks';
+import TaskCard from '../../components/TaskCard';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, X, Search, CloudRain } from 'lucide-react';
 
 const useTime = () => {
   const [time, setTime] = useState(new Date());
@@ -26,25 +26,25 @@ const useWeather = () => {
     const fetchWeather = async () => {
       try {
         // Step 1: Get location via IP (using ip-api.com - no API key needed for basic usage)
-        const locRes = await fetch("http://ip-api.com/json/");
+        const locRes = await fetch('http://ip-api.com/json/');
         const locData = await locRes.json();
 
-        if (locData.status === "success") {
+        if (locData.status === 'success') {
           // Step 2: Get weather via Open-Meteo (open API)
           const weatherRes = await fetch(
-            `https://api.open-meteo.com/v1/forecast?latitude=${locData.lat}&longitude=${locData.lon}&current_weather=true`
+            `https://api.open-meteo.com/v1/forecast?latitude=${locData.lat}&longitude=${locData.lon}&current_weather=true`,
           );
           const weatherData = await weatherRes.json();
 
           setData({
             city: locData.city,
             temp: `${Math.round(weatherData.current_weather.temperature)}°`,
-            condition: "Clear", // Simplified context for now
+            condition: 'Clear', // Simplified context for now
           });
         }
       } catch (error) {
-        console.error("Weather fetch failed:", error);
-        setData({ city: "Shanghai", temp: "12°", condition: "Cloudy" }); // Fallback
+        console.error('Weather fetch failed:', error);
+        setData({ city: 'Shanghai', temp: '12°', condition: 'Cloudy' }); // Fallback
       }
     };
 
@@ -66,21 +66,21 @@ const useQuote = () => {
   useEffect(() => {
     const fetchQuote = async () => {
       try {
-        const response = await fetch("https://api.xygeng.cn/one");
+        const response = await fetch('https://api.xygeng.cn/one');
         const data = await response.json();
         if (data.code === 200 && data.data) {
           setQuote({
             content: data.data.content,
             origin: data.data.origin,
-            author: data.data.name !== "佚名" ? data.data.name : undefined,
+            author: data.data.name !== '佚名' ? data.data.name : undefined,
           });
         }
       } catch (error) {
-        console.error("获取名言失败:", error);
+        console.error('获取名言失败:', error);
         // Fallback 名言
         setQuote({
-          content: "一个人至少拥有一个梦想，有一个理由去强大。",
-          author: "三毛",
+          content: '一个人至少拥有一个梦想，有一个理由去强大。',
+          author: '三毛',
         });
       }
     };
@@ -102,27 +102,27 @@ export default function Home() {
   } = useTasks();
   const navigate = useNavigate();
   const [isCreating, setIsCreating] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [newTitle, setNewTitle] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const currentTime = useTime();
   const weather = useWeather();
   const quote = useQuote();
 
   const timeString = currentTime.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
+    hour: '2-digit',
+    minute: '2-digit',
   });
   const greeting =
     currentTime.getHours() < 12
-      ? "早上好"
+      ? '早上好'
       : currentTime.getHours() < 18
-      ? "下午好"
-      : "晚上好";
+        ? '下午好'
+        : '晚上好';
 
   const handleCreate = async () => {
     if (newTitle.trim()) {
       const newTask = await addTask(newTitle.trim());
-      setNewTitle("");
+      setNewTitle('');
       setIsCreating(false);
       // 立即跳转到新创建的 workflow 页面
       navigate(`/workflow/${newTask.id}`);
@@ -130,11 +130,11 @@ export default function Home() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       handleCreate();
-    } else if (e.key === "Escape") {
+    } else if (e.key === 'Escape') {
       setIsCreating(false);
-      setNewTitle("");
+      setNewTitle('');
     }
   };
 
@@ -142,7 +142,7 @@ export default function Home() {
     const searchLower = searchQuery.toLowerCase();
     const matchTitle = task.title.toLowerCase().includes(searchLower);
     const matchTags = task.tags?.some((tag) =>
-      tag.toLowerCase().includes(searchLower)
+      tag.toLowerCase().includes(searchLower),
     );
     return matchTitle || matchTags;
   });
@@ -257,8 +257,8 @@ export default function Home() {
                   <div
                     className="w-12 h-12 border-4 border-white/5 border-t-white/40 rounded-full animate-spin"
                     style={{
-                      animationDirection: "reverse",
-                      animationDuration: "1s",
+                      animationDirection: 'reverse',
+                      animationDuration: '1s',
                     }}
                   />
                 </div>
@@ -349,7 +349,7 @@ export default function Home() {
                   未找到匹配的流水线资产
                 </p>
                 <button
-                  onClick={() => setSearchQuery("")}
+                  onClick={() => setSearchQuery('')}
                   className="mt-6 text-[10px] font-black uppercase tracking-widest text-primary hover:text-white transition-colors"
                 >
                   清除所有筛选
@@ -380,7 +380,7 @@ export default function Home() {
               <div className="flex items-center justify-center gap-2 text-[10px] uppercase tracking-[0.3em] text-white/40 font-black mix-blend-plus-lighter">
                 <span className="w-8 h-px bg-white/20" />
                 <span>
-                  {quote.author || "佚名"}
+                  {quote.author || '佚名'}
                   {quote.origin && ` · 《${quote.origin}》`}
                 </span>
                 <span className="w-8 h-px bg-white/20" />

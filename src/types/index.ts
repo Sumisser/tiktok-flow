@@ -10,8 +10,8 @@ export interface Task {
 }
 
 // 工作流步骤类型
-export type StepType = "idea" | "script" | "storyboard";
-export type StepStatus = "pending" | "in-progress" | "completed";
+export type StepType = 'idea' | 'script' | 'storyboard';
+export type StepStatus = 'pending' | 'in-progress' | 'completed';
 
 export interface WorkflowStep {
   id: string;

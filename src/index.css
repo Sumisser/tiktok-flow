@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
 @theme inline {
   --radius-sm: 0.5rem;
@@ -11,25 +11,25 @@
 
   --color-background: oklch(0.98 0.005 0);
   --color-foreground: oklch(0.2 0.02 260);
-  
+
   --color-card: oklch(1 0 0 / 0.8);
   --color-card-foreground: oklch(0.2 0.02 260);
-  
+
   --color-popover: oklch(1 0 0);
   --color-popover-foreground: oklch(0.2 0.02 260);
-  
+
   --color-primary: oklch(0.5 0.15 265); /* Professional Indigo */
   --color-primary-foreground: oklch(0.98 0.005 0);
-  
+
   --color-secondary: oklch(0.96 0.01 265 / 0.5);
   --color-secondary-foreground: oklch(0.3 0.05 265);
-  
+
   --color-muted: oklch(0.94 0.01 265 / 0.5);
   --color-muted-foreground: oklch(0.5 0.02 265);
-  
+
   --color-accent: oklch(0.6 0.12 280); /* Soft Periwinkle */
   --color-accent-foreground: oklch(1 0 0);
-  
+
   --color-destructive: oklch(0.6 0.18 25);
   --color-border: oklch(1 0 0 / 0.1);
   --color-input: oklch(1 0 0 / 0.05);
@@ -42,25 +42,27 @@
   @theme inline {
     --color-background: oklch(0.15 0.02 260);
     --color-foreground: oklch(0.99 0 0); /* 极亮白 */
-    
+
     --color-card: oklch(0.2 0.02 260 / 0.4);
     --color-card-foreground: oklch(0.99 0 0);
-    
+
     --color-popover: oklch(0.18 0.02 260);
     --color-popover-foreground: oklch(0.99 0 0);
-    
+
     --color-primary: oklch(0.75 0.12 265); /* 稍微调亮主色 */
     --color-primary-foreground: oklch(0.1 0.02 260);
-    
+
     --color-secondary: oklch(1 0 0 / 0.15); /* 增加背景厚度 */
     --color-secondary-foreground: oklch(0.95 0 0); /* 接近纯白 */
-    
+
     --color-muted: oklch(1 0 0 / 0.1);
-    --color-muted-foreground: oklch(0.85 0 0); /* 大幅调亮副标题文字 (85% 亮度) */
-    
+    --color-muted-foreground: oklch(
+      0.85 0 0
+    ); /* 大幅调亮副标题文字 (85% 亮度) */
+
     --color-accent: oklch(0.8 0.1 280);
     --color-accent-foreground: oklch(0.1 0.02 260);
-    
+
     --color-destructive: oklch(0.6 0.2 25);
     --color-border: oklch(1 0 0 / 0.2); /* 边框更明显 */
     --color-input: oklch(1 0 0 / 0.1);
@@ -95,9 +97,9 @@
 
   body {
     @apply bg-background text-foreground antialiased min-h-screen font-sans;
-    background-image: 
+    background-image:
       linear-gradient(to bottom, transparent, var(--color-background) 80%),
-      url("https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2070&auto=format&fit=crop");
+      url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2070&auto=format&fit=crop');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -110,12 +112,12 @@
     @apply backdrop-blur-3xl border border-white/10 shadow-2xl;
     background: rgba(0, 0, 0, 0.4); /* Darker background for contrast */
   }
-  
+
   .glass-card {
     @apply backdrop-blur-2xl border border-white/10 shadow-2xl transition-all duration-500 rounded-3xl;
     background: rgba(0, 0, 0, 0.4); /* Darker background for contrast */
   }
-  
+
   .glass-card:hover {
     @apply border-white/20 shadow-black/20;
     background: rgba(0, 0, 0, 0.5); /* Darker on hover */
@@ -123,7 +125,9 @@
 
   .text-neon {
     /* Subtle glow for light mode */
-    text-shadow: 0 0 20px oklch(0.55 0.22 260 / 0.2), 0 0 40px oklch(0.55 0.22 260 / 0.1);
+    text-shadow:
+      0 0 20px oklch(0.55 0.22 260 / 0.2),
+      0 0 40px oklch(0.55 0.22 260 / 0.1);
     @apply font-black tracking-tighter;
   }
 
@@ -148,7 +152,12 @@
 }
 
 /* Typography refinements */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   @apply tracking-tight font-black text-foreground;
 }
 
@@ -158,7 +167,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 .prose table {
   @apply w-full border-collapse my-8 rounded-2xl overflow-hidden bg-white/70 backdrop-blur-xl border border-white;
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.01);
+  box-shadow:
+    0 10px 40px -10px rgba(0, 0, 0, 0.05),
+    0 1px 3px 0 rgba(0, 0, 0, 0.01);
 }
 .prose th {
   @apply bg-secondary p-5 text-left border-b border-black/5 font-black text-primary uppercase tracking-widest text-[11px];
@@ -168,8 +179,18 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @keyframes scan {
-  0% { transform: translateY(-100%); opacity: 0; }
-  20% { opacity: 0.1; }
-  80% { opacity: 0.1; }
-  100% { transform: translateY(500%); opacity: 0; }
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.1;
+  }
+  80% {
+    opacity: 0.1;
+  }
+  100% {
+    transform: translateY(500%);
+    opacity: 0;
+  }
 }

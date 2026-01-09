@@ -1,12 +1,12 @@
-import { useParams, Link } from "react-router-dom";
-import { useTasks } from "../../store/hooks";
+import { useParams, Link } from 'react-router-dom';
+import { useTasks } from '../../store/hooks';
 
-import WorkflowStep from "../../components/WorkflowStep";
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, Edit3, Check, X, Home, Tag } from "lucide-react";
+import WorkflowStep from '../../components/WorkflowStep';
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { ChevronLeft, Edit3, Check, X, Home, Tag } from 'lucide-react';
 
 export default function Workflow() {
   const { id } = useParams<{ id: string }>();
@@ -20,11 +20,11 @@ export default function Workflow() {
     wallpaperAttribution,
   } = useTasks();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [titleInput, setTitleInput] = useState("");
+  const [titleInput, setTitleInput] = useState('');
   const [isAddingTag, setIsAddingTag] = useState(false);
-  const [tagInput, setTagInput] = useState("");
+  const [tagInput, setTagInput] = useState('');
 
-  const task = getTask(id || "");
+  const task = getTask(id || '');
 
   useEffect(() => {
     if (task) {
@@ -43,8 +43,8 @@ export default function Workflow() {
               <div
                 className="w-12 h-12 border-4 border-primary/5 border-t-primary/60 rounded-full animate-spin"
                 style={{
-                  animationDirection: "reverse",
-                  animationDuration: "1s",
+                  animationDirection: 'reverse',
+                  animationDuration: '1s',
                 }}
               />
             </div>
@@ -98,9 +98,9 @@ export default function Workflow() {
   };
 
   const handleTitleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       handleTitleSave();
-    } else if (e.key === "Escape") {
+    } else if (e.key === 'Escape') {
       setTitleInput(task.title);
       setIsEditingTitle(false);
     }
@@ -198,7 +198,7 @@ export default function Workflow() {
                       <button
                         onClick={() => {
                           const newTags = task.tags?.filter(
-                            (_, i) => i !== index
+                            (_, i) => i !== index,
                           );
                           updateTask(task.id, { tags: newTags });
                         }}
@@ -216,17 +216,17 @@ export default function Workflow() {
                           value={tagInput}
                           onChange={(e) => setTagInput(e.target.value)}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter" && tagInput.trim()) {
+                            if (e.key === 'Enter' && tagInput.trim()) {
                               const newTags = [
                                 ...(task.tags || []),
                                 tagInput.trim(),
                               ];
                               updateTask(task.id, { tags: newTags });
-                              setTagInput("");
+                              setTagInput('');
                               setIsAddingTag(false);
-                            } else if (e.key === "Escape") {
+                            } else if (e.key === 'Escape') {
                               setIsAddingTag(false);
-                              setTagInput("");
+                              setTagInput('');
                             }
                           }}
                           autoFocus

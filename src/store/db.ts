@@ -1,17 +1,17 @@
-import { supabase } from "../lib/supabase";
-import type { Task } from "../types";
+import { supabase } from '../lib/supabase';
+import type { Task } from '../types';
 
-const TABLE_NAME = "tasks";
+const TABLE_NAME = 'tasks';
 
 // 获取所有任务
 export async function getAllTasks(): Promise<Task[]> {
   const { data, error } = await supabase
     .from(TABLE_NAME)
-    .select("*")
-    .order("updatedAt", { ascending: false });
+    .select('*')
+    .order('updatedAt', { ascending: false });
 
   if (error) {
-    console.error("Error fetching tasks:", error);
+    console.error('Error fetching tasks:', error);
     return [];
   }
 
@@ -22,12 +22,12 @@ export async function getAllTasks(): Promise<Task[]> {
 export async function getTaskById(id: string): Promise<Task | undefined> {
   const { data, error } = await supabase
     .from(TABLE_NAME)
-    .select("*")
-    .eq("id", id)
+    .select('*')
+    .eq('id', id)
     .single();
 
   if (error) {
-    console.error("Error fetching task by id:", error);
+    console.error('Error fetching task by id:', error);
     return undefined;
   }
 
@@ -40,17 +40,17 @@ export async function saveTask(task: Task): Promise<void> {
   const { error } = await supabase.from(TABLE_NAME).upsert(task);
 
   if (error) {
-    console.error("Error saving task:", error);
+    console.error('Error saving task:', error);
     throw error;
   }
 }
 
 // 删除任务
 export async function deleteTaskById(id: string): Promise<void> {
-  const { error } = await supabase.from(TABLE_NAME).delete().eq("id", id);
+  const { error } = await supabase.from(TABLE_NAME).delete().eq('id', id);
 
   if (error) {
-    console.error("Error deleting task:", error);
+    console.error('Error deleting task:', error);
     throw error;
   }
 }

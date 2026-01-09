@@ -1,7 +1,7 @@
-import { Routes, Route } from "react-router-dom";
-import Home from "./pages/Home";
-import Workflow from "./pages/Workflow";
-import { Toaster } from "./components/ui/sonner";
+import { Routes, Route } from 'react-router-dom';
+import Home from './pages/Home';
+import Workflow from './pages/Workflow';
+import { Toaster } from './components/ui/sonner';
 
 function App() {
   return (

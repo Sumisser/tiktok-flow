@@ -1,11 +1,11 @@
-import { useState, useRef, useEffect } from "react";
-import type { StoryboardItem } from "../types";
+import { useState, useRef, useEffect } from 'react';
+import type { StoryboardItem } from '../types';
 import {
   uploadStoryboardImage,
   uploadStoryboardVideo,
   deleteStoryboardImage,
-} from "../lib/storage";
-import { toast } from "sonner";
+} from '../lib/storage';
+import { toast } from 'sonner';
 
 interface StoryboardEditorProps {
   taskId: string;
@@ -16,18 +16,18 @@ interface StoryboardEditorProps {
   setIsRawMode: (mode: boolean) => void;
 }
 
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from '@/components/ui/textarea';
 import {
   FileCode,
   LayoutGrid,
   AlertCircle,
   Video,
   Image as ImageIcon,
-} from "lucide-react";
+} from 'lucide-react';
 
 // 解析 Markdown 表格
 function parseMarkdownTable(markdown: string): StoryboardItem[] {
-  const lines = markdown.split("\n").filter((line) => line.trim());
+  const lines = markdown.split('\n').filter((line) => line.trim());
 
   // 检查是否包含 Markdown 表格特征 (至少有两个 | )
   const hasTable = lines.some((line) => (line.match(/\|/g) || []).length >= 2);
@@ -37,13 +37,13 @@ function parseMarkdownTable(markdown: string): StoryboardItem[] {
   if (hasTable) {
     for (const line of lines) {
       // 跳过表头（包含"镜号"）
-      if (line.includes("镜号")) continue;
+      if (line.includes('镜号')) continue;
 
       // 跳过分隔线（只包含 |、-、:、空格的行）
       if (/^[\s|:-]+$/.test(line)) continue;
 
       const cells = line
-        .split("|")
+        .split('|')
         .map((cell) => cell.trim())
         .filter(Boolean);
 
@@ -58,11 +58,11 @@ function parseMarkdownTable(markdown: string): StoryboardItem[] {
             .toString(36)
             .substr(2, 9)}`,
           shotNumber,
-          script: cells[1] || "",
-          imagePrompt: cells[2] || "",
-          imageUrl: "",
-          videoPrompt: cells[3] || "",
-          videoUrl: "",
+          script: cells[1] || '',
+          imagePrompt: cells[2] || '',
+          imageUrl: '',
+          videoPrompt: cells[3] || '',
+          videoUrl: '',
         });
       }
     }
@@ -73,8 +73,8 @@ function parseMarkdownTable(markdown: string): StoryboardItem[] {
         id: `shot-${index + 1}-${Date.now()}`,
         shotNumber: index + 1,
         script: line,
-        imagePrompt: "", // 初始没有提示词
-        imageUrl: "",
+        imagePrompt: '', // 初始没有提示词
+        imageUrl: '',
       });
     });
   }
@@ -115,7 +115,7 @@ export default function StoryboardEditor({
     // 合并现有图片信息，防止重新解析时丢失图片
     const mergedItems = newItems.map((newItem) => {
       const existingItem = storyboardsRef.current.find(
-        (s) => s.shotNumber === newItem.shotNumber
+        (s) => s.shotNumber === newItem.shotNumber,
       );
       if (existingItem) {
         return {
@@ -153,7 +153,7 @@ export default function StoryboardEditor({
       setCopiedId(id);
       setTimeout(() => setCopiedId(null), 1500);
     } catch (error) {
-      console.error("复制失败:", error);
+      console.error('复制失败:', error);
     }
   };
 
@@ -166,7 +166,7 @@ export default function StoryboardEditor({
     if (!clipboardItems) return;
 
     for (const clipItem of clipboardItems) {
-      if (clipItem.type.startsWith("image/")) {
+      if (clipItem.type.startsWith('image/')) {
         e.preventDefault();
         setIsProcessing(true);
 
@@ -177,19 +177,19 @@ export default function StoryboardEditor({
             const imageUrl = await uploadStoryboardImage(
               file,
               taskId,
-              item.shotNumber
+              item.shotNumber,
             );
 
             const updated = items.map((storyboard) =>
               storyboard.id === item.id
                 ? { ...storyboard, imageUrl }
-                : storyboard
+                : storyboard,
             );
             onUpdateStoryboards(updated);
             setEditingId(null);
           } catch (error) {
-            console.error("图片上传失败:", error);
-            toast.error("图片上传失败，请重试");
+            console.error('图片上传失败:', error);
+            toast.error('图片上传失败，请重试');
           }
         }
 
@@ -202,10 +202,10 @@ export default function StoryboardEditor({
   // 处理文件选择
   const handleFileSelect = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    item: StoryboardItem
+    item: StoryboardItem,
   ) => {
     const file = e.target.files?.[0];
-    if (!file || !file.type.startsWith("image/")) return;
+    if (!file || !file.type.startsWith('image/')) return;
 
     setIsProcessing(true);
     try {
@@ -213,17 +213,17 @@ export default function StoryboardEditor({
       const imageUrl = await uploadStoryboardImage(
         file,
         taskId,
-        item.shotNumber
+        item.shotNumber,
       );
 
       const updated = items.map((storyboard) =>
-        storyboard.id === item.id ? { ...storyboard, imageUrl } : storyboard
+        storyboard.id === item.id ? { ...storyboard, imageUrl } : storyboard,
       );
       onUpdateStoryboards(updated);
       setEditingId(null);
     } catch (error) {
-      console.error("图片上传失败:", error);
-      toast.error("图片上传失败，请重试");
+      console.error('图片上传失败:', error);
+      toast.error('图片上传失败，请重试');
     }
     setIsProcessing(false);
   };
@@ -236,35 +236,35 @@ export default function StoryboardEditor({
 
     const updated = items.map((storyboardItem) =>
       storyboardItem.id === item.id
-        ? { ...storyboardItem, imageUrl: "" }
-        : storyboardItem
+        ? { ...storyboardItem, imageUrl: '' }
+        : storyboardItem,
     );
     onUpdateStoryboards(updated);
   };
 
   const handleVideoSelect = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    item: StoryboardItem
+    item: StoryboardItem,
   ) => {
     const file = e.target.files?.[0];
-    if (!file || !file.type.startsWith("video/")) return;
+    if (!file || !file.type.startsWith('video/')) return;
 
     setIsProcessing(true);
     try {
       const videoUrl = await uploadStoryboardVideo(
         file,
         taskId,
-        item.shotNumber
+        item.shotNumber,
       );
 
       const updated = items.map((storyboard) =>
-        storyboard.id === item.id ? { ...storyboard, videoUrl } : storyboard
+        storyboard.id === item.id ? { ...storyboard, videoUrl } : storyboard,
       );
       onUpdateStoryboards(updated);
       setEditingId(null);
     } catch (error) {
-      console.error("视频上传失败:", error);
-      toast.error("视频上传失败，请重试");
+      console.error('视频上传失败:', error);
+      toast.error('视频上传失败，请重试');
     }
     setIsProcessing(false);
   };
@@ -276,8 +276,8 @@ export default function StoryboardEditor({
 
     const updated = items.map((storyboardItem) =>
       storyboardItem.id === item.id
-        ? { ...storyboardItem, videoUrl: "" }
-        : storyboardItem
+        ? { ...storyboardItem, videoUrl: '' }
+        : storyboardItem,
     );
     onUpdateStoryboards(updated);
   };
@@ -451,8 +451,8 @@ export default function StoryboardEditor({
                         className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
                       >
                         {copiedId === `script-${item.id}`
-                          ? "已复制"
-                          : "复制文本"}
+                          ? '已复制'
+                          : '复制文本'}
                       </button>
                     </div>
                     <p className="text-base text-foreground leading-relaxed font-medium">
@@ -476,7 +476,7 @@ export default function StoryboardEditor({
                           }
                           className="text-[10px] text-blue-400/60 hover:text-blue-400 transition-colors"
                         >
-                          {copiedId === `prompt-${item.id}` ? "已复制" : "复制"}
+                          {copiedId === `prompt-${item.id}` ? '已复制' : '复制'}
                         </button>
                       </div>
                       <div className="p-3 bg-black/20 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
@@ -497,14 +497,14 @@ export default function StoryboardEditor({
                             onClick={() =>
                               handleCopy(
                                 item.videoPrompt!,
-                                `video-prompt-${item.id}`
+                                `video-prompt-${item.id}`,
                               )
                             }
                             className="text-[10px] text-purple-400/60 hover:text-purple-400 transition-colors"
                           >
                             {copiedId === `video-prompt-${item.id}`
-                              ? "已复制"
-                              : "复制"}
+                              ? '已复制'
+                              : '复制'}
                           </button>
                         </div>
                         <div className="p-3 bg-black/20 rounded-lg border border-white/5 hover:border-white/10 transition-colors">

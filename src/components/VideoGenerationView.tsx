@@ -1,7 +1,7 @@
-import { useState } from "react";
-import type { StoryboardItem } from "../types";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { useState } from 'react';
+import type { StoryboardItem } from '../types';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Play,
   Wand2,
@@ -10,9 +10,9 @@ import {
   Video,
   RefreshCw,
   Sparkles,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface VideoGenerationViewProps {
   storyboards: StoryboardItem[];
@@ -28,7 +28,7 @@ export default function VideoGenerationView({
 
   const handleUpdatePrompt = (id: string, prompt: string) => {
     const updated = storyboards.map((item) =>
-      item.id === id ? { ...item, videoPrompt: prompt } : item
+      item.id === id ? { ...item, videoPrompt: prompt } : item,
     );
     onUpdateStoryboards(updated);
   };
@@ -41,12 +41,12 @@ export default function VideoGenerationView({
     // In a real app, this would call an API and update videoUrl
     const updated = storyboards.map((item) =>
       item.id === id
-        ? { ...item, videoUrl: "https://example.com/video.mp4" } // Mock URL
-        : item
+        ? { ...item, videoUrl: 'https://example.com/video.mp4' } // Mock URL
+        : item,
     );
     onUpdateStoryboards(updated);
     setGeneratingId(null);
-    toast.success("视频生成请求已提交");
+    toast.success('视频生成请求已提交');
   };
 
   const handleCopy = async (text: string, id: string) => {
@@ -55,8 +55,8 @@ export default function VideoGenerationView({
       setCopiedId(id);
       setTimeout(() => setCopiedId(null), 1500);
     } catch (error) {
-      console.error("Copy failed:", error);
-      toast.error("复制失败");
+      console.error('Copy failed:', error);
+      toast.error('复制失败');
     }
   };
 
@@ -140,7 +140,7 @@ export default function VideoGenerationView({
                       variant="ghost"
                       size="sm"
                       onClick={() =>
-                        handleCopy(item.videoPrompt || "", item.id)
+                        handleCopy(item.videoPrompt || '', item.id)
                       }
                       className="h-5 px-2 text-[9px] hover:bg-white/5 text-white/40 hover:text-white"
                     >
@@ -149,11 +149,11 @@ export default function VideoGenerationView({
                       ) : (
                         <Copy className="w-3 h-3 mr-1" />
                       )}
-                      {copiedId === item.id ? "COPIED" : "COPY PROMPT"}
+                      {copiedId === item.id ? 'COPIED' : 'COPY PROMPT'}
                     </Button>
                   </div>
                   <Textarea
-                    value={item.videoPrompt || ""}
+                    value={item.videoPrompt || ''}
                     onChange={(e) =>
                       handleUpdatePrompt(item.id, e.target.value)
                     }
@@ -177,10 +177,10 @@ export default function VideoGenerationView({
                   onClick={() => handleGenerateVideo(item.id)}
                   disabled={generatingId === item.id}
                   className={cn(
-                    "w-full justify-start text-xs font-bold transition-all duration-300",
+                    'w-full justify-start text-xs font-bold transition-all duration-300',
                     generatingId === item.id
-                      ? "bg-primary/20 text-primary border-primary/20"
-                      : "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:scale-105"
+                      ? 'bg-primary/20 text-primary border-primary/20'
+                      : 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:scale-105',
                   )}
                 >
                   {generatingId === item.id ? (
@@ -188,7 +188,7 @@ export default function VideoGenerationView({
                   ) : (
                     <Play className="w-3.5 h-3.5 mr-2 fill-current" />
                   )}
-                  {generatingId === item.id ? "生成中..." : "生成视频"}
+                  {generatingId === item.id ? '生成中...' : '生成视频'}
                 </Button>
               </div>
             </div>

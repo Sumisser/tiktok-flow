@@ -1,17 +1,17 @@
-import { useState, useEffect } from "react";
-import { ai } from "@/lib/gemini";
+import { useState, useEffect } from 'react';
+import { ai } from '@/lib/gemini';
 
 import type {
   WorkflowStep as WorkflowStepType,
   StoryboardItem,
-} from "../types";
-import StoryboardEditor from "./StoryboardEditor";
-import PromptSidebar from "./PromptSidebar";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+} from '../types';
+import StoryboardEditor from './StoryboardEditor';
+import PromptSidebar from './PromptSidebar';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Check,
   RotateCcw,
@@ -20,7 +20,7 @@ import {
   Wand2,
   FileCode,
   LayoutGrid,
-} from "lucide-react";
+} from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,8 +30,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/alert-dialog';
+import { cn } from '@/lib/utils';
 
 interface WorkflowStepProps {
   taskId: string;
@@ -66,131 +66,131 @@ export default function WorkflowStep({
 
   const handleInputChange = (value: string) => {
     setInput(value);
-    onUpdate({ input: value, status: "in-progress" });
+    onUpdate({ input: value, status: 'in-progress' });
   };
 
   const STYLE_CATEGORIES = [
     {
-      name: "✨ 精选风格",
+      name: '✨ 精选风格',
       styles: [
         {
-          id: "film_cinematic",
-          label: "🎬 电影质感",
+          id: 'film_cinematic',
+          label: '🎬 电影质感',
           description:
-            "好莱坞电影级画面。真实摄影，强烈的景深、自然光感和胶片颗粒，适合剧情、悬疑、纪录片。",
+            '好莱坞电影级画面。真实摄影，强烈的景深、自然光感和胶片颗粒，适合剧情、悬疑、纪录片。',
           prompt:
-            "Cinematic realism, photorealistic, 35mm lens, depth of field, natural lighting, film grain, color graded, 8k, movie scene",
+            'Cinematic realism, photorealistic, 35mm lens, depth of field, natural lighting, film grain, color graded, 8k, movie scene',
         },
         {
-          id: "anime_shinkai",
-          label: "🌤️ 新海诚风",
+          id: 'anime_shinkai',
+          label: '🌤️ 新海诚风',
           description:
-            "唯美治愈的日系动漫风格。强调光影、天空 render、细腻的云层和清新的色彩，适合治愈、情感、青春类内容。",
+            '唯美治愈的日系动漫风格。强调光影、天空 render、细腻的云层和清新的色彩，适合治愈、情感、青春类内容。',
           prompt:
-            "Makoto Shinkai style, high-quality anime art, vibrant sky, clouds, cinematic lighting, lens flare, emotional atmosphere, detailed background",
+            'Makoto Shinkai style, high-quality anime art, vibrant sky, clouds, cinematic lighting, lens flare, emotional atmosphere, detailed background',
         },
         {
-          id: "pixar_3d",
-          label: "🧸 皮克斯 3D",
+          id: 'pixar_3d',
+          label: '🧸 皮克斯 3D',
           description:
-            "迪士尼/皮克斯动画电影质感。角色圆润可爱，材质细腻，暖色调打光，适合亲子、叙事、轻松娱乐类。",
+            '迪士尼/皮克斯动画电影质感。角色圆润可爱，材质细腻，暖色调打光，适合亲子、叙事、轻松娱乐类。',
           prompt:
-            "Pixar style 3D render, Disney animation style, cute characters, expressive, octane render, volumetric lighting, soft textures, 3d cartoon",
+            'Pixar style 3D render, Disney animation style, cute characters, expressive, octane render, volumetric lighting, soft textures, 3d cartoon',
         },
         {
-          id: "epic_impasto",
-          label: "🖌️ 史诗厚涂",
+          id: 'epic_impasto',
+          label: '🖌️ 史诗厚涂',
           description:
-            "结合3D结构与2D手绘质感。笔触厚重，光影戏剧性强，画面极具史诗感和故事张力，类似顶级欧美动画剧集。",
+            '结合3D结构与2D手绘质感。笔触厚重，光影戏剧性强，画面极具史诗感和故事张力，类似顶级欧美动画剧集。',
           prompt:
-            "Semi-realistic 3D animation style, hand-painted textures, thick brushstrokes, dramatic cinematic lighting, epic atmosphere, stylized realism, oil painting aesthetics, volumetric fog, high fidelity, arcane style aesthetic",
+            'Semi-realistic 3D animation style, hand-painted textures, thick brushstrokes, dramatic cinematic lighting, epic atmosphere, stylized realism, oil painting aesthetics, volumetric fog, high fidelity, arcane style aesthetic',
         },
         {
-          id: "cel_shading",
-          label: "🎨 赛璐璐风",
+          id: 'cel_shading',
+          label: '🎨 赛璐璐风',
           description:
-            "鲜明的色块，清晰的轮廓线，高饱和度色彩，典型的日系二次元插画风格，适合活力、明快的内容。",
+            '鲜明的色块，清晰的轮廓线，高饱和度色彩，典型的日系二次元插画风格，适合活力、明快的内容。',
           prompt:
-            "Cel shading, anime style, flat color, clean outlines, vibrant colors, hard shadows, 2D animation style, high quality illustration, japanese anime aesthetics",
+            'Cel shading, anime style, flat color, clean outlines, vibrant colors, hard shadows, 2D animation style, high quality illustration, japanese anime aesthetics',
         },
         {
-          id: "unreal_engine",
-          label: "🎮 3A 游戏大作",
+          id: 'unreal_engine',
+          label: '🎮 3A 游戏大作',
           description:
-            "超写实游戏画面。极致的物理材质、光线追踪、动态天气，适合史诗、奇幻、动作类。",
+            '超写实游戏画面。极致的物理材质、光线追踪、动态天气，适合史诗、奇幻、动作类。',
           prompt:
-            "Unreal Engine 5 render, AAA game screenshot, hyperrealistic, ray tracing, global illumination, detailed textures, 8k resolution, epic fantasy",
+            'Unreal Engine 5 render, AAA game screenshot, hyperrealistic, ray tracing, global illumination, detailed textures, 8k resolution, epic fantasy',
         },
         {
-          id: "tech_commercial",
-          label: "📱 科技广告",
+          id: 'tech_commercial',
+          label: '📱 科技广告',
           description:
-            "苹果/大疆风格产品广告。极简干净背景，冷色调，强调产品细节和高级感，适合数码、评测、科技资讯。",
+            '苹果/大疆风格产品广告。极简干净背景，冷色调，强调产品细节和高级感，适合数码、评测、科技资讯。',
           prompt:
-            "High-tech commercial style, Apple aesthetic, clean background, studio lighting, sharp focus, minimalist, product photography, sleek design, 8k",
+            'High-tech commercial style, Apple aesthetic, clean background, studio lighting, sharp focus, minimalist, product photography, sleek design, 8k',
         },
         {
-          id: "documentary",
-          label: "📹 纪实摄影",
+          id: 'documentary',
+          label: '📹 纪实摄影',
           description:
-            "真实新闻/纪录片风格。自然光，手持摄影感，强调真实性和临场感，适合新闻资讯、生活记录、Vlog。",
+            '真实新闻/纪录片风格。自然光，手持摄影感，强调真实性和临场感，适合新闻资讯、生活记录、Vlog。',
           prompt:
-            "Documentary photography, raw style, natural lighting, shot on 35mm, candid moments, slight motion blur, street photography style",
+            'Documentary photography, raw style, natural lighting, shot on 35mm, candid moments, slight motion blur, street photography style',
         },
         {
-          id: "fashion_studio",
-          label: "💃 时尚大片",
+          id: 'fashion_studio',
+          label: '💃 时尚大片',
           description:
-            "高端商业摄影。影棚布光，高对比度，干净利落，强调主体质感，适合美妆、时尚、产品展示。",
+            '高端商业摄影。影棚布光，高对比度，干净利落，强调主体质感，适合美妆、时尚、产品展示。',
           prompt:
-            "High fashion photography, studio lighting, clean background, sharp focus, professional color grading, vogue style, commercial advertisement",
+            'High fashion photography, studio lighting, clean background, sharp focus, professional color grading, vogue style, commercial advertisement',
         },
         {
-          id: "anime_retro",
-          label: "📼 90s 复古动漫",
+          id: 'anime_retro',
+          label: '📼 90s 复古动漫',
           description:
-            "90年代赛璐璐风格。线条硬朗，赛博朋克或粉彩配色，适合怀旧、蒸汽波、情绪类内容。",
+            '90年代赛璐璐风格。线条硬朗，赛博朋克或粉彩配色，适合怀旧、蒸汽波、情绪类内容。',
           prompt:
-            "90s retro anime style, cel shading, vhs glitch effect, neon colors, sailor moon aesthetic, evangelion style, lo-fi vibes",
+            '90s retro anime style, cel shading, vhs glitch effect, neon colors, sailor moon aesthetic, evangelion style, lo-fi vibes',
         },
         {
-          id: "chinese_ink",
-          label: "🖌️ 水墨国风",
+          id: 'chinese_ink',
+          label: '🖌️ 水墨国风',
           description:
-            "中国传统水墨画意境。留白、墨色晕染、山水意象，适合历史、古风、文化传播类。",
+            '中国传统水墨画意境。留白、墨色晕染、山水意象，适合历史、古风、文化传播类。',
           prompt:
-            "Traditional Chinese Ink Painting, watercolor style, ethereal atmosphere, ink wash, minimalist, zen aesthetics, calligraphy brush strokes",
+            'Traditional Chinese Ink Painting, watercolor style, ethereal atmosphere, ink wash, minimalist, zen aesthetics, calligraphy brush strokes',
         },
         {
-          id: "cyberpunk",
-          label: "🌆 赛博朋克",
+          id: 'cyberpunk',
+          label: '🌆 赛博朋克',
           description:
-            "未来科幻。高对比度霓虹色（紫/青），雨夜城市，机械元素，适合科技、游戏、未来话题。",
+            '未来科幻。高对比度霓虹色（紫/青），雨夜城市，机械元素，适合科技、游戏、未来话题。',
           prompt:
-            "Cyberpunk neon, futuristic city, rainy night, violet and teal lighting, high tech, blade runner aesthetic, glow effects, sci-fi concept art",
+            'Cyberpunk neon, futuristic city, rainy night, violet and teal lighting, high tech, blade runner aesthetic, glow effects, sci-fi concept art',
         },
         {
-          id: "claymation",
-          label: "🧱 黏土动画",
+          id: 'claymation',
+          label: '🧱 黏土动画',
           description:
-            "手工黏土定格动画。有指纹痕迹和材质感，笨拙可爱，适合创意短片、手工DIY内容。",
+            '手工黏土定格动画。有指纹痕迹和材质感，笨拙可爱，适合创意短片、手工DIY内容。',
           prompt:
-            "Claymation style, handmade texture, stop-motion aesthetic, soft studio lighting, plasticine material, fingerprint details, aardman style",
+            'Claymation style, handmade texture, stop-motion aesthetic, soft studio lighting, plasticine material, fingerprint details, aardman style',
         },
       ],
     },
   ];
 
   const [selectedStyle, setSelectedStyle] = useState(
-    STYLE_CATEGORIES[0].styles[0].id
+    STYLE_CATEGORIES[0].styles[0].id,
   );
 
   const selectedStyleConfig = STYLE_CATEGORIES.flatMap((c) => c.styles).find(
-    (s) => s.id === selectedStyle
+    (s) => s.id === selectedStyle,
   );
 
   const getFullPrompt = () => {
-    let stylePrompt = "";
+    let stylePrompt = '';
     for (const cat of STYLE_CATEGORIES) {
       const found = cat.styles.find((s) => s.id === selectedStyle);
       if (found) {
@@ -205,25 +205,25 @@ export default function WorkflowStep({
     let finalBasePrompt = step.basePrompt;
 
     // 如果没有输入，直接返回空或基础提示词
-    if (!input.trim()) return "";
+    if (!input.trim()) return '';
 
-    const stylePlaceholder = "[STYLE_INSTRUCTION]";
+    const stylePlaceholder = '[STYLE_INSTRUCTION]';
     if (finalBasePrompt.includes(stylePlaceholder)) {
       // 1. 优先替换专门设置的占位符
       finalBasePrompt = finalBasePrompt.replace(stylePlaceholder, stylePrompt);
     } else {
       // 2. 兜底：直接追加
       finalBasePrompt =
-        finalBasePrompt + "\n\n" + `**画面风格要求：**\n${stylePrompt}`;
+        finalBasePrompt + '\n\n' + `**画面风格要求：**\n${stylePrompt}`;
     }
 
     // 3. 注入用户输入
-    const inputPlaceholder = "[USER_INPUT]";
+    const inputPlaceholder = '[USER_INPUT]';
     if (finalBasePrompt.includes(inputPlaceholder)) {
       finalBasePrompt = finalBasePrompt.replace(inputPlaceholder, input);
     } else {
       // 兜底：如果模板中没有占位符，还是追加在最后
-      finalBasePrompt = finalBasePrompt + "\n" + input;
+      finalBasePrompt = finalBasePrompt + '\n' + input;
     }
 
     return finalBasePrompt.trim();
@@ -238,14 +238,14 @@ export default function WorkflowStep({
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {
-      console.error("复制失败:", err);
+      console.error('复制失败:', err);
     }
 
     // 2. 调用 AI 模型
     setIsGenerating(true);
     try {
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: 'gemini-3-flash-preview',
         contents: getFullPrompt(),
       });
 
@@ -257,10 +257,10 @@ export default function WorkflowStep({
 
       if (text) {
         setOutput(text);
-        onUpdate({ output: text, status: "in-progress" });
+        onUpdate({ output: text, status: 'in-progress' });
       }
     } catch (error) {
-      console.error("AI 生成失败:", error);
+      console.error('AI 生成失败:', error);
     } finally {
       setIsGenerating(false);
     }
@@ -271,9 +271,9 @@ export default function WorkflowStep({
   };
 
   const handleConfirmReset = () => {
-    setInput("");
-    setOutput("");
-    onUpdate({ input: "", output: "", status: "pending" });
+    setInput('');
+    setOutput('');
+    onUpdate({ input: '', output: '', status: 'pending' });
     onUpdateStoryboards([]);
     setResetDialogOpen(false);
   };
@@ -314,7 +314,7 @@ export default function WorkflowStep({
               查看 System Prompt
             </Button>
 
-            {step.status !== "pending" && (
+            {step.status !== 'pending' && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -377,19 +377,19 @@ export default function WorkflowStep({
                           key={style.id}
                           onClick={() => setSelectedStyle(style.id)}
                           className={cn(
-                            "px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all duration-300 border uppercase tracking-tighter flex items-center gap-2",
+                            'px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all duration-300 border uppercase tracking-tighter flex items-center gap-2',
                             selectedStyle === style.id
-                              ? "bg-primary/20 text-primary border-primary/50 shadow-lg shadow-primary/5 scale-[1.02]"
-                              : "bg-white/5 text-white/40 border-white/5 hover:border-white/10 hover:text-white/60"
+                              ? 'bg-primary/20 text-primary border-primary/50 shadow-lg shadow-primary/5 scale-[1.02]'
+                              : 'bg-white/5 text-white/40 border-white/5 hover:border-white/10 hover:text-white/60',
                           )}
                         >
-                          {style.label.includes(" ") ? (
+                          {style.label.includes(' ') ? (
                             <>
                               <span className="text-xs">
-                                {style.label.split(" ")[0]}
+                                {style.label.split(' ')[0]}
                               </span>
                               <span>
-                                {style.label.split(" ").slice(1).join(" ")}
+                                {style.label.split(' ').slice(1).join(' ')}
                               </span>
                             </>
                           ) : (
@@ -411,9 +411,9 @@ export default function WorkflowStep({
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-bold text-primary">
                           {selectedStyleConfig.label
-                            .split(" ")
+                            .split(' ')
                             .slice(1)
-                            .join(" ")}
+                            .join(' ')}
                         </span>
                         <span className="text-[10px] text-muted-foreground bg-black/5 px-1.5 py-0.5 rounded uppercase tracking-wider">
                           Style Preview
@@ -435,10 +435,10 @@ export default function WorkflowStep({
               onClick={handleGenerate}
               disabled={!input.trim() || isGenerating}
               className={cn(
-                "w-full h-14 rounded-xl text-sm font-black tracking-widest transition-all duration-300 shadow-lg uppercase relative overflow-hidden group",
+                'w-full h-14 rounded-xl text-sm font-black tracking-widest transition-all duration-300 shadow-lg uppercase relative overflow-hidden group',
                 input.trim() && !isGenerating
-                  ? "bg-gradient-to-r from-primary to-violet-600 text-white hover:scale-[1.01] hover:shadow-primary/25 border border-white/10"
-                  : "bg-muted text-muted-foreground"
+                  ? 'bg-gradient-to-r from-primary to-violet-600 text-white hover:scale-[1.01] hover:shadow-primary/25 border border-white/10'
+                  : 'bg-muted text-muted-foreground',
               )}
             >
               <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
@@ -477,10 +477,10 @@ export default function WorkflowStep({
                 size="sm"
                 onClick={() => setIsStoryboardRawMode(!isStoryboardRawMode)}
                 className={cn(
-                  "h-8 px-3 text-[10px] font-bold uppercase tracking-wider transition-all border",
+                  'h-8 px-3 text-[10px] font-bold uppercase tracking-wider transition-all border',
                   isStoryboardRawMode
-                    ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
-                    : "text-muted-foreground border-transparent hover:bg-white/5 hover:text-foreground"
+                    ? 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20'
+                    : 'text-muted-foreground border-transparent hover:bg-white/5 hover:text-foreground',
                 )}
               >
                 {isStoryboardRawMode ? (

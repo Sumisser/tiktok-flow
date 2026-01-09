@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -6,12 +6,12 @@ import {
   SheetTitle,
   SheetDescription,
   SheetFooter,
-} from "@/components/ui/sheet";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Cpu, Info, Save, RotateCcw } from "lucide-react";
-import { toast } from "sonner";
+} from '@/components/ui/sheet';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Cpu, Info, Save, RotateCcw } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface PromptSidebarProps {
   isOpen: boolean;
@@ -42,7 +42,7 @@ export default function PromptSidebar({
   const handleSave = () => {
     onSave(prompt);
     setHasChanges(false);
-    toast.success("系统提示词已更新");
+    toast.success('系统提示词已更新');
     onClose();
   };
 

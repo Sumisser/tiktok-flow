@@ -1,13 +1,13 @@
-import { useState, useEffect, useRef, type ReactNode } from "react";
-import type { Task, WorkflowStep, StoryboardItem } from "../types";
-import { getAllTasks, saveTask, deleteTaskById } from "./db";
-import { TaskContext, type WallpaperAttribution } from "./context";
+import { useState, useEffect, useRef, type ReactNode } from 'react';
+import type { Task, WorkflowStep, StoryboardItem } from '../types';
+import { getAllTasks, saveTask, deleteTaskById } from './db';
+import { TaskContext, type WallpaperAttribution } from './context';
 import {
   createDefaultSteps,
   hydrateTasksWithPrompts,
   dehydrateTaskForStorage,
-} from "./utils";
-import { getRandomWallpaper } from "../lib/unsplash";
+} from './utils';
+import { getRandomWallpaper } from '../lib/unsplash';
 
 // Provider 组件
 export function TaskProvider({ children }: { children: ReactNode }) {
@@ -21,7 +21,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   // 初始化壁纸 - 使用 Unsplash API
   useEffect(() => {
     const fetchWallpaper = async () => {
-      const data = await getRandomWallpaper("nature landscape");
+      const data = await getRandomWallpaper('nature landscape');
       if (data) {
         setWallpaperUrl(data.url);
         setWallpaperAttribution({
@@ -32,7 +32,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
       } else {
         // 如果 Unsplash API 失败，使用备用壁纸（无归属信息）
         setWallpaperUrl(
-          `https://bing.biturl.top/?resolution=1920&format=image&index=random&_t=${Date.now()}`
+          `https://bing.biturl.top/?resolution=1920&format=image&index=random&_t=${Date.now()}`,
         );
         setWallpaperAttribution(null);
       }
@@ -52,7 +52,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         const hydratedTasks = hydrateTasksWithPrompts(storedTasks);
         setTasks(hydratedTasks);
       } catch (error) {
-        console.error("加载任务失败:", error);
+        console.error('加载任务失败:', error);
       } finally {
         setIsLoading(false);
       }
@@ -65,7 +65,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     const now = new Date().toISOString();
     const newTask: Task = {
       id: `task-${Date.now()}`,
-      title: title || "未命名项目",
+      title: title || '未命名项目',
       createdAt: now,
       updatedAt: now,
       steps: createDefaultSteps(),
@@ -89,7 +89,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
 
     // 如果任务存在，异步清理存储中的图片
     if (taskToDelete) {
-      const { deleteTaskImages } = await import("../lib/storage");
+      const { deleteTaskImages } = await import('../lib/storage');
       await deleteTaskImages(id);
     }
   };
@@ -98,7 +98,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     const updatedTasks = tasks.map((task) =>
       task.id === id
         ? { ...task, ...updates, updatedAt: new Date().toISOString() }
-        : task
+        : task,
     );
     setTasks(updatedTasks);
     const updatedTask = updatedTasks.find((t) => t.id === id);
@@ -114,12 +114,12 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   const updateStep = async (
     taskId: string,
     stepId: string,
-    updates: Partial<WorkflowStep>
+    updates: Partial<WorkflowStep>,
   ) => {
     const updatedTasks = tasks.map((task) => {
       if (task.id === taskId) {
         const updatedSteps = task.steps.map((step) =>
-          step.id === stepId ? { ...step, ...updates } : step
+          step.id === stepId ? { ...step, ...updates } : step,
         );
         return {
           ...task,
@@ -138,12 +138,12 @@ export function TaskProvider({ children }: { children: ReactNode }) {
 
   const updateStoryboards = async (
     taskId: string,
-    storyboards: StoryboardItem[]
+    storyboards: StoryboardItem[],
   ) => {
     const updatedTasks = tasks.map((task) =>
       task.id === taskId
         ? { ...task, storyboards, updatedAt: new Date().toISOString() }
-        : task
+        : task,
     );
     setTasks(updatedTasks);
     const updatedTask = updatedTasks.find((t) => t.id === taskId);

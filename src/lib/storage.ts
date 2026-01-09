@@ -1,6 +1,6 @@
-import { supabase } from "./supabase";
+import { supabase } from './supabase';
 
-const BUCKET_NAME = "flow";
+const BUCKET_NAME = 'flow';
 
 /**
  * 上传图片到 Supabase Storage
@@ -12,24 +12,24 @@ const BUCKET_NAME = "flow";
 export async function uploadStoryboardImage(
   file: File,
   taskId: string,
-  shotNumber: number
+  shotNumber: number,
 ): Promise<string> {
   try {
     // 生成唯一的文件名
     const timestamp = Date.now();
-    const fileExt = file.name.split(".").pop();
+    const fileExt = file.name.split('.').pop();
     const fileName = `${taskId}/shot-${shotNumber}-${timestamp}.${fileExt}`;
 
     // 上传文件到 Supabase Storage
     const { data, error } = await supabase.storage
       .from(BUCKET_NAME)
       .upload(fileName, file, {
-        cacheControl: "3600",
+        cacheControl: '3600',
         upsert: true, // 如果文件已存在则覆盖
       });
 
     if (error) {
-      console.error("Error uploading image:", error);
+      console.error('Error uploading image:', error);
       throw error;
     }
 
@@ -40,7 +40,7 @@ export async function uploadStoryboardImage(
 
     return publicUrl;
   } catch (error) {
-    console.error("Failed to upload storyboard image:", error);
+    console.error('Failed to upload storyboard image:', error);
     throw error;
   }
 }
@@ -55,23 +55,23 @@ export async function uploadStoryboardImage(
 export async function uploadStoryboardVideo(
   file: File,
   taskId: string,
-  shotNumber: number
+  shotNumber: number,
 ): Promise<string> {
   try {
     const timestamp = Date.now();
-    const fileExt = file.name.split(".").pop();
+    const fileExt = file.name.split('.').pop();
     // 使用 video 前缀以示区别，或者直接混用也可以，这里加个 video- 前缀
     const fileName = `${taskId}/video-${shotNumber}-${timestamp}.${fileExt}`;
 
     const { data, error } = await supabase.storage
       .from(BUCKET_NAME)
       .upload(fileName, file, {
-        cacheControl: "3600",
+        cacheControl: '3600',
         upsert: true,
       });
 
     if (error) {
-      console.error("Error uploading video:", error);
+      console.error('Error uploading video:', error);
       throw error;
     }
 
@@ -81,7 +81,7 @@ export async function uploadStoryboardVideo(
 
     return publicUrl;
   } catch (error) {
-    console.error("Failed to upload storyboard video:", error);
+    console.error('Failed to upload storyboard video:', error);
     throw error;
   }
 }
@@ -94,15 +94,15 @@ export async function deleteStoryboardImage(imageUrl: string): Promise<void> {
   try {
     // 从 URL 中提取文件路径
     const url = new URL(imageUrl);
-    const pathParts = url.pathname.split("/");
+    const pathParts = url.pathname.split('/');
     const bucketIndex = pathParts.indexOf(BUCKET_NAME);
 
     if (bucketIndex === -1) {
-      console.warn("Invalid image URL, cannot extract file path");
+      console.warn('Invalid image URL, cannot extract file path');
       return;
     }
 
-    const filePath = pathParts.slice(bucketIndex + 1).join("/");
+    const filePath = pathParts.slice(bucketIndex + 1).join('/');
 
     // 删除文件
     const { error } = await supabase.storage
@@ -110,11 +110,11 @@ export async function deleteStoryboardImage(imageUrl: string): Promise<void> {
       .remove([filePath]);
 
     if (error) {
-      console.error("Error deleting image:", error);
+      console.error('Error deleting image:', error);
       throw error;
     }
   } catch (error) {
-    console.error("Failed to delete storyboard image:", error);
+    console.error('Failed to delete storyboard image:', error);
     // 不抛出错误，因为删除失败不应该阻止其他操作
   }
 }
@@ -131,7 +131,7 @@ export async function deleteTaskImages(taskId: string): Promise<void> {
       .list(taskId);
 
     if (listError) {
-      console.error("Error listing task images:", listError);
+      console.error('Error listing task images:', listError);
       return;
     }
 
@@ -148,9 +148,9 @@ export async function deleteTaskImages(taskId: string): Promise<void> {
       .remove(filesToRemove);
 
     if (removeError) {
-      console.error("Error removing task images:", removeError);
+      console.error('Error removing task images:', removeError);
     }
   } catch (error) {
-    console.error("Failed to delete task images room storage:", error);
+    console.error('Failed to delete task images room storage:', error);
   }
 }

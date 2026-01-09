@@ -1,5 +1,5 @@
-import { createContext } from "react";
-import type { Task, WorkflowStep, StoryboardItem } from "../types";
+import { createContext } from 'react';
+import type { Task, WorkflowStep, StoryboardItem } from '../types';
 
 // Unsplash 壁纸归属信息
 export interface WallpaperAttribution {
@@ -18,11 +18,11 @@ export interface TaskContextType {
   updateStep: (
     taskId: string,
     stepId: string,
-    updates: Partial<WorkflowStep>
+    updates: Partial<WorkflowStep>,
   ) => Promise<void>;
   updateStoryboards: (
     taskId: string,
-    storyboards: StoryboardItem[]
+    storyboards: StoryboardItem[],
   ) => Promise<void>;
   wallpaperUrl: string | null;
   wallpaperAttribution: WallpaperAttribution | null;

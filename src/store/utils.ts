@@ -1,11 +1,11 @@
-import type { Task, WorkflowStep } from "../types";
+import type { Task, WorkflowStep } from '../types';
 
 // 默认工作流步骤模板
 export const createDefaultSteps = (): WorkflowStep[] => [
   {
-    id: "step-1",
-    type: "storyboard",
-    title: "创意分镜生成",
+    id: 'step-1',
+    type: 'storyboard',
+    title: '创意分镜生成',
     basePrompt: `你是一个全能的短视频创作专家，集成了金牌编剧、分镜大师、AI绘画专家和视频生成专家的能力。
 你的任务是将用户的简单想法转化为一份完整的、可直接用于生产的短视频分镜脚本。
 
@@ -54,19 +54,22 @@ export const createDefaultSteps = (): WorkflowStep[] => [
 ...
 \`\`\`
     `,
-    input: "",
-    output: "",
-    status: "pending",
+    input: '',
+    output: '',
+    status: 'pending',
   },
 ];
 
 // 获取默认提示词的映射
 export const getDefaultPrompts = (): Record<string, string> => {
   const steps = createDefaultSteps();
-  return steps.reduce((acc, step) => {
-    acc[step.id] = step.basePrompt;
-    return acc;
-  }, {} as Record<string, string>);
+  return steps.reduce(
+    (acc, step) => {
+      acc[step.id] = step.basePrompt;
+      return acc;
+    },
+    {} as Record<string, string>,
+  );
 };
 
 // 从存储恢复任务时，补充 basePrompt
@@ -77,7 +80,7 @@ export const hydrateTasksWithPrompts = (storedTasks: Task[]): Task[] => {
     storyboards: task.storyboards || [],
     steps: task.steps.map((step) => ({
       ...step,
-      basePrompt: defaultPrompts[step.id] || step.basePrompt || "",
+      basePrompt: defaultPrompts[step.id] || step.basePrompt || '',
     })),
   }));
 };
