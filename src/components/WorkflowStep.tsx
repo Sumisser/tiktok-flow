@@ -98,12 +98,28 @@ export default function WorkflowStep({
             "Pixar style 3D render, Disney animation style, cute characters, expressive, octane render, volumetric lighting, soft textures, 3d cartoon",
         },
         {
+          id: "epic_impasto",
+          label: "🖌️ 史诗厚涂",
+          description:
+            "结合3D结构与2D手绘质感。笔触厚重，光影戏剧性强，画面极具史诗感和故事张力，类似顶级欧美动画剧集。",
+          prompt:
+            "Semi-realistic 3D animation style, hand-painted textures, thick brushstrokes, dramatic cinematic lighting, epic atmosphere, stylized realism, oil painting aesthetics, volumetric fog, high fidelity, arcane style aesthetic",
+        },
+        {
+          id: "cel_shading",
+          label: "🎨 赛璐璐风",
+          description:
+            "鲜明的色块，清晰的轮廓线，高饱和度色彩，典型的日系二次元插画风格，适合活力、明快的内容。",
+          prompt:
+            "Cel shading, anime style, flat color, clean outlines, vibrant colors, hard shadows, 2D animation style, high quality illustration, japanese anime aesthetics",
+        },
+        {
           id: "unreal_engine",
           label: "🎮 3A 游戏大作",
           description:
-            "超写实游戏画面（黑神话/虚幻5）。极致的物理材质、光线追踪、动态天气，适合史诗、奇幻、动作类。",
+            "超写实游戏画面。极致的物理材质、光线追踪、动态天气，适合史诗、奇幻、动作类。",
           prompt:
-            "Unreal Engine 5 render, AAA game screenshot, hyperrealistic, ray tracing, global illumination, detailed textures, 8k resolution, epic fantasy, Black Myth Wukong style",
+            "Unreal Engine 5 render, AAA game screenshot, hyperrealistic, ray tracing, global illumination, detailed textures, 8k resolution, epic fantasy",
         },
         {
           id: "tech_commercial",
