@@ -114,7 +114,7 @@ export default function Workflow() {
   // );
 
   return (
-    <div className="min-h-screen pb-32 relative text-white">
+    <div className="h-screen overflow-hidden relative text-white">
       {/* 背景图片 */}
       {wallpaperUrl && (
         <>
@@ -281,9 +281,9 @@ export default function Workflow() {
       </header>
 
       {/* 主要内容 */}
-      <main className="w-full overflow-x-hidden pb-12 mt-36">
-        <div className="w-full px-4 md:px-12 lg:px-24">
-          <div className="max-w-7xl mx-auto space-y-12">
+      <main className="w-full pt-16 h-full overflow-y-auto overflow-x-hidden flex flex-col">
+        <div className="flex-1 w-full px-4 md:px-12 lg:px-24 flex flex-col items-center">
+          <div className="w-full max-w-7xl mx-auto my-auto py-8">
             {task.steps.length > 0 && (
               <WorkflowStep
                 key={task.steps[0].id}

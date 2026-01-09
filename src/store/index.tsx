@@ -1,4 +1,10 @@
-import { useState, useEffect, useRef, type ReactNode } from 'react';
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  type ReactNode,
+} from 'react';
 import type { Task, WorkflowStep, StoryboardItem } from '../types';
 import { getAllTasks, saveTask, deleteTaskById } from './db';
 import { TaskContext, type WallpaperAttribution } from './context';
@@ -136,21 +142,69 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateStoryboards = async (
-    taskId: string,
-    storyboards: StoryboardItem[],
-  ) => {
-    const updatedTasks = tasks.map((task) =>
-      task.id === taskId
-        ? { ...task, storyboards, updatedAt: new Date().toISOString() }
-        : task,
-    );
-    setTasks(updatedTasks);
-    const updatedTask = updatedTasks.find((t) => t.id === taskId);
-    if (updatedTask) {
-      await saveTask(dehydrateTaskForStorage(updatedTask));
-    }
-  };
+  // 用于防抖的 ref
+  const saveStoryboardsTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+  const pendingStoryboardsRef = useRef<{
+    taskId: string;
+    storyboards: StoryboardItem[];
+  } | null>(null);
+  const tasksRef = useRef(tasks);
+
+  // 保持 tasksRef 与 tasks 同步
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
+
+  const updateStoryboards = useCallback(
+    (taskId: string, storyboards: StoryboardItem[]) => {
+      // 立即更新本地状态
+      setTasks((prevTasks) =>
+        prevTasks.map((task) =>
+          task.id === taskId
+            ? { ...task, storyboards, updatedAt: new Date().toISOString() }
+            : task,
+        ),
+      );
+
+      // 保存待处理的数据
+      pendingStoryboardsRef.current = { taskId, storyboards };
+
+      // 取消之前的保存定时器
+      if (saveStoryboardsTimeoutRef.current) {
+        clearTimeout(saveStoryboardsTimeoutRef.current);
+      }
+
+      // 延迟保存到数据库（防抖 500ms）
+      saveStoryboardsTimeoutRef.current = setTimeout(async () => {
+        const pending = pendingStoryboardsRef.current;
+        if (pending) {
+          try {
+            // 使用 ref 获取最新的任务状态，避免闭包问题
+            const currentTask = tasksRef.current.find(
+              (t) => t.id === pending.taskId,
+            );
+            if (currentTask) {
+              const taskToSave = {
+                ...currentTask,
+                storyboards: pending.storyboards,
+                updatedAt: new Date().toISOString(),
+              };
+              await saveTask(dehydrateTaskForStorage(taskToSave));
+            }
+          } catch (error) {
+            // 忽略 AbortError，因为它通常是因为新请求取消了旧请求
+            if (error instanceof Error && error.name !== 'AbortError') {
+              console.error('保存分镜失败:', error);
+            }
+          }
+          pendingStoryboardsRef.current = null;
+        }
+      }, 500);
+    },
+    [], // 空依赖数组，函数引用稳定
+  );
 
   return (
     <TaskContext.Provider

@@ -23,6 +23,8 @@ import {
   AlertCircle,
   Video,
   Image as ImageIcon,
+  Copy,
+  Check,
 } from 'lucide-react';
 
 // 解析 Markdown 表格
@@ -94,6 +96,7 @@ export default function StoryboardEditor({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isFullScriptCopied, setIsFullScriptCopied] = useState(false);
   const dropzoneRef = useRef<HTMLDivElement>(null);
   const storyboardsRef = useRef(storyboards);
   const [rawText, setRawText] = useState(output);
@@ -103,14 +106,16 @@ export default function StoryboardEditor({
     storyboardsRef.current = storyboards;
   }, [storyboards]);
 
-  // Sync raw text from output only if not editing and output changed significantly
-  useEffect(() => {
-    if (!isRawMode && output && output !== rawText) {
-      setRawText(output);
-    }
-  }, [output]);
+  // 追踪是否已初始化解析，避免重复解析
+  const hasInitializedRef = useRef(false);
+  const lastParsedOutputRef = useRef<string>('');
 
   const handleParseAndMerge = (markdown: string) => {
+    // 如果内容相同，跳过
+    if (markdown === lastParsedOutputRef.current) {
+      return;
+    }
+
     const newItems = parseMarkdownTable(markdown);
     // 合并现有图片信息，防止重新解析时丢失图片
     const mergedItems = newItems.map((newItem) => {
@@ -130,19 +135,41 @@ export default function StoryboardEditor({
 
     // 只有当解析出有效内容时才更新
     if (mergedItems.length > 0) {
+      lastParsedOutputRef.current = markdown;
       onUpdateStoryboards(mergedItems);
     }
   };
 
-  // 监听 output 变化，自动解析
+  // 只在首次挂载时解析 output（如果有的话）
   useEffect(() => {
-    if (output) {
+    if (!hasInitializedRef.current && output && storyboards.length === 0) {
+      hasInitializedRef.current = true;
       handleParseAndMerge(output);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 当 output 从父组件更新时（例如 AI 生成后），同步解析
+  // 使用 prevOutputRef 追踪上一次的 output
+  const prevOutputRef = useRef(output);
+  useEffect(() => {
+    // 只有当 output 真正变化且与上次不同时才解析
+    if (
+      output &&
+      output !== prevOutputRef.current &&
+      output !== lastParsedOutputRef.current
+    ) {
+      prevOutputRef.current = output;
+      setRawText(output);
+      handleParseAndMerge(output);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [output]);
 
   const handleRawTextChange = (value: string) => {
     setRawText(value);
+    // 用户手动编辑时，先清除缓存以确保可以解析
+    lastParsedOutputRef.current = '';
     handleParseAndMerge(value);
   };
 
@@ -152,6 +179,18 @@ export default function StoryboardEditor({
       await navigator.clipboard.writeText(text);
       setCopiedId(id);
       setTimeout(() => setCopiedId(null), 1500);
+    } catch (error) {
+      console.error('复制失败:', error);
+    }
+  };
+
+  // 一键复制完整脚本（所有分镜脚本合并）
+  const handleCopyFullScript = async () => {
+    const fullScript = storyboards.map((s) => s.script).join('\n\n');
+    try {
+      await navigator.clipboard.writeText(fullScript);
+      setIsFullScriptCopied(true);
+      setTimeout(() => setIsFullScriptCopied(false), 1500);
     } catch (error) {
       console.error('复制失败:', error);
     }
@@ -329,142 +368,126 @@ export default function StoryboardEditor({
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 animate-in fade-in slide-in-from-left-2 duration-300">
-          {items.map((item) => (
-            <div
-              key={item.id}
-              className="group bg-black/20 rounded-2xl border border-white/5 overflow-hidden hover:border-primary/20 transition-all duration-300"
-            >
-              <div className="flex flex-col md:flex-row gap-0">
-                {/* 1. Media Area (Left) */}
-                <div className="w-full md:w-56 bg-black/10 p-4 flex flex-col gap-3 border-b md:border-b-0 md:border-r border-white/5">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="px-2 py-1 bg-white/5 rounded text-[10px] font-bold text-muted-foreground">
-                      SHOT {item.shotNumber}
-                    </span>
-                  </div>
+        <div className="space-y-4 animate-in fade-in slide-in-from-left-2 duration-300">
+          {/* 一键复制完整脚本按钮 */}
+          {items.length > 0 && (
+            <div className="flex justify-end">
+              <button
+                onClick={handleCopyFullScript}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all text-xs font-bold"
+              >
+                {isFullScriptCopied ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    已复制完整脚本
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    一键复制完整脚本
+                  </>
+                )}
+              </button>
+            </div>
+          )}
 
-                  {/* Image */}
-                  <div className="aspect-video w-full bg-black/40 rounded-lg overflow-hidden relative group/media ring-1 ring-white/5">
-                    <div className="absolute top-2 left-2 z-10 px-1.5 py-0.5 bg-black/60 backdrop-blur-sm rounded text-[10px] text-white/70 font-bold flex items-center gap-1">
-                      <ImageIcon className="w-3 h-3" /> Image
+          {/* 分镜卡片列表 */}
+          <div className="grid gap-4">
+            {items.map((item) => (
+              <div
+                key={item.id}
+                className="group bg-black/20 rounded-2xl border border-white/5 overflow-hidden hover:border-primary/20 transition-all duration-300"
+              >
+                {/* 顶部脚本区域 - 全宽 */}
+                <div className="p-5 border-b border-white/5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <span className="px-2.5 py-1 bg-primary/10 rounded-lg text-[11px] font-black text-primary uppercase tracking-wider">
+                        SHOT {item.shotNumber}
+                      </span>
                     </div>
-                    {item.imageUrl ? (
-                      <>
-                        <img
-                          src={item.imageUrl}
-                          alt={`Shot ${item.shotNumber}`}
-                          className="w-full h-full object-cover"
-                        />
-                        <button
-                          onClick={() => handleRemoveImage(item)}
-                          className="absolute top-2 right-2 w-5 h-5 bg-red-500/80 rounded-full flex items-center justify-center text-white text-xs opacity-0 group-hover/media:opacity-100 transition-all hover:bg-red-500"
-                        >
-                          ×
-                        </button>
-                      </>
-                    ) : editingId === item.id ? (
-                      <div
-                        ref={dropzoneRef}
-                        onPaste={(e) => handlePaste(e, item)}
-                        className="w-full h-full flex flex-col items-center justify-center p-2 text-center"
-                        tabIndex={0}
-                      >
-                        {isProcessing ? (
-                          <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full" />
-                        ) : (
-                          <label className="cursor-pointer flex flex-col items-center gap-2">
-                            <span className="text-[10px] text-muted-foreground">
-                              Ctrl+V 粘贴或
-                            </span>
-                            <span className="px-2 py-1 bg-primary/20 text-primary text-[10px] rounded font-bold hover:bg-primary/30">
-                              上传文件
-                            </span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => handleFileSelect(e, item)}
-                              className="hidden"
-                            />
-                          </label>
-                        )}
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setEditingId(item.id)}
-                        className="w-full h-full flex flex-col items-center justify-center text-muted-foreground/30 hover:text-primary hover:bg-primary/5 transition-all gap-2"
-                      >
-                        <ImageIcon className="w-6 h-6" />
-                        <span className="text-[10px] font-bold">
-                          添加参考图
-                        </span>
-                      </button>
-                    )}
+                    <button
+                      onClick={() =>
+                        handleCopy(item.script, `script-${item.id}`)
+                      }
+                      className="p-1.5 rounded-md hover:bg-white/10 transition-all"
+                      title="复制脚本"
+                    >
+                      {copiedId === `script-${item.id}` ? (
+                        <Check className="w-4 h-4 text-green-400" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                      )}
+                    </button>
                   </div>
-
-                  {/* Video */}
-                  <div className="aspect-video w-full bg-black/40 rounded-lg overflow-hidden relative group/media ring-1 ring-white/5">
-                    <div className="absolute top-2 left-2 z-10 px-1.5 py-0.5 bg-black/60 backdrop-blur-sm rounded text-[10px] text-white/70 font-bold flex items-center gap-1">
-                      <Video className="w-3 h-3" /> Video
-                    </div>
-                    {item.videoUrl ? (
-                      <>
-                        <video
-                          src={item.videoUrl}
-                          className="w-full h-full object-cover"
-                          controls
-                        />
-                        <button
-                          onClick={() => handleRemoveVideo(item)}
-                          className="absolute top-2 right-2 w-5 h-5 bg-red-500/80 rounded-full flex items-center justify-center text-white text-xs opacity-0 group-hover/media:opacity-100 transition-all hover:bg-red-500 z-20"
-                        >
-                          ×
-                        </button>
-                      </>
-                    ) : (
-                      <label className="w-full h-full flex flex-col items-center justify-center text-muted-foreground/30 hover:text-blue-400 hover:bg-blue-500/5 transition-all cursor-pointer gap-2">
-                        <Video className="w-6 h-6" />
-                        <span className="text-[10px] font-bold">添加视频</span>
-                        <input
-                          type="file"
-                          accept="video/*"
-                          onChange={(e) => handleVideoSelect(e, item)}
-                          className="hidden"
-                        />
-                      </label>
-                    )}
-                  </div>
+                  <p className="mt-3 text-base text-foreground leading-relaxed font-medium">
+                    {item.script}
+                  </p>
                 </div>
 
-                {/* 2. Content Area (Right) */}
-                <div className="flex-1 p-5 md:p-6 space-y-6">
-                  {/* Script Section */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                        分镜脚本
+                {/* 媒体和提示词区域 - 两列布局 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+                  {/* 左侧：图片和图片提示词 */}
+                  <div className="p-4 border-b md:border-b-0 md:border-r border-white/5 space-y-3">
+                    {/* 图片预览 */}
+                    <div className="aspect-video w-full bg-black/40 rounded-lg overflow-hidden relative group/media ring-1 ring-blue-500/20">
+                      <div className="absolute top-2 left-2 z-10 px-1.5 py-0.5 bg-blue-500/80 backdrop-blur-sm rounded text-[10px] text-white font-bold flex items-center gap-1">
+                        <ImageIcon className="w-3 h-3" /> Image
                       </div>
-                      <button
-                        onClick={() =>
-                          handleCopy(item.script, `script-${item.id}`)
-                        }
-                        className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {copiedId === `script-${item.id}`
-                          ? '已复制'
-                          : '复制文本'}
-                      </button>
+                      {item.imageUrl ? (
+                        <>
+                          <img
+                            src={item.imageUrl}
+                            alt={`Shot ${item.shotNumber}`}
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            onClick={() => handleRemoveImage(item)}
+                            className="absolute top-2 right-2 w-5 h-5 bg-red-500/80 rounded-full flex items-center justify-center text-white text-xs opacity-0 group-hover/media:opacity-100 transition-all hover:bg-red-500"
+                          >
+                            ×
+                          </button>
+                        </>
+                      ) : editingId === item.id ? (
+                        <div
+                          ref={dropzoneRef}
+                          onPaste={(e) => handlePaste(e, item)}
+                          className="w-full h-full flex flex-col items-center justify-center p-2 text-center"
+                          tabIndex={0}
+                        >
+                          {isProcessing ? (
+                            <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full" />
+                          ) : (
+                            <label className="cursor-pointer flex flex-col items-center gap-2">
+                              <span className="text-[10px] text-muted-foreground">
+                                Ctrl+V 粘贴或
+                              </span>
+                              <span className="px-2 py-1 bg-primary/20 text-primary text-[10px] rounded font-bold hover:bg-primary/30">
+                                上传文件
+                              </span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleFileSelect(e, item)}
+                                className="hidden"
+                              />
+                            </label>
+                          )}
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setEditingId(item.id)}
+                          className="w-full h-full flex flex-col items-center justify-center text-muted-foreground/30 hover:text-blue-400 hover:bg-blue-500/5 transition-all gap-2"
+                        >
+                          <ImageIcon className="w-6 h-6" />
+                          <span className="text-[10px] font-bold">
+                            添加参考图
+                          </span>
+                        </button>
+                      )}
                     </div>
-                    <p className="text-base text-foreground leading-relaxed font-medium">
-                      {item.script}
-                    </p>
-                  </div>
 
-                  <div className="h-px bg-white/5 w-full" />
-
-                  {/* Prompts Grid */}
-                  <div className="grid grid-cols-1 gap-4">
-                    {/* Image Prompt */}
+                    {/* 图片提示词 */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-bold text-blue-400/80 uppercase tracking-wider flex items-center gap-1.5">
@@ -474,19 +497,62 @@ export default function StoryboardEditor({
                           onClick={() =>
                             handleCopy(item.imagePrompt, `prompt-${item.id}`)
                           }
-                          className="text-[10px] text-blue-400/60 hover:text-blue-400 transition-colors"
+                          className="p-1 rounded hover:bg-white/10 transition-all"
+                          title="复制"
                         >
-                          {copiedId === `prompt-${item.id}` ? '已复制' : '复制'}
+                          {copiedId === `prompt-${item.id}` ? (
+                            <Check className="w-3.5 h-3.5 text-green-400" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5 text-blue-400/60 hover:text-blue-400" />
+                          )}
                         </button>
                       </div>
-                      <div className="p-3 bg-black/20 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
+                      <div className="p-3 bg-black/20 rounded-lg border border-blue-500/10 hover:border-blue-500/20 transition-colors">
                         <p className="text-xs text-muted-foreground font-mono leading-relaxed whitespace-pre-wrap break-all">
                           {item.imagePrompt}
                         </p>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Video Prompt */}
+                  {/* 右侧：视频和视频提示词 */}
+                  <div className="p-4 space-y-3">
+                    {/* 视频预览 */}
+                    <div className="aspect-video w-full bg-black/40 rounded-lg overflow-hidden relative group/media ring-1 ring-purple-500/20">
+                      <div className="absolute top-2 left-2 z-10 px-1.5 py-0.5 bg-purple-500/80 backdrop-blur-sm rounded text-[10px] text-white font-bold flex items-center gap-1">
+                        <Video className="w-3 h-3" /> Video
+                      </div>
+                      {item.videoUrl ? (
+                        <>
+                          <video
+                            src={item.videoUrl}
+                            className="w-full h-full object-cover"
+                            controls
+                          />
+                          <button
+                            onClick={() => handleRemoveVideo(item)}
+                            className="absolute top-2 right-2 w-5 h-5 bg-red-500/80 rounded-full flex items-center justify-center text-white text-xs opacity-0 group-hover/media:opacity-100 transition-all hover:bg-red-500 z-20"
+                          >
+                            ×
+                          </button>
+                        </>
+                      ) : (
+                        <label className="w-full h-full flex flex-col items-center justify-center text-muted-foreground/30 hover:text-purple-400 hover:bg-purple-500/5 transition-all cursor-pointer gap-2">
+                          <Video className="w-6 h-6" />
+                          <span className="text-[10px] font-bold">
+                            添加视频
+                          </span>
+                          <input
+                            type="file"
+                            accept="video/*"
+                            onChange={(e) => handleVideoSelect(e, item)}
+                            className="hidden"
+                          />
+                        </label>
+                      )}
+                    </div>
+
+                    {/* 视频提示词 */}
                     {item.videoPrompt && (
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
@@ -500,14 +566,17 @@ export default function StoryboardEditor({
                                 `video-prompt-${item.id}`,
                               )
                             }
-                            className="text-[10px] text-purple-400/60 hover:text-purple-400 transition-colors"
+                            className="p-1 rounded hover:bg-white/10 transition-all"
+                            title="复制"
                           >
-                            {copiedId === `video-prompt-${item.id}`
-                              ? '已复制'
-                              : '复制'}
+                            {copiedId === `video-prompt-${item.id}` ? (
+                              <Check className="w-3.5 h-3.5 text-green-400" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5 text-purple-400/60 hover:text-purple-400" />
+                            )}
                           </button>
                         </div>
-                        <div className="p-3 bg-black/20 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
+                        <div className="p-3 bg-black/20 rounded-lg border border-purple-500/10 hover:border-purple-500/20 transition-colors">
                           <p className="text-xs text-muted-foreground font-mono leading-relaxed whitespace-pre-wrap break-all">
                             {item.videoPrompt}
                           </p>
@@ -517,8 +586,8 @@ export default function StoryboardEditor({
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </div>
