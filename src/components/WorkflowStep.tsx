@@ -5,6 +5,51 @@ import type {
   WorkflowStep as WorkflowStepType,
   StoryboardItem,
 } from '../types';
+
+// 解析 Markdown 表格生成分镜列表
+function parseMarkdownTable(markdown: string): StoryboardItem[] {
+  const lines = markdown.split('\n').filter((line) => line.trim());
+  const hasTable = lines.some((line) => (line.match(/\|/g) || []).length >= 2);
+  const items: StoryboardItem[] = [];
+
+  if (hasTable) {
+    for (const line of lines) {
+      if (line.includes('镜号')) continue;
+      if (/^[\s|:-]+$/.test(line)) continue;
+      const cells = line
+        .split('|')
+        .map((cell) => cell.trim())
+        .filter(Boolean);
+      if (cells.length > 0 && cells.every((cell) => /^[-:]+$/.test(cell)))
+        continue;
+      if (cells.length >= 3) {
+        const shotNumber = parseInt(cells[0]) || items.length + 1;
+        items.push({
+          id: `shot-${shotNumber}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          shotNumber,
+          script: cells[1] || '',
+          imagePrompt: cells[2] || '',
+          imageUrl: '',
+          videoPrompt: cells[3] || '',
+          videoUrl: '',
+        });
+      }
+    }
+  } else {
+    lines.forEach((line, index) => {
+      items.push({
+        id: `shot-${index + 1}-${Date.now()}`,
+        shotNumber: index + 1,
+        script: line,
+        imagePrompt: '',
+        imageUrl: '',
+        videoPrompt: '',
+        videoUrl: '',
+      });
+    });
+  }
+  return items;
+}
 import StoryboardEditor from './StoryboardEditor';
 import PromptSidebar from './PromptSidebar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -253,6 +298,13 @@ export default function WorkflowStep({
       if (text) {
         setOutput(text);
         onUpdate({ output: text, status: 'in-progress' });
+
+        // 解析 AI 返回的分镜表格并更新 storyboards
+        const parsedStoryboards = parseMarkdownTable(text);
+        if (parsedStoryboards.length > 0) {
+          onUpdateStoryboards(parsedStoryboards);
+        }
+
         // 生成成功后自动切换到结果视图
         setShowResultView(true);
       }
