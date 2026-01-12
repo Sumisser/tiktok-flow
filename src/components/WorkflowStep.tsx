@@ -1,55 +1,15 @@
-import { useState, useEffect } from 'react';
-import { ai } from '@/lib/gemini';
+import { useState, useEffect, useRef } from 'react';
+import { openai } from '@/lib/ai';
 
 import type {
   WorkflowStep as WorkflowStepType,
   StoryboardItem,
 } from '../types';
 
-// 解析 Markdown 表格生成分镜列表
-function parseMarkdownTable(markdown: string): StoryboardItem[] {
-  const lines = markdown.split('\n').filter((line) => line.trim());
-  const hasTable = lines.some((line) => (line.match(/\|/g) || []).length >= 2);
-  const items: StoryboardItem[] = [];
-
-  if (hasTable) {
-    for (const line of lines) {
-      if (line.includes('镜号')) continue;
-      if (/^[\s|:-]+$/.test(line)) continue;
-      const cells = line
-        .split('|')
-        .map((cell) => cell.trim())
-        .filter(Boolean);
-      if (cells.length > 0 && cells.every((cell) => /^[-:]+$/.test(cell)))
-        continue;
-      if (cells.length >= 3) {
-        const shotNumber = parseInt(cells[0]) || items.length + 1;
-        items.push({
-          id: `shot-${shotNumber}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          shotNumber,
-          script: cells[1] || '',
-          imagePrompt: cells[2] || '',
-          imageUrl: '',
-          videoPrompt: cells[3] || '',
-          videoUrl: '',
-        });
-      }
-    }
-  } else {
-    lines.forEach((line, index) => {
-      items.push({
-        id: `shot-${index + 1}-${Date.now()}`,
-        shotNumber: index + 1,
-        script: line,
-        imagePrompt: '',
-        imageUrl: '',
-        videoPrompt: '',
-        videoUrl: '',
-      });
-    });
-  }
-  return items;
-}
+import {
+  parseStoryboardTable,
+  stringifyStoryboardTable,
+} from '../lib/storyboard';
 import StoryboardEditor from './StoryboardEditor';
 import PromptSidebar from './PromptSidebar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -57,7 +17,14 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Check, ListTodo, Lightbulb, Wand2, ArrowRight } from 'lucide-react';
+import {
+  Check,
+  ListTodo,
+  Lightbulb,
+  Wand2,
+  ArrowRight,
+  Sparkles,
+} from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -97,6 +64,56 @@ export default function WorkflowStep({
 
   // 视图切换：有分镜内容时默认显示结果视图
   const [showResultView, setShowResultView] = useState(storyboards.length > 0);
+
+  // 模型定义
+  const MODELS = [
+    {
+      id: 'grok-4-1-fast-reasoning',
+      name: 'Grok-4-Reasoning',
+      vendor: 'xAI',
+      color: '#ffffff',
+      icon: (
+        <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
+          <path d="M18.901 1.153h3.642l-7.955 9.093 9.358 12.379h-7.33l-5.743-7.508-6.568 7.508H.659l8.506-9.721L.267 1.153h7.516l5.188 6.859 6.047-6.859zm-1.277 19.29h2.017L7.221 3.235H5.056l12.568 17.208z" />
+        </svg>
+      ),
+    },
+    {
+      id: 'deepseek-v3.2-thinking',
+      name: 'DeepSeek-V3-Think',
+      vendor: 'DeepSeek',
+      color: '#60a5fa',
+      icon: (
+        <svg viewBox="0 0 1024 1024" className="w-4 h-4" fill="currentColor">
+          <path d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm0 820c-205.4 0-372-166.6-372-372s166.6-372 372-372 372 166.6 372 372-166.6 372-372 372z" />
+          <path d="M512 320c106 0 192 86 192 192s-86 192-192 192-192-86-192-192 86-192 192-192z" />
+        </svg>
+      ),
+    },
+    {
+      id: 'gemini-3-flash-preview',
+      name: 'Gemini-3-Flash',
+      vendor: 'Google',
+      color: '#8ab4f8',
+      icon: (
+        <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
+          <path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z" />
+        </svg>
+      ),
+    },
+  ];
+
+  const [selectedModel, setSelectedModel] = useState(MODELS[1].id); // 默认 DeepSeek
+  const [streamingText, setStreamingText] = useState(''); // 新增：用于展示流式文本
+  const streamingContainerRef = useRef<HTMLDivElement>(null);
+
+  // 自动滚动流式文本到最新位置
+  useEffect(() => {
+    if (streamingContainerRef.current) {
+      streamingContainerRef.current.scrollTop =
+        streamingContainerRef.current.scrollHeight;
+    }
+  }, [streamingText]);
 
   // Sync state
   useEffect(() => {
@@ -281,28 +298,66 @@ export default function WorkflowStep({
       console.error('复制失败:', err);
     }
 
-    // 2. 调用 AI 模型
+    // 2. 调用 AI 模型 (OpenAI / 灵芽) - 开启流式传输
     setIsGenerating(true);
+    setStreamingText('');
     try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: getFullPrompt(),
+      const stream = await openai.chat.completions.create({
+        model: selectedModel,
+        messages: [
+          {
+            role: 'user',
+            content: getFullPrompt(),
+          },
+        ],
+        temperature: 0.7,
+        stream: true,
       });
 
-      // 根据用户提供的示例，直接访问 result.text
-      // 注意：这里假设 SDK 返回的结构符合用户提供的示例
-      // 如果 SDK 返回的是 standard structure，可能需要 response.response.text()
-      // 但根据用户提供的 import { GoogleGenAI } from "@google/genai" (新 SDK)，直接访问 .text 是可能的
-      const text = response.text;
+      let fullText = '';
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content || '';
+        if (content) {
+          fullText += content;
+          setStreamingText(fullText);
+        }
+      }
+
+      const text = fullText;
 
       if (text) {
-        setOutput(text);
-        onUpdate({ output: text, status: 'in-progress' });
+        // 获取当前选中的风格提示词
+        const stylePrefix = selectedStyleConfig?.prompt || '';
 
-        // 解析 AI 返回的分镜表格并更新 storyboards
-        const parsedStoryboards = parseMarkdownTable(text);
-        if (parsedStoryboards.length > 0) {
-          onUpdateStoryboards(parsedStoryboards);
+        // 1. 解析 AI 返回的分镜表格并拼接风格
+        const rawStoryboards = parseStoryboardTable(text);
+        const styledStoryboards = rawStoryboards.map((item) => {
+          const cleanedPrompt = item.imagePrompt.trim();
+          return {
+            ...item,
+            imagePrompt: cleanedPrompt
+              ? `${cleanedPrompt}, ${stylePrefix}`
+              : stylePrefix,
+          };
+        });
+
+        // 2. 尝试提取 AI 输出中的完整文案部分，以便重组 Markdown
+        const fullScriptMatch = text.match(
+          /### 1\. 完整口播文[稿案]([\s\S]*?)### 2/,
+        );
+        const fullScript = fullScriptMatch ? fullScriptMatch[1].trim() : '';
+
+        // 3. 生成包含风格提示词的新 Markdown
+        const styledOutput = stringifyStoryboardTable(
+          styledStoryboards,
+          fullScript,
+        );
+
+        setOutput(styledOutput);
+        onUpdate({ output: styledOutput, status: 'in-progress' });
+
+        if (styledStoryboards.length > 0) {
+          onUpdateStoryboards(styledStoryboards);
         }
 
         // 生成成功后自动切换到结果视图
@@ -346,9 +401,10 @@ export default function WorkflowStep({
               <div className="absolute inset-[-40px] rounded-full border border-primary/20 animate-[ping_4s_cubic-bezier(0,0,0.2,1)_infinite]" />
               <div className="absolute inset-[-20px] rounded-full border border-primary/30 animate-[ping_2.5s_cubic-bezier(0,0,0.2,1)_infinite]" />
 
-              <div className="p-10 rounded-full bg-white/10 ring-1 ring-white/20 shadow-[0_0_80px_rgba(var(--primary),0.4)] relative backdrop-blur-md">
-                <Wand2 className="w-16 h-16 text-white animate-[bounce_2s_infinite] drop-shadow-[0_0_20px_rgba(255,255,255,0.8)]" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-primary/50 blur-3xl animate-pulse rounded-full" />
+              <div className="p-8 rounded-full bg-white/5 ring-1 ring-white/10 shadow-[0_0_60px_rgba(var(--primary),0.3)] relative backdrop-blur-md overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-primary/20 animate-spin-slow opacity-50" />
+                <Sparkles className="w-12 h-12 text-white animate-pulse-slow drop-shadow-[0_0_15px_rgba(255,255,255,0.6)] relative z-10" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-primary/30 blur-2xl animate-pulse rounded-full" />
               </div>
             </div>
 
@@ -363,32 +419,48 @@ export default function WorkflowStep({
                 </p>
               </div>
 
-              <div className="flex flex-col items-center gap-6">
+              <div className="flex flex-col items-center gap-5 w-full max-w-lg px-6">
                 {/* 极简发光进度条 */}
-                <div className="w-56 h-[3px] bg-white/10 rounded-full overflow-hidden relative shadow-[0_0_15px_rgba(255,255,255,0.2)]">
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent animate-[shimmer_2s_infinite] w-[50%]" />
+                <div className="w-48 h-[2px] bg-white/5 rounded-full overflow-hidden relative shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-[shimmer_2s_infinite] w-[50%]" />
                 </div>
 
-                {/* 纯文字状态轮播 - 强投影确保可读性 */}
-                <div className="h-8 overflow-hidden relative w-full px-4">
-                  <div className="animate-[slide-up_8s_infinite] flex flex-col items-center gap-0">
-                    <span className="h-8 text-lg text-white font-bold drop-shadow-[0_2px_10px_rgba(0,0,0,1)]">
-                      正在尝试感知您的创意初衷...
-                    </span>
-                    <span className="h-8 text-lg text-white font-bold drop-shadow-[0_2px_10px_rgba(0,0,0,1)]">
-                      在生活碎片中寻找镜头共鸣...
-                    </span>
-                    <span className="h-8 text-lg text-white font-bold drop-shadow-[0_2px_10px_rgba(0,0,0,1)]">
-                      正在以同理心打磨角色对白...
-                    </span>
-                    <span className="h-8 text-lg text-white font-bold drop-shadow-[0_2px_10px_rgba(0,0,0,1)]">
-                      将真实的温度融入画面构图...
-                    </span>
-                    <span className="h-8 text-lg text-white font-bold drop-shadow-[0_2px_10px_rgba(0,0,0,1)]">
-                      为您生成触及人心的视觉分镜...
-                    </span>
+                {/* 流式文本展示区 (收紧后的窗口) */}
+                {streamingText && (
+                  <div className="w-full bg-black/40 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-2xl animate-in fade-in zoom-in duration-500 overflow-hidden">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="flex gap-1">
+                        <div className="w-2h-2 w-2 h-2 rounded-full bg-white/10" />
+                        <div className="w-2h-2 w-2 h-2 rounded-full bg-white/10" />
+                        <div className="w-2h-2 w-2 h-2 rounded-full bg-white/10" />
+                      </div>
+                      <div className="text-[9px] text-white/20 font-black uppercase tracking-[0.2em] ml-1">
+                        AI Draft
+                      </div>
+                    </div>
+                    <div
+                      ref={streamingContainerRef}
+                      className="max-h-[160px] overflow-y-auto no-scrollbar mask-fade-bottom scroll-smooth"
+                    >
+                      <p className="text-[11px] text-white/50 font-mono leading-relaxed whitespace-pre-wrap break-all">
+                        {streamingText}
+                        <span className="inline-block w-1.5 h-3 bg-primary/40 animate-pulse ml-0.5" />
+                      </p>
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {/* 纯文字状态轮播 - 只有在没有流式文本时显示 */}
+                {!streamingText && (
+                  <div className="h-8 overflow-hidden relative w-full px-4">
+                    <div className="animate-[slide-up_8s_infinite] flex flex-col items-center gap-0">
+                      <span className="h-8 text-lg text-white font-bold drop-shadow-[0_2px_10px_rgba(0,0,0,1)]">
+                        正在尝试感知您的创意初衷...
+                      </span>
+                      {/* ... (其它状态语) */}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -437,17 +509,17 @@ export default function WorkflowStep({
           {/* 顶部装饰 */}
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
 
-          <CardHeader className="px-5 py-4 border-b border-white/5 flex flex-row items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10 text-primary border border-primary/20 shadow-inner">
+          <CardHeader className="px-5 py-4 border-b border-white/5 flex flex-row items-center justify-between bg-white/[0.01]">
+            <div className="flex items-center gap-3.5">
+              <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-inner">
                 <ListTodo className="w-4 h-4" />
               </div>
               <div>
-                <h2 className="text-base font-black text-white tracking-wide">
+                <h2 className="text-base font-black text-white tracking-wide leading-tight">
                   创意分镜生成
                 </h2>
-                <p className="text-[10px] text-muted-foreground font-medium leading-tight">
-                  输入想法，AI 自动生成分镜脚本、画面提示词和视频提示词
+                <p className="text-[10px] text-muted-foreground font-medium mt-0.5">
+                  输入想法，AI 自动生成视觉分镜与提示词
                 </p>
               </div>
             </div>
@@ -479,36 +551,36 @@ export default function WorkflowStep({
             </div>
           </CardHeader>
 
-          <CardContent className="px-6 py-6 space-y-6">
+          <CardContent className="px-5 py-5 space-y-4">
             {/* 1. 创意输入区域 */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                输入创意
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-primary font-bold text-[11px] uppercase tracking-wider">
+                <span className="w-1 h-1 rounded-full bg-primary" />
+                创意描述
               </div>
               <Textarea
                 value={input}
                 onChange={(e) => handleInputChange(e.target.value)}
                 placeholder="例如：一个年轻人在下雨的城市街道上奔跑，突然回头看到了..."
-                className="min-h-[140px] bg-black/20 border-white/10 focus:border-primary/50 focus:ring-primary/20 placeholder:text-white/20 resize-none rounded-xl p-4 text-sm leading-relaxed font-medium transition-all shadow-inner text-white"
+                className="min-h-[100px] bg-black/20 border-white/10 focus:border-primary/50 focus:ring-primary/20 placeholder:text-white/10 resize-none rounded-xl p-3 text-xs leading-relaxed font-medium transition-all shadow-inner text-white"
               />
             </div>
 
             {/* 2. 风格选择区域 */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Tabs defaultValue={STYLE_CATEGORIES[0].name} className="w-full">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider shrink-0">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    选择风格
+                  <div className="flex items-center gap-2 text-primary font-bold text-[11px] uppercase tracking-wider shrink-0">
+                    <span className="w-1 h-1 rounded-full bg-primary" />
+                    视觉风格
                   </div>
 
-                  <TabsList className="h-9 bg-black/30 border border-white/5 p-1 rounded-xl flex justify-start overflow-x-auto no-scrollbar w-auto ml-4">
+                  <TabsList className="h-7 bg-black/30 border border-white/5 p-0.5 rounded-lg flex justify-start overflow-x-auto no-scrollbar w-auto ml-4">
                     {STYLE_CATEGORIES.map((category) => (
                       <TabsTrigger
                         key={category.name}
                         value={category.name}
-                        className="px-4 py-1.5 text-[10px] font-black rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300 whitespace-nowrap"
+                        className="px-3 py-1 text-[9px] font-black rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300 whitespace-nowrap"
                       >
                         {category.name}
                       </TabsTrigger>
@@ -516,7 +588,7 @@ export default function WorkflowStep({
                   </TabsList>
                 </div>
 
-                <div className="bg-black/20 border border-white/5 rounded-xl p-3 mt-3">
+                <div className="bg-black/20 border border-white/5 rounded-xl p-2.5 mt-2">
                   {STYLE_CATEGORIES.map((category) => (
                     <TabsContent
                       key={category.name}
@@ -555,23 +627,20 @@ export default function WorkflowStep({
 
                   {/* 风格描述信息展示 */}
                   {selectedStyleConfig && (
-                    <div className="mt-3 px-3 py-2 bg-primary/5 border border-primary/10 rounded-lg flex items-start gap-2 animate-in fade-in slide-in-from-top-1">
-                      <div className="p-1.5 bg-primary/10 rounded-full mt-0.5">
-                        <Lightbulb className="w-3.5 h-3.5 text-primary" />
+                    <div className="mt-2.5 px-3 py-1.5 bg-primary/5 border border-primary/10 rounded-lg flex items-center gap-2.5 animate-in fade-in slide-in-from-top-1">
+                      <div className="p-1 bg-primary/10 rounded-full shrink-0">
+                        <Lightbulb className="w-3 h-3 text-primary" />
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-bold text-primary">
+                      <div className="flex-1 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="text-[10px] font-black text-primary uppercase">
                             {selectedStyleConfig.label
                               .split(' ')
                               .slice(1)
                               .join(' ')}
                           </span>
-                          <span className="text-[10px] text-muted-foreground bg-black/5 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                            Style Preview
-                          </span>
                         </div>
-                        <p className="text-[11px] text-foreground/70 leading-relaxed">
+                        <p className="text-[9px] text-foreground/50 leading-none truncate italic">
                           {selectedStyleConfig.description}
                         </p>
                       </div>
@@ -582,12 +651,44 @@ export default function WorkflowStep({
             </div>
 
             {/* 3. 生成按钮区域 */}
-            <div className="pt-4 border-t border-white/5 w-full">
+            <div className="pt-3 border-t border-white/5 w-full space-y-3">
+              {/* 模型选择器 */}
+              <div className="flex items-center justify-center gap-1 p-1 bg-black/40 rounded-lg border border-white/5 w-fit mx-auto scale-90">
+                {MODELS.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => setSelectedModel(m.id)}
+                    className={cn(
+                      'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md transition-all duration-300 relative group',
+                      selectedModel === m.id
+                        ? 'bg-white/10 text-white border border-white/10 shadow-lg'
+                        : 'text-white/40 hover:text-white/70 hover:bg-white/5',
+                    )}
+                    title={m.name}
+                  >
+                    <div
+                      className={cn(
+                        'transition-transform duration-300',
+                        selectedModel === m.id
+                          ? 'scale-110'
+                          : 'scale-90 opacity-50',
+                      )}
+                      style={{ color: m.color }}
+                    >
+                      {m.icon}
+                    </div>
+                    <span className="text-[9px] font-black uppercase tracking-widest leading-none">
+                      {m.vendor}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
               <Button
                 onClick={handleGenerate}
                 disabled={!input.trim() || isGenerating}
                 className={cn(
-                  'w-full h-14 rounded-xl text-sm font-black tracking-widest transition-all duration-300 shadow-lg uppercase relative overflow-hidden group',
+                  'w-full h-12 rounded-xl text-xs font-black tracking-widest transition-all duration-300 shadow-lg uppercase relative overflow-hidden group',
                   input.trim() && !isGenerating
                     ? 'bg-gradient-to-r from-primary to-violet-600 text-white hover:scale-[1.01] hover:shadow-primary/25 border border-white/10'
                     : 'bg-muted text-muted-foreground',

@@ -21,6 +21,7 @@ import {
   ArrowLeft,
   RotateCcw,
 } from 'lucide-react';
+import { parseStoryboardTable } from '../lib/storyboard';
 
 interface StoryboardEditorProps {
   taskId: string;
@@ -31,73 +32,6 @@ interface StoryboardEditorProps {
   setIsRawMode: (mode: boolean) => void;
   onBack?: () => void;
   onReset?: () => void;
-}
-
-// 解析 Markdown 表格
-function parseMarkdownTable(markdown: string): StoryboardItem[] {
-  const lines = markdown.split('\n').filter((line) => line.trim());
-  const hasTable = lines.some((line) => (line.match(/\|/g) || []).length >= 2);
-  const items: StoryboardItem[] = [];
-
-  if (hasTable) {
-    for (const line of lines) {
-      if (line.includes('镜号')) continue;
-      if (/^[\s|:-]+$/.test(line)) continue;
-      const cells = line
-        .split('|')
-        .map((cell) => cell.trim())
-        .filter(Boolean);
-      if (cells.length > 0 && cells.every((cell) => /^[-:]+$/.test(cell)))
-        continue;
-      if (cells.length >= 3) {
-        // 正确处理 shotNumber 为 0 的情况（封面）
-        const parsedNumber = parseInt(cells[0]);
-        const shotNumber = isNaN(parsedNumber)
-          ? items.length + 1
-          : parsedNumber;
-        items.push({
-          id: `shot-${shotNumber}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          shotNumber,
-          script: cells[1] || '',
-          imagePrompt: cells[2] || '',
-          imageUrl: '',
-          videoPrompt: cells[3] || '',
-          videoUrl: '',
-        });
-      }
-    }
-  } else {
-    lines.forEach((line, index) => {
-      items.push({
-        id: `shot-${index + 1}-${Date.now()}`,
-        shotNumber: index + 1,
-        script: line,
-        imagePrompt: '',
-        imageUrl: '',
-        videoPrompt: '',
-        videoUrl: '',
-      });
-    });
-  }
-
-  // 如果结果中没有 shot 0（封面），自动添加一个封面占位
-  const hasCover = items.some((item) => item.shotNumber === 0);
-  if (!hasCover && items.length > 0) {
-    const coverItem: StoryboardItem = {
-      id: `shot-0-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      shotNumber: 0,
-      script: '',
-      imagePrompt:
-        'Cinematic cover image for this video, combining the core theme and visual aesthetics, dramatic lighting, 8k quality',
-      imageUrl: '',
-      videoPrompt: '-',
-      videoUrl: '',
-    };
-    // 将封面插入到最前面
-    items.unshift(coverItem);
-  }
-
-  return items;
 }
 
 export default function StoryboardEditor({
@@ -145,7 +79,7 @@ export default function StoryboardEditor({
 
   const handleParseAndMerge = (markdown: string) => {
     if (markdown === lastParsedOutputRef.current) return;
-    const newItems = parseMarkdownTable(markdown);
+    const newItems = parseStoryboardTable(markdown);
     const mergedItems = newItems.map((newItem) => {
       const existingItem = storyboardsRef.current.find(
         (s) => s.shotNumber === newItem.shotNumber,
