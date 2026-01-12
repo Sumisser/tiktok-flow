@@ -333,28 +333,97 @@ export default function WorkflowStep({
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {isGenerating ? (
-        <Card className="glass-card border-primary/20 ring-1 ring-primary/10 shadow-2xl relative overflow-hidden gap-0 py-0">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
-          <CardContent className="p-0">
-            <div className="h-[400px] w-full flex flex-col items-center justify-center gap-6 animate-pulse relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-transparent skew-y-12 translate-x-[-100%] animate-[shimmer_2s_infinite]" />
+        <Card className="glass-card border-primary/20 ring-1 ring-primary/10 shadow-2xl relative overflow-hidden gap-0 py-0 min-h-[460px] flex flex-col items-center justify-center">
+          {/* 背景动态光影 */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent animate-pulse" />
 
-              <div className="relative z-10 p-6 rounded-full bg-primary/10 ring-1 ring-primary/20">
-                <Wand2 className="w-10 h-10 text-primary animate-[spin_3s_linear_infinite]" />
+          {/* 装饰性漂浮粒子 (CSS 实现) */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <div className="absolute top-[10%] left-[20%] w-32 h-32 bg-primary/10 rounded-full blur-[80px] animate-pulse" />
+            <div className="absolute bottom-[20%] right-[15%] w-48 h-48 bg-accent/10 rounded-full blur-[100px] animate-pulse-slow" />
+          </div>
+
+          <CardContent className="relative z-10 flex flex-col items-center gap-10">
+            {/* 核心动画图标 */}
+            <div className="relative">
+              {/* 外层呼吸环 */}
+              <div className="absolute inset-[-20px] rounded-full border border-primary/10 animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite]" />
+              <div className="absolute inset-[-10px] rounded-full border border-primary/20 animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite]" />
+
+              {/* 中心魔法棒图标 */}
+              <div className="p-8 rounded-full bg-gradient-to-b from-primary/20 to-primary/5 ring-1 ring-primary/30 shadow-[0_0_40px_-10px_rgba(var(--primary),0.3)] relative">
+                <Wand2 className="w-12 h-12 text-primary animate-[bounce_2s_infinite]" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-primary/20 blur-2xl animate-pulse rounded-full" />
+              </div>
+            </div>
+
+            {/* 动态文字描述 */}
+            <div className="text-center space-y-4 max-w-[300px]">
+              <div className="space-y-1">
+                <h3 className="text-xl font-black text-white tracking-tight text-gradient">
+                  正在构思艺术分镜
+                </h3>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-[0.2em] font-bold opacity-60">
+                  AI Creative Director is active
+                </p>
               </div>
 
-              <div className="space-y-2 text-center relative z-10">
-                <h3 className="text-base font-bold text-white tracking-wide">
-                  正在创作分镜脚本
-                </h3>
-                <div className="flex flex-col gap-1">
-                  <p className="text-xs text-white/40">分析场景描述...</p>
-                  <p className="text-xs text-white/40">构思画面构图...</p>
-                  <p className="text-xs text-white/40">生成标准分镜...</p>
+              <div className="flex flex-col items-center gap-2">
+                {/* 模拟进度指示器 */}
+                <div className="w-48 h-1 bg-white/5 rounded-full overflow-hidden relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/40 via-primary to-accent/40 animate-[shimmer_1.5s_infinite] w-[60%] rounded-full shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
+                </div>
+
+                {/* 滚动的状态信息 */}
+                <div className="h-5 overflow-hidden relative w-full">
+                  <div className="animate-[slide-up_8s_infinite] flex flex-col items-center gap-0">
+                    <span className="h-5 text-sm text-primary/80 font-medium">
+                      深入解析您的创意初衷...
+                    </span>
+                    <span className="h-5 text-sm text-primary/80 font-medium">
+                      寻找最佳的镜头语言与构图...
+                    </span>
+                    <span className="h-5 text-sm text-primary/80 font-medium">
+                      正在打磨每一句脚本对白...
+                    </span>
+                    <span className="h-5 text-sm text-primary/80 font-medium">
+                      融入您选定的视觉艺术风格...
+                    </span>
+                    <span className="h-5 text-sm text-primary/80 font-medium">
+                      正在生成完整的视觉分镜表...
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
           </CardContent>
+
+          {/* 底部微小提示 */}
+          <div className="absolute bottom-10 left-0 w-full text-center">
+            <span className="text-[10px] text-white/20 font-medium italic">
+              "Great stories take a few seconds to craft..."
+            </span>
+          </div>
+
+          <style
+            dangerouslySetInnerHTML={{
+              __html: `
+            @keyframes slide-up {
+              0%, 15% { transform: translateY(0); }
+              20%, 35% { transform: translateY(-20px); }
+              40%, 55% { transform: translateY(-40px); }
+              60%, 75% { transform: translateY(-60px); }
+              80%, 95% { transform: translateY(-80px); }
+              100% { transform: translateY(0); }
+            }
+            @keyframes shimmer {
+              0% { transform: translateX(-100%); }
+              100% { transform: translateX(200%); }
+            }
+          `,
+            }}
+          />
         </Card>
       ) : showResultView && storyboards.length > 0 ? (
         <div className="relative w-full">
