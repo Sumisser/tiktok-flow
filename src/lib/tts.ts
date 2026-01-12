@@ -16,33 +16,44 @@ export interface Voice {
 
 export async function generateMinimaxTts(req: TtsRequest) {
   const apiKey = import.meta.env.VITE_MINIMAX_KEY;
+  const groupId = import.meta.env.VITE_MINIMAX_GROUP_ID;
   if (!apiKey) {
     throw new Error('Missing VITE_MINIMAX_KEY');
   }
 
-  const response = await fetch('https://api.minimaxi.com/v1/t2a_v2', {
+  const url = groupId
+    ? `https://api.minimax.chat/v1/t2a_v2?GroupId=${groupId}`
+    : 'https://api.minimax.chat/v1/t2a_v2';
+
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'speech-2.6-hd',
+      model: 'speech-02-hd',
       text: req.text,
       stream: false,
+      timbre_weights: [
+        {
+          voice_id: req.voice_id || 'Boyan_new_platform',
+          weight: 100,
+        },
+      ],
       voice_setting: {
-        voice_id: req.voice_id,
+        voice_id: '', // 留空，使用 timbre_weights
         speed: req.speed || 1,
         vol: req.vol || 1,
         pitch: req.pitch || 0,
-        emotion: req.emotion || 'happy',
+        latex_read: false,
       },
       audio_setting: {
         sample_rate: 32000,
         bitrate: 128000,
         format: 'mp3',
-        channel: 1,
       },
+      language_boost: 'auto',
     }),
   });
 
@@ -166,6 +177,12 @@ export async function fetchMinimaxVoices(): Promise<Voice[]> {
 }
 
 export const MINIMAX_VOICES: Voice[] = [
+  {
+    id: 'Boyan_new_platform',
+    name: '专业播音',
+    desc: '标准普通话播音员',
+    type: '系统',
+  },
   {
     id: 'male-qn-qingse',
     name: '青涩青年',
