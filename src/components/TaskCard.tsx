@@ -34,13 +34,6 @@ export default function TaskCard({ task, onDelete }: TaskCardProps) {
   // 是否显示创建者信息（管理员查看他人数据时显示）
   const showOwner = isAdmin && isOthersTask;
 
-  // 计算完成进度
-  // const completedSteps = task.steps.filter(
-  //   (s) => s.status === "completed"
-  // ).length;
-  // const totalSteps = task.steps.length;
-  // const progress = (completedSteps / totalSteps) * 100;
-
   // 格式化日期
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr || Date.now());
@@ -63,8 +56,10 @@ export default function TaskCard({ task, onDelete }: TaskCardProps) {
     setDeleteDialogOpen(false);
   };
 
-  // 寻找第一个有图片的分镜作为封面
-  const coverImage = task.storyboards?.find((s) => s.imageUrl)?.imageUrl;
+  // 寻找封面图：优先取 shot 0（专用封面），其次取第一个有图片的分镜
+  const coverImage =
+    task.storyboards?.find((s) => s.shotNumber === 0 && s.imageUrl)?.imageUrl ||
+    task.storyboards?.find((s) => s.imageUrl)?.imageUrl;
 
   return (
     <div className="relative group">

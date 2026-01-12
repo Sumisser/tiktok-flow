@@ -45,12 +45,22 @@ export const createDefaultSteps = (): WorkflowStep[] => [
 (在此处展示你深思熟虑后的长文案，确保它是一篇独立成章、文笔斐然的佳作)
 
 ### 2. 视觉分镜表
+
+**⚠️ 重要：镜号必须从 0 开始！**
+
 \`\`\`markdown
 | 镜号 | 脚本文案 | 画面生成提示词 (Image Prompt) | 视频生成提示词 (Video Prompt) |
 |------|----------|-------------------------------|------------------------------|
-| 1 | (文案片段) | Cinematic wide shot of... [Style Blend] | Slow pans across the scene... |
+| 0 | [封面] | (为视频封面设计一张极具吸引力的静态画面，融合视频核心主题与视觉美学) | - |
+| 1 | (第一段文案) | Cinematic wide shot of... [Style Blend] | Slow pans across the scene... |
+| 2 | (第二段文案) | ... | ... |
 ...
 \`\`\`
+
+**强制规则**：
+1. 第一行必须是镜号 0（封面），脚本文案固定写"[封面]"，视频提示词填"-"
+2. 后续镜号从 1 开始递增
+3. 封面只需要画面提示词，用于生成视频封面图
     `,
     input: '',
     output: '',

@@ -50,7 +50,11 @@ function parseMarkdownTable(markdown: string): StoryboardItem[] {
       if (cells.length > 0 && cells.every((cell) => /^[-:]+$/.test(cell)))
         continue;
       if (cells.length >= 3) {
-        const shotNumber = parseInt(cells[0]) || items.length + 1;
+        // 正确处理 shotNumber 为 0 的情况（封面）
+        const parsedNumber = parseInt(cells[0]);
+        const shotNumber = isNaN(parsedNumber)
+          ? items.length + 1
+          : parsedNumber;
         items.push({
           id: `shot-${shotNumber}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           shotNumber,
@@ -75,6 +79,24 @@ function parseMarkdownTable(markdown: string): StoryboardItem[] {
       });
     });
   }
+
+  // 如果结果中没有 shot 0（封面），自动添加一个封面占位
+  const hasCover = items.some((item) => item.shotNumber === 0);
+  if (!hasCover && items.length > 0) {
+    const coverItem: StoryboardItem = {
+      id: `shot-0-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      shotNumber: 0,
+      script: '',
+      imagePrompt:
+        'Cinematic cover image for this video, combining the core theme and visual aesthetics, dramatic lighting, 8k quality',
+      imageUrl: '',
+      videoPrompt: '-',
+      videoUrl: '',
+    };
+    // 将封面插入到最前面
+    items.unshift(coverItem);
+  }
+
   return items;
 }
 
@@ -384,221 +406,356 @@ export default function StoryboardEditor({
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-2 h-full flex flex-col grow">
               {/* 分镜卡片轮播区域 */}
               <div className="relative h-[480px] w-full shrink-0">
-                {storyboards.map((item, idx) => (
-                  <div
-                    key={item.id}
-                    className={cn(
-                      'absolute inset-0 transition-all duration-700 ease-in-out',
-                      idx === currentIndex
-                        ? 'opacity-100 translate-x-0 scale-100 pointer-events-auto'
-                        : idx < currentIndex
-                          ? 'opacity-0 -translate-x-20 scale-95 pointer-events-none'
-                          : 'opacity-0 translate-x-20 scale-95 pointer-events-none',
-                    )}
-                  >
-                    <div className="bg-black/40 backdrop-blur-3xl rounded-3xl border border-white/10 overflow-hidden shadow-2xl h-full flex flex-col">
-                      {/* 脚本标题区 */}
-                      <div className="px-6 py-3 border-b border-white/5 bg-gradient-to-br from-primary/10 to-transparent shrink-0">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="px-3 py-1 bg-primary text-primary-foreground rounded-full text-[9px] font-black uppercase tracking-[0.2em] shadow-lg shadow-primary/20">
-                            SHOT {item.shotNumber} / {storyboards.length}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() =>
-                              handleCopy(item.script, `s-${item.id}`)
-                            }
-                            className="h-8 w-8 rounded-lg bg-white/5 hover:bg-white/10 transition-all"
-                          >
-                            {copiedId === `s-${item.id}` ? (
-                              <Check className="w-3.5 h-3.5 text-green-400" />
-                            ) : (
-                              <Copy className="w-3.5 h-3.5 text-white/40" />
-                            )}
-                          </Button>
-                        </div>
-                        <p className="text-lg text-white font-semibold leading-tight tracking-tight">
-                          {item.script}
-                        </p>
-                      </div>
+                {storyboards.map((item, idx) => {
+                  // 判断是否是封面镜头
+                  const isCover = item.shotNumber === 0;
 
-                      {/* 媒体与提示词混合区 */}
-                      <div className="flex-1 grid grid-cols-2 gap-px bg-white/5 overflow-hidden">
-                        {/* 左侧：画面预览与提示词 */}
-                        <div className="p-3 flex flex-col gap-3 bg-black/20 overflow-hidden h-full">
-                          <div className="aspect-[21/9] w-full bg-black/60 rounded-xl overflow-hidden relative group/media ring-1 ring-blue-500/20 shadow-xl shrink-0">
-                            <div className="absolute top-3 left-3 z-10 px-2.5 py-0.5 bg-blue-500/80 backdrop-blur-md rounded text-[9px] text-white font-black uppercase tracking-widest flex items-center gap-1.5 shadow-lg">
-                              <ImageIcon className="w-3 h-3" /> IMAGE
+                  return (
+                    <div
+                      key={item.id}
+                      className={cn(
+                        'absolute inset-0 transition-all duration-700 ease-in-out',
+                        idx === currentIndex
+                          ? 'opacity-100 translate-x-0 scale-100 pointer-events-auto'
+                          : idx < currentIndex
+                            ? 'opacity-0 -translate-x-20 scale-95 pointer-events-none'
+                            : 'opacity-0 translate-x-20 scale-95 pointer-events-none',
+                      )}
+                    >
+                      {isCover ? (
+                        /* 封面专用 UI - 只有图片上传，无脚本和视频 */
+                        <div className="bg-black/40 backdrop-blur-3xl rounded-3xl border border-white/10 overflow-hidden shadow-2xl h-full flex flex-col">
+                          <div className="px-6 py-4 border-b border-white/5 bg-gradient-to-br from-amber-500/10 to-transparent shrink-0">
+                            <div className="flex items-center gap-3">
+                              <span className="px-3 py-1 bg-amber-500 text-black rounded-full text-[9px] font-black uppercase tracking-[0.2em] shadow-lg">
+                                SHOT 0 /{' '}
+                                {
+                                  storyboards.filter((s) => s.shotNumber !== 0)
+                                    .length
+                                }
+                              </span>
+                              <span className="text-sm text-white/50 font-medium">
+                                视频封面
+                              </span>
                             </div>
-                            {item.imageUrl ? (
-                              <>
-                                <img
-                                  src={item.imageUrl}
-                                  className="w-full h-full object-cover"
-                                />
-                                <button
-                                  onClick={() => handleRemoveImage(item)}
-                                  className="absolute top-3 right-3 w-7 h-7 bg-red-500/90 rounded-full flex items-center justify-center text-white text-xs opacity-0 group-hover/media:opacity-100 transition-all hover:bg-red-500 shadow-lg"
-                                >
-                                  ×
-                                </button>
-                              </>
-                            ) : (
-                              <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-                                {editingId === item.id ? (
-                                  <div
-                                    onPaste={(e) => handlePaste(e, item)}
-                                    className="w-full h-full flex flex-col items-center justify-center p-2 outline-none"
-                                    tabIndex={0}
-                                  >
-                                    <label className="cursor-pointer flex flex-col items-center gap-1">
-                                      {isProcessing ? (
-                                        <div className="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full" />
-                                      ) : (
-                                        <>
-                                          <ImageIcon className="w-8 h-8 text-blue-500/40" />
-                                          <span className="text-[9px] text-blue-400/60 font-black uppercase text-center">
-                                            Ctrl+V or Click
-                                          </span>
-                                          <input
-                                            type="file"
-                                            accept="image/*"
-                                            className="hidden"
-                                            onChange={(e) =>
-                                              handleFileSelect(e, item)
-                                            }
-                                          />
-                                        </>
-                                      )}
-                                    </label>
-                                  </div>
+                          </div>
+
+                          {/* 内容区：图片 + 提示词 (左右排布) */}
+                          <div className="flex-1 grid grid-cols-2 gap-px bg-white/5 overflow-hidden">
+                            {/* 左侧：封面图上传区 */}
+                            <div className="p-6 flex flex-col items-center justify-center bg-black/20 overflow-hidden h-full">
+                              <div className="w-full aspect-video bg-black/60 rounded-2xl overflow-hidden relative group/media ring-2 ring-amber-500/30 shadow-2xl">
+                                <div className="absolute top-4 left-4 z-10 px-3 py-1 bg-amber-500/80 backdrop-blur-md rounded-lg text-[10px] text-black font-black uppercase tracking-widest flex items-center gap-2 shadow-lg">
+                                  <ImageIcon className="w-3.5 h-3.5" /> COVER
+                                  IMAGE
+                                </div>
+                                {item.imageUrl ? (
+                                  <>
+                                    <img
+                                      src={item.imageUrl}
+                                      className="w-full h-full object-cover"
+                                    />
+                                    <button
+                                      onClick={() => handleRemoveImage(item)}
+                                      className="absolute top-4 right-4 w-8 h-8 bg-red-500/90 rounded-full flex items-center justify-center text-white text-sm opacity-0 group-hover/media:opacity-100 transition-all hover:bg-red-500 shadow-lg"
+                                    >
+                                      ×
+                                    </button>
+                                  </>
                                 ) : (
-                                  <button
-                                    onClick={() => setEditingId(item.id)}
-                                    className="flex flex-col items-center gap-2 text-white/10 hover:text-blue-500 transition-all group/add"
-                                  >
-                                    <ImageIcon className="w-10 h-10 group-hover/add:scale-110 transition-transform" />
-                                    <span className="text-[9px] font-black uppercase tracking-widest">
-                                      Add Reference
-                                    </span>
-                                  </button>
+                                  <div className="w-full h-full flex flex-col items-center justify-center gap-4">
+                                    {editingId === item.id ? (
+                                      <div
+                                        onPaste={(e) => handlePaste(e, item)}
+                                        className="w-full h-full flex flex-col items-center justify-center p-4 outline-none"
+                                        tabIndex={0}
+                                      >
+                                        <label className="cursor-pointer flex flex-col items-center gap-3">
+                                          {isProcessing ? (
+                                            <div className="animate-spin w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full" />
+                                          ) : (
+                                            <>
+                                              <ImageIcon className="w-16 h-16 text-amber-500/40" />
+                                              <span className="text-sm text-amber-400/70 font-bold">
+                                                Ctrl+V 粘贴 或 点击上传
+                                              </span>
+                                              <input
+                                                type="file"
+                                                accept="image/*"
+                                                className="hidden"
+                                                onChange={(e) =>
+                                                  handleFileSelect(e, item)
+                                                }
+                                              />
+                                            </>
+                                          )}
+                                        </label>
+                                      </div>
+                                    ) : (
+                                      <button
+                                        onClick={() => setEditingId(item.id)}
+                                        className="flex flex-col items-center gap-4 text-white/20 hover:text-amber-500 transition-all group/add"
+                                      >
+                                        <ImageIcon className="w-20 h-20 group-hover/add:scale-110 transition-transform" />
+                                        <span className="text-sm font-bold">
+                                          添加封面图
+                                        </span>
+                                      </button>
+                                    )}
+                                  </div>
                                 )}
                               </div>
-                            )}
-                          </div>
-                          {item.imagePrompt && (
-                            <div className="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10 flex flex-col gap-2 overflow-hidden flex-1">
-                              <div className="flex items-center justify-between shrink-0">
-                                <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">
-                                  画面提示词
-                                </span>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() =>
-                                    handleCopy(
-                                      item.imagePrompt!,
-                                      `ip-${item.id}`,
-                                    )
-                                  }
-                                  className="h-6 w-6 rounded-lg bg-blue-500/10"
-                                >
-                                  {copiedId === `ip-${item.id}` ? (
-                                    <Check className="w-3 h-3 text-green-400" />
-                                  ) : (
-                                    <Copy className="w-3 h-3 text-blue-400/40" />
-                                  )}
-                                </Button>
-                              </div>
-                              <p className="text-[11px] text-blue-100/60 leading-relaxed font-mono tracking-tight overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10">
-                                {item.imagePrompt}
-                              </p>
                             </div>
-                          )}
-                        </div>
 
-                        {/* 右侧：视频预览与提示词 */}
-                        <div className="p-3 flex flex-col gap-3 bg-black/40 overflow-hidden h-full">
-                          <div className="aspect-[21/9] w-full bg-black/60 rounded-xl overflow-hidden relative group/media ring-1 ring-purple-500/20 shadow-xl shrink-0">
-                            <div className="absolute top-3 left-3 z-10 px-2.5 py-0.5 bg-purple-500/80 backdrop-blur-md rounded text-[9px] text-white font-black uppercase tracking-widest flex items-center gap-1.5 shadow-lg">
-                              <VideoIcon className="w-3 h-3" /> VIDEO
-                            </div>
-                            {item.videoUrl ? (
-                              <>
-                                <video
-                                  src={item.videoUrl}
-                                  controls
-                                  className="w-full h-full object-cover"
-                                />
-                                <button
-                                  onClick={() => handleRemoveVideo(item)}
-                                  className="absolute top-3 right-3 w-7 h-7 bg-red-500/90 rounded-full flex items-center justify-center text-white text-xs opacity-0 group-hover/media:opacity-100 transition-all hover:bg-red-500 shadow-lg"
-                                >
-                                  ×
-                                </button>
-                              </>
-                            ) : (
-                              <div className="w-full h-full flex flex-col items-center justify-center gap-4">
-                                <VideoIcon className="w-10 h-10 text-white/5" />
-                                <div className="flex gap-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleGenerateVideo(item)}
-                                    className="h-8 rounded-lg border-purple-500/30 text-purple-400 hover:bg-purple-500/20 font-black uppercase tracking-widest px-4 text-[9px]"
-                                  >
-                                    ✨ 智能生成
-                                  </Button>
-                                  <label className="h-8 flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-4 text-[9px] font-black uppercase tracking-widest text-white/40 hover:bg-white/10 cursor-pointer">
-                                    上传
-                                    <input
-                                      type="file"
-                                      accept="video/*"
-                                      className="hidden"
-                                      onChange={(e) =>
-                                        handleVideoSelect(e, item)
-                                      }
-                                    />
-                                  </label>
+                            {/* 右侧：封面图提示词 */}
+                            <div className="p-6 flex flex-col bg-black/40 overflow-hidden h-full">
+                              {item.imagePrompt && (
+                                <div className="flex-1 flex flex-col gap-3 overflow-hidden">
+                                  <div className="p-5 bg-amber-500/5 rounded-2xl border border-amber-500/10 flex-1 flex flex-col overflow-hidden">
+                                    <div className="flex items-center justify-between mb-3 shrink-0">
+                                      <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest">
+                                        封面设计提示词
+                                      </span>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() =>
+                                          handleCopy(
+                                            item.imagePrompt!,
+                                            `ip-${item.id}`,
+                                          )
+                                        }
+                                        className="h-8 w-8 rounded-lg bg-amber-500/10"
+                                      >
+                                        {copiedId === `ip-${item.id}` ? (
+                                          <Check className="w-4 h-4 text-green-400" />
+                                        ) : (
+                                          <Copy className="w-4 h-4 text-amber-400/50" />
+                                        )}
+                                      </Button>
+                                    </div>
+                                    <p className="text-sm text-amber-100/60 leading-relaxed font-mono overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10">
+                                      {item.imagePrompt}
+                                    </p>
+                                  </div>
                                 </div>
-                              </div>
-                            )}
-                          </div>
-                          {item.videoPrompt && (
-                            <div className="p-3 bg-purple-500/5 rounded-2xl border border-purple-500/10 flex flex-col gap-2 overflow-hidden flex-1">
-                              <div className="flex items-center justify-between shrink-0">
-                                <span className="text-[9px] font-black text-purple-400 uppercase tracking-widest">
-                                  视频同步提示词
-                                </span>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() =>
-                                    handleCopy(
-                                      item.videoPrompt!,
-                                      `vp-${item.id}`,
-                                    )
-                                  }
-                                  className="h-6 w-6 rounded-lg bg-purple-500/10"
-                                >
-                                  {copiedId === `vp-${item.id}` ? (
-                                    <Check className="w-3 h-3 text-green-400" />
-                                  ) : (
-                                    <Copy className="w-3 h-3 text-purple-400/40" />
-                                  )}
-                                </Button>
-                              </div>
-                              <p className="text-[11px] text-purple-100/60 leading-relaxed font-mono tracking-tight overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10">
-                                {item.videoPrompt}
-                              </p>
+                              )}
                             </div>
-                          )}
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        /* 普通分镜 UI */
+                        <div className="bg-black/40 backdrop-blur-3xl rounded-3xl border border-white/10 overflow-hidden shadow-2xl h-full flex flex-col">
+                          {/* 脚本标题区 */}
+                          <div className="px-6 py-3 border-b border-white/5 bg-gradient-to-br from-primary/10 to-transparent shrink-0">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="px-3 py-1 bg-primary text-primary-foreground rounded-full text-[9px] font-black uppercase tracking-[0.2em] shadow-lg shadow-primary/20">
+                                SHOT {item.shotNumber} /{' '}
+                                {
+                                  storyboards.filter((s) => s.shotNumber !== 0)
+                                    .length
+                                }
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  handleCopy(item.script, `s-${item.id}`)
+                                }
+                                className="h-8 w-8 rounded-lg bg-white/5 hover:bg-white/10 transition-all"
+                              >
+                                {copiedId === `s-${item.id}` ? (
+                                  <Check className="w-3.5 h-3.5 text-green-400" />
+                                ) : (
+                                  <Copy className="w-3.5 h-3.5 text-white/40" />
+                                )}
+                              </Button>
+                            </div>
+                            <p className="text-lg text-white font-semibold leading-tight tracking-tight">
+                              {item.script}
+                            </p>
+                          </div>
+
+                          {/* 媒体与提示词混合区 */}
+                          <div className="flex-1 grid grid-cols-2 gap-px bg-white/5 overflow-hidden">
+                            {/* 左侧：画面预览与提示词 */}
+                            <div className="p-3 flex flex-col gap-3 bg-black/20 overflow-hidden h-full">
+                              <div className="aspect-[21/9] w-full bg-black/60 rounded-xl overflow-hidden relative group/media ring-1 ring-blue-500/20 shadow-xl shrink-0">
+                                <div className="absolute top-3 left-3 z-10 px-2.5 py-0.5 bg-blue-500/80 backdrop-blur-md rounded text-[9px] text-white font-black uppercase tracking-widest flex items-center gap-1.5 shadow-lg">
+                                  <ImageIcon className="w-3 h-3" /> IMAGE
+                                </div>
+                                {item.imageUrl ? (
+                                  <>
+                                    <img
+                                      src={item.imageUrl}
+                                      className="w-full h-full object-cover"
+                                    />
+                                    <button
+                                      onClick={() => handleRemoveImage(item)}
+                                      className="absolute top-3 right-3 w-7 h-7 bg-red-500/90 rounded-full flex items-center justify-center text-white text-xs opacity-0 group-hover/media:opacity-100 transition-all hover:bg-red-500 shadow-lg"
+                                    >
+                                      ×
+                                    </button>
+                                  </>
+                                ) : (
+                                  <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                                    {editingId === item.id ? (
+                                      <div
+                                        onPaste={(e) => handlePaste(e, item)}
+                                        className="w-full h-full flex flex-col items-center justify-center p-2 outline-none"
+                                        tabIndex={0}
+                                      >
+                                        <label className="cursor-pointer flex flex-col items-center gap-1">
+                                          {isProcessing ? (
+                                            <div className="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full" />
+                                          ) : (
+                                            <>
+                                              <ImageIcon className="w-8 h-8 text-blue-500/40" />
+                                              <span className="text-[9px] text-blue-400/60 font-black uppercase text-center">
+                                                Ctrl+V or Click
+                                              </span>
+                                              <input
+                                                type="file"
+                                                accept="image/*"
+                                                className="hidden"
+                                                onChange={(e) =>
+                                                  handleFileSelect(e, item)
+                                                }
+                                              />
+                                            </>
+                                          )}
+                                        </label>
+                                      </div>
+                                    ) : (
+                                      <button
+                                        onClick={() => setEditingId(item.id)}
+                                        className="flex flex-col items-center gap-2 text-white/10 hover:text-blue-500 transition-all group/add"
+                                      >
+                                        <ImageIcon className="w-10 h-10 group-hover/add:scale-110 transition-transform" />
+                                        <span className="text-[9px] font-black uppercase tracking-widest">
+                                          Add Reference
+                                        </span>
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                              {item.imagePrompt && (
+                                <div className="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10 flex flex-col gap-2 overflow-hidden flex-1">
+                                  <div className="flex items-center justify-between shrink-0">
+                                    <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">
+                                      画面提示词
+                                    </span>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() =>
+                                        handleCopy(
+                                          item.imagePrompt!,
+                                          `ip-${item.id}`,
+                                        )
+                                      }
+                                      className="h-6 w-6 rounded-lg bg-blue-500/10"
+                                    >
+                                      {copiedId === `ip-${item.id}` ? (
+                                        <Check className="w-3 h-3 text-green-400" />
+                                      ) : (
+                                        <Copy className="w-3 h-3 text-blue-400/40" />
+                                      )}
+                                    </Button>
+                                  </div>
+                                  <p className="text-[11px] text-blue-100/60 leading-relaxed font-mono tracking-tight overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10">
+                                    {item.imagePrompt}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* 右侧：视频预览与提示词 */}
+                            <div className="p-3 flex flex-col gap-3 bg-black/40 overflow-hidden h-full">
+                              <div className="aspect-[21/9] w-full bg-black/60 rounded-xl overflow-hidden relative group/media ring-1 ring-purple-500/20 shadow-xl shrink-0">
+                                <div className="absolute top-3 left-3 z-10 px-2.5 py-0.5 bg-purple-500/80 backdrop-blur-md rounded text-[9px] text-white font-black uppercase tracking-widest flex items-center gap-1.5 shadow-lg">
+                                  <VideoIcon className="w-3 h-3" /> VIDEO
+                                </div>
+                                {item.videoUrl ? (
+                                  <>
+                                    <video
+                                      src={item.videoUrl}
+                                      controls
+                                      className="w-full h-full object-cover"
+                                    />
+                                    <button
+                                      onClick={() => handleRemoveVideo(item)}
+                                      className="absolute top-3 right-3 w-7 h-7 bg-red-500/90 rounded-full flex items-center justify-center text-white text-xs opacity-0 group-hover/media:opacity-100 transition-all hover:bg-red-500 shadow-lg"
+                                    >
+                                      ×
+                                    </button>
+                                  </>
+                                ) : (
+                                  <div className="w-full h-full flex flex-col items-center justify-center gap-4">
+                                    <VideoIcon className="w-10 h-10 text-white/5" />
+                                    <div className="flex gap-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                          handleGenerateVideo(item)
+                                        }
+                                        className="h-8 rounded-lg border-purple-500/30 text-purple-400 hover:bg-purple-500/20 font-black uppercase tracking-widest px-4 text-[9px]"
+                                      >
+                                        ✨ 智能生成
+                                      </Button>
+                                      <label className="h-8 flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-4 text-[9px] font-black uppercase tracking-widest text-white/40 hover:bg-white/10 cursor-pointer">
+                                        上传
+                                        <input
+                                          type="file"
+                                          accept="video/*"
+                                          className="hidden"
+                                          onChange={(e) =>
+                                            handleVideoSelect(e, item)
+                                          }
+                                        />
+                                      </label>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              {item.videoPrompt && (
+                                <div className="p-3 bg-purple-500/5 rounded-2xl border border-purple-500/10 flex flex-col gap-2 overflow-hidden flex-1">
+                                  <div className="flex items-center justify-between shrink-0">
+                                    <span className="text-[9px] font-black text-purple-400 uppercase tracking-widest">
+                                      视频同步提示词
+                                    </span>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() =>
+                                        handleCopy(
+                                          item.videoPrompt!,
+                                          `vp-${item.id}`,
+                                        )
+                                      }
+                                      className="h-6 w-6 rounded-lg bg-purple-500/10"
+                                    >
+                                      {copiedId === `vp-${item.id}` ? (
+                                        <Check className="w-3 h-3 text-green-400" />
+                                      ) : (
+                                        <Copy className="w-3 h-3 text-purple-400/40" />
+                                      )}
+                                    </Button>
+                                  </div>
+                                  <p className="text-[11px] text-purple-100/60 leading-relaxed font-mono tracking-tight overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10">
+                                    {item.videoPrompt}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* 底部居中轮播导航 - 增强视觉样式 */}
