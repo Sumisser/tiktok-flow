@@ -7,6 +7,8 @@ export interface Task {
   steps: WorkflowStep[];
   storyboards: StoryboardItem[];
   tags?: string[];
+  user_id?: string;
+  user_email?: string;
 }
 
 // 工作流步骤类型

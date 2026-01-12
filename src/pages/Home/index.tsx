@@ -114,6 +114,14 @@ export default function Home() {
     hour: '2-digit',
     minute: '2-digit',
   });
+
+  // 从用户信息中提取显示名称
+  const displayName =
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    user?.email?.split('@')[0] ||
+    '创作者';
+
   const greeting =
     currentTime.getHours() < 12
       ? '早上好'
@@ -299,68 +307,56 @@ export default function Home() {
             </div>
           </section>
         ) : !hasTasks || isCreating ? (
-          /* 空状态 / 创建状态：展示全屏 Hero 区域 */
-          <section className="min-h-screen flex flex-col items-center justify-center px-8 pb-32 animate-in fade-in duration-1000">
-            <div className="w-full max-w-4xl space-y-16">
-              {/* 大时钟 */}
-              <div className="text-center space-y-4 select-none">
-                <h1 className="text-[140px] md:text-[200px] font-black tracking-tighter leading-none drop-shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
+          /* 空状态 / 创建状态：简洁的 Hero 区域 */
+          <section className="min-h-screen flex flex-col items-center justify-center px-8 pb-20 animate-in fade-in duration-1000">
+            <div className="w-full max-w-2xl space-y-12 text-center">
+              {/* 时钟与问候 */}
+              <div className="space-y-3 select-none">
+                <h1 className="text-[100px] md:text-[140px] font-black tracking-tighter leading-none drop-shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
                   {timeString}
                 </h1>
-                <h2 className="text-3xl md:text-5xl font-black tracking-tight opacity-70">
-                  {greeting}, Miracle.
+                <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white/70">
+                  {greeting}, {displayName}
                 </h2>
               </div>
 
-              {/* 核心交互区 */}
-              <div className="relative max-w-2xl mx-auto w-full">
-                {isCreating ? (
-                  <div className="animate-in zoom-in-95 fade-in duration-500 text-center space-y-10">
-                    <p className="text-3xl md:text-4xl font-black tracking-tight drop-shadow-md">
-                      为你的新创作流命名
-                    </p>
-                    <div className="relative">
-                      <input
-                        autoFocus
-                        type="text"
-                        value={newTitle}
-                        onChange={(e) => setNewTitle(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder="例如：夏日旅行叙事..."
-                        className="w-full bg-white/10 backdrop-blur-[40px] rounded-[2.5rem] h-24 px-10 text-3xl font-black tracking-tight placeholder:text-white/10 border border-white/10 focus:border-white/30 transition-all outline-none text-center shadow-2xl"
-                      />
-                      <div className="mt-10 flex justify-center gap-6">
-                        <button
-                          onClick={handleCreate}
-                          disabled={!newTitle.trim()}
-                          className="px-12 py-5 bg-white text-black font-black rounded-3xl hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:scale-100 shadow-xl"
-                        >
-                          开始创作
-                        </button>
-                        <button
-                          onClick={() => setIsCreating(false)}
-                          className="px-12 py-5 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-3xl font-black transition-all border border-white/10 shadow-xl"
-                        >
-                          取消
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center space-y-8 animate-in slide-in-from-bottom-4 duration-700">
-                    <p className="text-2xl font-bold tracking-tight opacity-50">
-                      今天的创作核心目标是什么？
-                    </p>
-                    <div className="h-px bg-white/20 w-32 mx-auto" />
+              {/* 创建任务区域 */}
+              {isCreating ? (
+                <div className="animate-in zoom-in-95 fade-in duration-300 space-y-6">
+                  <input
+                    autoFocus
+                    type="text"
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="输入创作主题..."
+                    className="w-full bg-white/10 backdrop-blur-xl rounded-2xl h-16 px-6 text-xl font-bold placeholder:text-white/20 border border-white/10 focus:border-white/30 transition-all outline-none text-center"
+                  />
+                  <div className="flex justify-center gap-4">
                     <button
-                      onClick={() => setIsCreating(true)}
-                      className="px-12 py-6 bg-white/10 hover:bg-white/20 backdrop-blur-2xl rounded-[2rem] border border-white/10 transition-all group relative overflow-hidden"
+                      onClick={handleCreate}
+                      disabled={!newTitle.trim()}
+                      className="px-10 py-4 bg-white text-black font-black rounded-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:scale-100"
                     >
-                      <Plus className="w-8 h-8 opacity-40 group-hover:opacity-100 group-hover:rotate-90 transition-all" />
+                      开始创作
+                    </button>
+                    <button
+                      onClick={() => setIsCreating(false)}
+                      className="px-10 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-xl font-bold transition-all border border-white/10"
+                    >
+                      取消
                     </button>
                   </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setIsCreating(true)}
+                  className="inline-flex items-center gap-3 px-8 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-2xl border border-white/10 transition-all group"
+                >
+                  <Plus className="w-5 h-5 opacity-60 group-hover:opacity-100 group-hover:rotate-90 transition-all" />
+                  <span className="text-base font-bold">新建创作流</span>
+                </button>
+              )}
             </div>
           </section>
         ) : (

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Task } from '../types';
+import { useAuth, ADMIN_EMAIL } from '../store/auth';
 // 移除未使用的 UI 组件导入
 import { Button } from '@/components/ui/button';
 import {
@@ -13,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Calendar, Trash2, Clapperboard } from 'lucide-react';
+import { Calendar, Trash2, Clapperboard, User } from 'lucide-react';
 // 移除未使用的 cn 导入
 
 interface TaskCardProps {
@@ -23,7 +24,15 @@ interface TaskCardProps {
 
 export default function TaskCard({ task, onDelete }: TaskCardProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  // 当前用户是否是管理员
+  const isAdmin = user?.email === ADMIN_EMAIL;
+  // 任务是否属于其他人
+  const isOthersTask = task.user_email && task.user_email !== user?.email;
+  // 是否显示创建者信息（管理员查看他人数据时显示）
+  const showOwner = isAdmin && isOthersTask;
 
   // 计算完成进度
   // const completedSteps = task.steps.filter(
@@ -135,6 +144,16 @@ export default function TaskCard({ task, onDelete }: TaskCardProps) {
               )}
             </div>
           </div>
+
+          {/* 右下角：创建者信息（仅管理员查看他人数据时显示） */}
+          {showOwner && (
+            <div className="absolute bottom-2.5 right-3 flex items-center gap-1.5 px-2 py-1 bg-accent/20 backdrop-blur-md rounded-md border border-accent/20">
+              <User className="w-3 h-3 text-accent" />
+              <span className="text-[9px] font-bold text-accent truncate max-w-[80px]">
+                {task.user_email?.split('@')[0]}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 

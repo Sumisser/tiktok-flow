@@ -14,9 +14,11 @@ import {
   dehydrateTaskForStorage,
 } from './utils';
 import { getRandomWallpaper } from '../lib/unsplash';
+import { useAuth } from './auth';
 
 // Provider 组件
 export function TaskProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [wallpaperUrl, setWallpaperUrl] = useState<string | null>(null);
@@ -77,6 +79,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
       steps: createDefaultSteps(),
       storyboards: [],
       tags: [],
+      user_email: user?.email || undefined,
     };
 
     const updatedTasks = [newTask, ...tasks];
