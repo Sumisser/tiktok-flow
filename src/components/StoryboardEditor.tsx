@@ -19,9 +19,10 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowLeft,
-  RotateCcw,
+  Mic,
 } from 'lucide-react';
 import { parseStoryboardTable } from '../lib/storyboard';
+import TtsDrawer from './TtsDrawer';
 
 interface StoryboardEditorProps {
   taskId: string;
@@ -42,7 +43,6 @@ export default function StoryboardEditor({
   isRawMode,
   setIsRawMode,
   onBack,
-  onReset,
 }: StoryboardEditorProps) {
   /* eslint-disable react-hooks/exhaustive-deps */
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -52,6 +52,7 @@ export default function StoryboardEditor({
   const storyboardsRef = useRef(storyboards);
   const [rawText, setRawText] = useState(output);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isTtsDrawerOpen, setIsTtsDrawerOpen] = useState(false);
 
   useEffect(() => {
     storyboardsRef.current = storyboards;
@@ -299,11 +300,11 @@ export default function StoryboardEditor({
           <Button
             variant="ghost"
             size="icon"
-            onClick={onReset}
-            className="w-12 h-12 rounded-xl text-white/30 hover:text-red-500 hover:bg-red-500/10 transition-all"
-            title="重置任务"
+            onClick={() => setIsTtsDrawerOpen(true)}
+            className="w-12 h-12 rounded-xl text-white/50 hover:text-primary hover:bg-primary/10 transition-all"
+            title="AI 语音合成"
           >
-            <RotateCcw className="w-5 h-5" />
+            <Mic className="w-5 h-5" />
           </Button>
         </div>
       )}
@@ -742,6 +743,15 @@ export default function StoryboardEditor({
           )}
         </div>
       </div>
+
+      <TtsDrawer
+        isOpen={isTtsDrawerOpen}
+        onClose={() => setIsTtsDrawerOpen(false)}
+        fullScript={storyboards
+          .filter((s) => s.shotNumber !== 0)
+          .map((s) => s.script)
+          .join('\n\n')}
+      />
     </>
   );
 }
