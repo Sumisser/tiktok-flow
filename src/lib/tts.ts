@@ -37,7 +37,7 @@ export async function generateMinimaxTts(req: TtsRequest) {
       stream: false,
       timbre_weights: [
         {
-          voice_id: req.voice_id || 'Boyan_new_platform',
+          voice_id: 'Boyan_new_platform',
           weight: 100,
         },
       ],
