@@ -10,7 +10,7 @@ import type { User, Session } from '@supabase/supabase-js';
 
 // 允许访问的用户邮箱列表（只有这些用户能看到数据）
 // 请在这里替换为你自己的邮箱
-const ALLOWED_EMAILS = ['miracleisshit@gmail.com'];
+const ALLOWED_EMAILS = ['miracleisshit@gmail.com', '656603135@qq.com'];
 
 interface AuthContextType {
   user: User | null;
