@@ -329,7 +329,11 @@ export default function WorkflowStep({
         // 获取当前选中的风格提示词
         const stylePrefix = selectedStyleConfig?.prompt || '';
 
-        // 1. 解析 AI 返回的分镜表格并拼接风格
+        // 更新状态和输出（保持原始输出，不污染表格源码）
+        setOutput(text);
+        onUpdate({ output: text, status: 'in-progress' });
+
+        // 解析并处理展示用的 storyboards（保留拼接逻辑以便在 UI 中展示和复制单项）
         const rawStoryboards = parseStoryboardTable(text);
         const styledStoryboards = rawStoryboards.map((item) => {
           const cleanedPrompt = item.imagePrompt.trim();
@@ -340,21 +344,6 @@ export default function WorkflowStep({
               : stylePrefix,
           };
         });
-
-        // 2. 尝试提取 AI 输出中的完整文案部分，以便重组 Markdown
-        const fullScriptMatch = text.match(
-          /### 1\. 完整口播文[稿案]([\s\S]*?)### 2/,
-        );
-        const fullScript = fullScriptMatch ? fullScriptMatch[1].trim() : '';
-
-        // 3. 生成包含风格提示词的新 Markdown
-        const styledOutput = stringifyStoryboardTable(
-          styledStoryboards,
-          fullScript,
-        );
-
-        setOutput(styledOutput);
-        onUpdate({ output: styledOutput, status: 'in-progress' });
 
         if (styledStoryboards.length > 0) {
           onUpdateStoryboards(styledStoryboards);

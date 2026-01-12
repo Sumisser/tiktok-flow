@@ -135,7 +135,10 @@ export default function StoryboardEditor({
   };
 
   const handleCopyFullScript = async () => {
-    const fullScript = storyboards.map((s) => s.script).join('\n\n');
+    const fullScript = storyboards
+      .filter((s) => s.shotNumber !== 0)
+      .map((s) => s.script)
+      .join('\n\n');
     try {
       await navigator.clipboard.writeText(fullScript);
       setIsFullScriptCopied(true);
