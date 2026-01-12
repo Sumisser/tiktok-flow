@@ -1,8 +1,9 @@
 import { useTasks } from '../../store/hooks';
+import { useAuth } from '../../store/auth';
 import TaskCard from '../../components/TaskCard';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, X, Search, CloudRain } from 'lucide-react';
+import { Plus, X, Search, CloudRain, LogOut } from 'lucide-react';
 
 const useTime = () => {
   const [time, setTime] = useState(new Date());
@@ -100,6 +101,7 @@ export default function Home() {
     wallpaperUrl,
     wallpaperAttribution,
   } = useTasks();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -240,6 +242,34 @@ export default function Home() {
               >
                 Unsplash
               </a>
+            </div>
+          )}
+          {/* 用户信息与登出 */}
+          {user && (
+            <div className="flex items-center gap-3 animate-in fade-in duration-500">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10">
+                {user.user_metadata?.avatar_url ? (
+                  <img
+                    src={user.user_metadata.avatar_url}
+                    alt="Avatar"
+                    className="w-6 h-6 rounded-full"
+                  />
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-primary/30 flex items-center justify-center text-[10px] font-bold text-white">
+                    {user.email?.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="text-[11px] text-white/70 font-medium max-w-[120px] truncate">
+                  {user.email}
+                </span>
+              </div>
+              <button
+                onClick={signOut}
+                className="p-2 bg-black/40 hover:bg-red-500/20 backdrop-blur-md rounded-full border border-white/10 hover:border-red-500/30 transition-all group"
+                title="退出登录"
+              >
+                <LogOut className="w-4 h-4 text-white/60 group-hover:text-red-400 transition-colors" />
+              </button>
             </div>
           )}
         </div>
