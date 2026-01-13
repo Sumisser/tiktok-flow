@@ -21,11 +21,16 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowLeft,
-  Mic,
   Loader2,
+  AudioWaveform,
+  Play,
+  Pause,
+  Download,
+  RotateCcw,
 } from 'lucide-react';
 import { parseStoryboardTable } from '../lib/storyboard';
-import TtsDrawer from './TtsDrawer';
+import { generateMinimaxTts } from '../lib/tts';
+import { uploadTtsAudio, deleteTtsAudio } from '../lib/storage';
 
 interface StoryboardEditorProps {
   taskId: string;
@@ -59,7 +64,94 @@ export default function StoryboardEditor({
   const storyboardsRef = useRef(storyboards);
   const [rawText, setRawText] = useState(output);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isTtsDrawerOpen, setIsTtsDrawerOpen] = useState(false);
+  // TTS 状态管理
+  const [isTtsGenerating, setIsTtsGenerating] = useState(false);
+  const [isTtsPlaying, setIsTtsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // 初始化或 URL 变更时重置播放器
+  useEffect(() => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+      audioRef.current.onended = () => setIsTtsPlaying(false);
+      audioRef.current.onerror = () => {
+        setIsTtsPlaying(false);
+        toast.error('音频播放出错');
+      };
+    }
+    if (ttsAudioUrl) {
+      audioRef.current.src = ttsAudioUrl;
+    }
+  }, [ttsAudioUrl]);
+
+  const handleGenerateTts = async () => {
+    // 拼接完整脚本
+    const fullScript = storyboards
+      .filter((s) => s.shotNumber !== 0)
+      .map((s) => s.script)
+      .join('\n\n');
+
+    if (!fullScript.trim()) {
+      toast.error('脚本内容为空，无法生成语音');
+      return;
+    }
+
+    setIsTtsGenerating(true);
+    const toastId = toast.loading('正在合成语音...');
+
+    try {
+      // 1. 如果已有音频，先删除旧的
+      if (ttsAudioUrl) {
+        // 虽然当前逻辑是按钮互斥，但防御性编程
+        // 这里的删除可以是异步后的，不一定阻塞
+        deleteTtsAudio(ttsAudioUrl).catch(console.error);
+      }
+
+      // 2. 生成新音频 (使用默认音色 Boyan_new_platform)
+      const localUrl = await generateMinimaxTts({
+        text: fullScript,
+        voice_id: 'Boyan_new_platform',
+      });
+
+      // 3. 上传到 Supabase
+      const response = await fetch(localUrl);
+      const audioBlob = await response.blob();
+      const uploadedUrl = await uploadTtsAudio(audioBlob, taskId);
+
+      // 4. 更新状态
+      onUpdateTtsAudioUrl?.(uploadedUrl);
+      URL.revokeObjectURL(localUrl); // 清理本地内存
+
+      toast.success('语音合成成功', { id: toastId });
+
+      // 自动播放
+      if (audioRef.current) {
+        audioRef.current.src = uploadedUrl;
+        audioRef.current.play();
+        setIsTtsPlaying(true);
+      }
+    } catch (error: any) {
+      console.error('TTS Error:', error);
+      toast.error(error.message || '语音合成失败', { id: toastId });
+    } finally {
+      setIsTtsGenerating(false);
+    }
+  };
+
+  const handlePlayPauseTts = () => {
+    if (!audioRef.current || !ttsAudioUrl) return;
+
+    if (isTtsPlaying) {
+      audioRef.current.pause();
+      setIsTtsPlaying(false);
+    } else {
+      audioRef.current.play().catch((err) => {
+        console.error('Play error:', err);
+        toast.error('播放失败');
+      });
+      setIsTtsPlaying(true);
+    }
+  };
   // 视频生成状态：支持多个分镜并行生成
   const [videoGeneratingMap, setVideoGeneratingMap] = useState<
     Map<string, number>
@@ -428,15 +520,63 @@ export default function StoryboardEditor({
             )}
           </Button>
           <div className="h-px w-8 mx-auto bg-white/5" />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsTtsDrawerOpen(true)}
-            className="w-12 h-12 rounded-xl text-white/50 hover:text-primary hover:bg-primary/10 transition-all"
-            title="AI 语音合成"
-          >
-            <Mic className="w-5 h-5" />
-          </Button>
+
+          {/* TTS 语音合成与播放控制 */}
+          <div className="flex flex-col gap-2 items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={ttsAudioUrl ? handlePlayPauseTts : handleGenerateTts}
+              disabled={isTtsGenerating}
+              className={cn(
+                'w-12 h-12 rounded-xl transition-all relative',
+                ttsAudioUrl
+                  ? isTtsPlaying
+                    ? 'text-green-400 bg-green-400/10 hover:bg-green-400/20'
+                    : 'text-primary bg-primary/10 hover:bg-primary/20'
+                  : 'text-white/50 hover:text-primary hover:bg-primary/10',
+              )}
+              title={
+                ttsAudioUrl ? (isTtsPlaying ? '暂停' : '播放语音') : '生成语音'
+              }
+            >
+              {isTtsGenerating ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : ttsAudioUrl ? (
+                isTtsPlaying ? (
+                  <Pause className="w-5 h-5" />
+                ) : (
+                  <Play className="w-5 h-5 ml-0.5" />
+                )
+              ) : (
+                <AudioWaveform className="w-5 h-5" />
+              )}
+            </Button>
+
+            {/* 只有存在音频时才显示的额外操作：下载 */}
+            {ttsAudioUrl && (
+              <div className="flex flex-col gap-2 animate-in slide-in-from-top-2 fade-in duration-300">
+                <a
+                  href={ttsAudioUrl}
+                  download={`tts-${taskId}.mp3`}
+                  className="w-12 h-12 flex items-center justify-center rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all"
+                  title="下载音频"
+                >
+                  <Download className="w-4 h-4" />
+                </a>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleGenerateTts}
+                  disabled={isTtsGenerating}
+                  className="w-12 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all"
+                  title="重新生成语音"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -991,18 +1131,6 @@ export default function StoryboardEditor({
           )}
         </div>
       </div>
-
-      <TtsDrawer
-        isOpen={isTtsDrawerOpen}
-        onClose={() => setIsTtsDrawerOpen(false)}
-        fullScript={storyboards
-          .filter((s) => s.shotNumber !== 0)
-          .map((s) => s.script)
-          .join('\n\n')}
-        taskId={taskId}
-        savedAudioUrl={ttsAudioUrl}
-        onAudioSaved={(url) => onUpdateTtsAudioUrl?.(url)}
-      />
     </>
   );
 }
