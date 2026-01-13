@@ -221,3 +221,43 @@ export async function deleteTtsAudio(audioUrl: string): Promise<void> {
     console.error('Failed to delete TTS audio:', error);
   }
 }
+
+/**
+ * 上传 AI 生成的视频到 Supabase Storage
+ * @param videoBlob - 视频 Blob
+ * @param taskId - 任务ID
+ * @param shotNumber - 镜号
+ * @returns 视频的公开访问 URL
+ */
+export async function uploadGeneratedVideo(
+  videoBlob: Blob,
+  taskId: string,
+  shotNumber: number,
+): Promise<string> {
+  try {
+    const timestamp = Date.now();
+    const fileName = `${taskId}/ai-video-${shotNumber}-${timestamp}.mp4`;
+
+    const { data, error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(fileName, videoBlob, {
+        contentType: 'video/mp4',
+        cacheControl: '3600',
+        upsert: true,
+      });
+
+    if (error) {
+      console.error('Error uploading generated video:', error);
+      throw error;
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from(BUCKET_NAME).getPublicUrl(data.path);
+
+    return publicUrl;
+  } catch (error) {
+    console.error('Failed to upload generated video:', error);
+    throw error;
+  }
+}

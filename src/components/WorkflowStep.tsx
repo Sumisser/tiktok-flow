@@ -133,11 +133,11 @@ export default function WorkflowStep({
       styles: [
         {
           id: 'oil_painting_artistic',
-          label: '🖼️ 艺术油画',
+          label: '🎨 诗意油画',
           description:
-            '经典油画艺术风格。丰富的色彩层次，富有表现力的笔触，戏剧性的光影对比，兼具古典美学与现代艺术感，适合艺术、情感、叙事类内容。',
+            '富有表现力的现代油画风格。厚涂笔触质感，戏剧性明暗对照法，冷暖色调和谐对比，梦幻诗意氛围，饱含情感张力与哲思深度，适合哲学、心理学、情感类内容。',
           prompt:
-            'Artistic oil painting style, expressive brushstrokes, rich vibrant colors, dramatic lighting, fine art aesthetic, impasto texture, gallery quality, painterly atmosphere, classical and modern fusion',
+            'Expressive oil painting style, thick impasto brushstrokes, visible canvas texture, dramatic chiaroscuro lighting, warm and cool color harmony, rich saturated colors, dreamlike poetic atmosphere, emotional depth, contemplative mood, symbolic visual storytelling, fine art museum quality, painterly aesthetic',
         },
         {
           id: 'film_cinematic',
