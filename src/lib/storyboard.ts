@@ -17,7 +17,11 @@ export function parseStoryboardTable(markdown: string): StoryboardItem[] {
 
   if (hasTable) {
     for (const line of lines) {
-      if (line.includes('镜号') || line.includes('Shot')) continue;
+      // 检查是否是标题行：包含关键字且不以数字开头（分镜行通常以数字或 | 数字开头）
+      const isHeader =
+        (line.includes('镜号') || line.includes('Shot')) &&
+        !/^\s*\|?\s*\d+/.test(line);
+      if (isHeader) continue;
       if (/^[\s|:-]+$/.test(line)) continue;
 
       const cells = line
