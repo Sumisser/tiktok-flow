@@ -60,10 +60,10 @@ export default function StoryboardEditor({
   const [rawText, setRawText] = useState(output);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTtsDrawerOpen, setIsTtsDrawerOpen] = useState(false);
-  const [videoGeneratingId, setVideoGeneratingId] = useState<string | null>(
-    null,
-  );
-  const [videoProgress, setVideoProgress] = useState(0);
+  // 视频生成状态：支持多个分镜并行生成
+  const [videoGeneratingMap, setVideoGeneratingMap] = useState<
+    Map<string, number>
+  >(new Map());
   // 媒体视图模式：'video' 默认显示视频，'image' 显示图片
   const [mediaViewMode, setMediaViewMode] = useState<'video' | 'image'>(
     'video',
@@ -263,12 +263,21 @@ export default function StoryboardEditor({
       return;
     }
 
-    setVideoGeneratingId(item.id);
-    setVideoProgress(0);
+    // 如果该 item 已经在生成中，不重复触发
+    if (videoGeneratingMap.has(item.id)) {
+      toast.info('该分镜正在生成中，请稍候');
+      return;
+    }
 
-    const loadingToast = toast.loading('正在生成视频...', {
-      description: '这可能需要几分钟，请耐心等待',
-    });
+    // 添加到生成状态 Map
+    setVideoGeneratingMap((prev) => new Map(prev).set(item.id, 0));
+
+    const loadingToast = toast.loading(
+      `分镜 ${item.shotNumber} 正在生成视频...`,
+      {
+        description: '这可能需要几分钟，请耐心等待',
+      },
+    );
 
     try {
       // 构建提示词：如果没有参考图片，将画面提示词和视频提示词合并
@@ -283,12 +292,12 @@ export default function StoryboardEditor({
           prompt: fullPrompt,
           imageUrl: item.imageUrl || undefined,
           model: 'sora-2',
-          seconds: 4,
+          seconds: 15,
           size: '1280x720',
         },
         (progress, status) => {
-          setVideoProgress(progress);
-          toast.loading(`视频生成中: ${progress}%`, {
+          setVideoGeneratingMap((prev) => new Map(prev).set(item.id, progress));
+          toast.loading(`分镜 ${item.shotNumber}: ${progress}%`, {
             id: loadingToast,
             description: status === 'queued' ? '排队中...' : '处理中...',
           });
@@ -296,7 +305,9 @@ export default function StoryboardEditor({
       );
 
       // 2. 下载视频并上传到 Supabase
-      toast.loading('正在保存视频...', { id: loadingToast });
+      toast.loading(`分镜 ${item.shotNumber} 正在保存...`, {
+        id: loadingToast,
+      });
       const videoResponse = await fetch(videoUrl);
       const videoBlob = await videoResponse.blob();
       const uploadedUrl = await uploadGeneratedVideo(
@@ -305,19 +316,28 @@ export default function StoryboardEditor({
         item.shotNumber,
       );
 
-      // 3. 更新分镜数据
-      const updated = storyboards.map((s) =>
+      // 3. 更新分镜数据（使用 ref 获取最新状态）
+      const updated = storyboardsRef.current.map((s) =>
         s.id === item.id ? { ...s, videoUrl: uploadedUrl } : s,
       );
       onUpdateStoryboards(updated);
 
-      toast.success('视频生成成功！', { id: loadingToast });
+      toast.success(`分镜 ${item.shotNumber} 视频生成成功！`, {
+        id: loadingToast,
+      });
     } catch (error: any) {
       console.error('视频生成失败:', error);
-      toast.error(error.message || '视频生成失败', { id: loadingToast });
+      toast.error(
+        `分镜 ${item.shotNumber}: ${error.message || '视频生成失败'}`,
+        { id: loadingToast },
+      );
     } finally {
-      setVideoGeneratingId(null);
-      setVideoProgress(0);
+      // 从生成状态 Map 中移除
+      setVideoGeneratingMap((prev) => {
+        const next = new Map(prev);
+        next.delete(item.id);
+        return next;
+      });
     }
   };
 
@@ -646,13 +666,16 @@ export default function StoryboardEditor({
                                           ×
                                         </button>
                                       </>
-                                    ) : videoGeneratingId === item.id ? (
+                                    ) : videoGeneratingMap.has(item.id) ? (
                                       <div className="w-full h-full flex flex-col items-center justify-center gap-4">
                                         <div className="relative">
                                           <Loader2 className="w-12 h-12 text-purple-500 animate-spin" />
                                           <div className="absolute inset-0 flex items-center justify-center">
                                             <span className="text-[10px] font-black text-purple-400">
-                                              {videoProgress}%
+                                              {videoGeneratingMap.get(
+                                                item.id,
+                                              ) || 0}
+                                              %
                                             </span>
                                           </div>
                                         </div>
@@ -675,9 +698,9 @@ export default function StoryboardEditor({
                                             onClick={() =>
                                               handleGenerateVideo(item)
                                             }
-                                            disabled={
-                                              videoGeneratingId !== null
-                                            }
+                                            disabled={videoGeneratingMap.has(
+                                              item.id,
+                                            )}
                                             className="h-10 rounded-xl border-purple-500/30 text-purple-400 hover:bg-purple-500/20 font-bold px-6 text-sm disabled:opacity-50"
                                           >
                                             ✨ AI 生成视频
