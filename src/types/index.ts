@@ -32,6 +32,7 @@ export interface StoryboardItem {
   shotNumber: number;
   script: string;
   imagePrompt: string;
+  stylePrompt?: string;
   imageUrl: string;
   videoPrompt?: string;
   videoUrl?: string;

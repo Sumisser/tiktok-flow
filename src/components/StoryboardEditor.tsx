@@ -283,7 +283,10 @@ export default function StoryboardEditor({
       // 构建提示词：如果没有参考图片，将画面提示词和视频提示词合并
       let fullPrompt = item.videoPrompt;
       if (!item.imageUrl && item.imagePrompt) {
-        fullPrompt = `Scene: ${item.imagePrompt}\n\nMotion: ${item.videoPrompt}`;
+        fullPrompt = `场景: ${item.imagePrompt}\n\n动态: ${item.videoPrompt}`;
+        if (item.stylePrompt) {
+          fullPrompt = `${fullPrompt}\n\n风格: ${item.stylePrompt}`;
+        }
       }
 
       // 1. 调用灵芽 AI 生成视频（使用 sora-2-pro 以获得更好的稳定性）
@@ -555,7 +558,9 @@ export default function StoryboardEditor({
                                         size="icon"
                                         onClick={() =>
                                           handleCopy(
-                                            item.imagePrompt!,
+                                            item.stylePrompt
+                                              ? `内容: ${item.imagePrompt}\n风格: ${item.stylePrompt}`
+                                              : item.imagePrompt,
                                             `ip-${item.id}`,
                                           )
                                         }
@@ -568,9 +573,26 @@ export default function StoryboardEditor({
                                         )}
                                       </Button>
                                     </div>
-                                    <p className="text-sm text-amber-100/60 leading-relaxed font-mono overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10">
-                                      {item.imagePrompt}
-                                    </p>
+                                    <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10">
+                                      <div className="space-y-1">
+                                        <div className="text-[9px] text-amber-500/40 font-bold uppercase tracking-wider">
+                                          内容 (Content)
+                                        </div>
+                                        <p className="text-sm text-amber-100/60 leading-relaxed font-mono">
+                                          {item.imagePrompt}
+                                        </p>
+                                      </div>
+                                      {item.stylePrompt && (
+                                        <div className="space-y-1 pt-3 border-t border-white/5">
+                                          <div className="text-[9px] text-amber-500/40 font-bold uppercase tracking-wider">
+                                            风格 (Style)
+                                          </div>
+                                          <p className="text-[12px] text-amber-400/40 leading-relaxed font-mono italic">
+                                            {item.stylePrompt}
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               )}
@@ -797,7 +819,7 @@ export default function StoryboardEditor({
                               {mediaViewMode === 'image'
                                 ? /* 图片模式：显示画面提示词 */
                                   item.imagePrompt && (
-                                    <div className="p-4 bg-blue-500/5 rounded-xl border border-blue-500/10 flex flex-col gap-3 h-full">
+                                    <div className="p-4 bg-blue-500/5 rounded-xl border border-blue-500/10 flex flex-col gap-3 h-full overflow-hidden">
                                       <div className="flex items-center justify-between shrink-0">
                                         <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">
                                           画面提示词
@@ -807,7 +829,9 @@ export default function StoryboardEditor({
                                           size="icon"
                                           onClick={() =>
                                             handleCopy(
-                                              item.imagePrompt!,
+                                              item.stylePrompt
+                                                ? `内容: ${item.imagePrompt}\n风格: ${item.stylePrompt}`
+                                                : item.imagePrompt,
                                               `ip-${item.id}`,
                                             )
                                           }
@@ -820,14 +844,31 @@ export default function StoryboardEditor({
                                           )}
                                         </Button>
                                       </div>
-                                      <p className="text-[11px] text-blue-100/60 leading-relaxed font-mono flex-1 overflow-y-auto">
-                                        {item.imagePrompt}
-                                      </p>
+                                      <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-1 custom-scrollbar">
+                                        <div className="space-y-1">
+                                          <div className="text-[8px] text-blue-400/40 font-bold uppercase tracking-wider">
+                                            内容 (Content)
+                                          </div>
+                                          <p className="text-[11px] text-blue-100/60 leading-relaxed font-mono">
+                                            {item.imagePrompt}
+                                          </p>
+                                        </div>
+                                        {item.stylePrompt && (
+                                          <div className="space-y-1 pt-2 border-t border-white/5">
+                                            <div className="text-[8px] text-blue-400/40 font-bold uppercase tracking-wider">
+                                              风格 (Style)
+                                            </div>
+                                            <p className="text-[10px] text-blue-400/30 leading-relaxed font-mono italic">
+                                              {item.stylePrompt}
+                                            </p>
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
                                   )
                                 : /* 视频模式：显示视频提示词 */
                                   item.videoPrompt && (
-                                    <div className="p-4 bg-purple-500/5 rounded-xl border border-purple-500/10 flex flex-col gap-3 h-full">
+                                    <div className="p-4 bg-purple-500/5 rounded-xl border border-purple-500/10 flex flex-col gap-3 h-full overflow-hidden">
                                       <div className="flex items-center justify-between shrink-0">
                                         <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">
                                           视频提示词
@@ -850,9 +891,16 @@ export default function StoryboardEditor({
                                           )}
                                         </Button>
                                       </div>
-                                      <p className="text-[11px] text-purple-100/60 leading-relaxed font-mono flex-1 overflow-y-auto">
-                                        {item.videoPrompt}
-                                      </p>
+                                      <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-1 custom-scrollbar">
+                                        <div className="space-y-1">
+                                          <div className="text-[8px] text-purple-400/40 font-bold uppercase tracking-wider">
+                                            动态 (Motion)
+                                          </div>
+                                          <p className="text-[11px] text-purple-100/60 leading-relaxed font-mono">
+                                            {item.videoPrompt}
+                                          </p>
+                                        </div>
+                                      </div>
                                     </div>
                                   )}
                             </div>

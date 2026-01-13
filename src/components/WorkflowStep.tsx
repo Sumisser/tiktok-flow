@@ -348,9 +348,8 @@ export default function WorkflowStep({
           const cleanedPrompt = item.imagePrompt.trim();
           return {
             ...item,
-            imagePrompt: cleanedPrompt
-              ? `${cleanedPrompt}, ${stylePrefix}`
-              : stylePrefix,
+            imagePrompt: cleanedPrompt,
+            stylePrompt: stylePrefix,
           };
         });
 
