@@ -289,21 +289,55 @@ export default function StoryboardEditor({
         }
       }
 
-      // 1. 调用灵芽 AI 生成视频（使用 sora-2-pro 以获得更好的稳定性）
+      // 1. 调用灵芽 AI 生成视频
+      // 如果有 imagePrompt 但没有 imageUrl，generateVideo 内部会自动先生成参考图
       const videoUrl = await generateVideo(
         {
-          prompt: fullPrompt,
-          imageUrl: item.imageUrl || undefined,
+          prompt: fullPrompt, // 视频生成提示词
+          imagePrompt: item.imagePrompt || undefined, // 图片生成提示词（用于自动生图）
+          imageUrl: item.imageUrl || undefined, // 现有的参考图（如果有）
           model: 'sora-2',
           seconds: 10,
           size: '1280x720',
         },
-        (progress, status) => {
+        async (progress, status, extraData) => {
           setVideoGeneratingMap((prev) => new Map(prev).set(item.id, progress));
           toast.loading(`分镜 ${item.shotNumber}: ${progress}%`, {
             id: loadingToast,
             description: status === 'queued' ? '排队中...' : '处理中...',
           });
+
+          // 如果生成了参考图，自动保存
+          if (
+            status === 'generating_reference_success' &&
+            extraData?.imageUrl
+          ) {
+            try {
+              const imgRes = await fetch(extraData.imageUrl);
+              const imgBlob = await imgRes.blob();
+              // 转换为 File 对象以适应 uploadStoryboardImage 签名 (虽然它可能接受 Blob 但是为了类型安全)
+              const imgFile = new File([imgBlob], `ref-${item.id}.png`, {
+                type: 'image/png',
+              });
+
+              const savedUrl = await uploadStoryboardImage(
+                imgFile,
+                taskId,
+                item.shotNumber,
+              );
+
+              // 更新分镜数据中的图片
+              const updated = storyboardsRef.current.map((s) =>
+                s.id === item.id ? { ...s, imageUrl: savedUrl } : s,
+              );
+              storyboardsRef.current = updated; // 立即更新 Ref 防止后续状态不同步
+              onUpdateStoryboards(updated);
+
+              toast.success('参考图已保存');
+            } catch (err) {
+              console.error('自动保存参考图失败:', err);
+            }
+          }
         },
       );
 

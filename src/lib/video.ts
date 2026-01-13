@@ -10,7 +10,7 @@ const LINGYA_API_URL = 'https://api.lingyaai.cn';
 
 export interface ImageGenerateRequest {
   prompt: string;
-  model: 'banana-pro';
+  model: 'nano-banana' | 'banana-pro';
   size: '1024x1024' | '1280x720' | '720x1280';
 }
 
@@ -38,7 +38,7 @@ export async function generateImageBanana(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'banana-pro', // 强制使用 nano-banana pro 模型
+      model: 'nano-banana', // 使用 nano-banana 模型
       prompt: prompt,
       n: 1,
       size: '1280x720', // 与视频默认尺寸保持一致
@@ -218,7 +218,11 @@ export async function waitForVideoCompletion(
  */
 export async function generateVideo(
   req: VideoGenerateRequest,
-  onProgress?: (progress: number, status: string) => void,
+  onProgress?: (
+    progress: number,
+    status: string,
+    extraData?: { imageUrl?: string },
+  ) => void,
 ): Promise<string> {
   let referenceImageUrl = req.imageUrl;
 
@@ -226,18 +230,30 @@ export async function generateVideo(
   if (!referenceImageUrl && req.imagePrompt) {
     try {
       if (onProgress) onProgress(0, 'generating_reference');
-      referenceImageUrl = await generateImageBanana(req.imagePrompt, (msg) => {
-        // 这里可以细化图片生成的进度回调，暂时简化
-        console.log(msg);
+      // 显式等待图片生成完成
+      const generatedUrl = await generateImageBanana(req.imagePrompt, (msg) => {
+        // 将图片生成的进度通过 onProgress 简单透传（虽然状态都是 generating_reference）
+        if (onProgress) onProgress(0, `generating_reference: ${msg}`);
       });
-      console.log('Generated reference image:', referenceImageUrl);
-    } catch (e) {
-      console.error(
-        'Reference image generation failed, falling back to pure text generation:',
-        e,
-      );
-      // 图片生成失败，回退到仅使用文本生成视频，或者直接抛出错误
-      // 这里选择回退，不阻断流程，但效果可能不如图生视频稳定
+
+      if (generatedUrl) {
+        referenceImageUrl = generatedUrl;
+        console.log(
+          'Reference image generated successfully:',
+          referenceImageUrl,
+        );
+        // 回调通知前端：图片生成成功，携带图片 URL
+        if (onProgress) {
+          onProgress(0, 'generating_reference_success', {
+            imageUrl: generatedUrl,
+          });
+        }
+      } else {
+        throw new Error('生成的图片 URL 为空');
+      }
+    } catch (e: any) {
+      console.error('Reference image generation failed:', e);
+      throw new Error(`参考图片生成失败: ${e.message || '未知错误'}`);
     }
   }
 
