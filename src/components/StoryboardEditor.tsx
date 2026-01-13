@@ -6,7 +6,7 @@ import {
   deleteStoryboardImage,
   uploadGeneratedVideo,
 } from '../lib/storage';
-import { generateVideo } from '../lib/video';
+import { generateVideo, recoverVideoTask } from '../lib/video';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -58,7 +58,10 @@ export default function StoryboardEditor({
 }: StoryboardEditorProps) {
   /* eslint-disable react-hooks/exhaustive-deps */
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  // 上传状态管理：支持多个分镜并行上传
+  const [uploadingMap, setUploadingMap] = useState<Map<string, boolean>>(
+    new Map(),
+  );
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isFullScriptCopied, setIsFullScriptCopied] = useState(false);
   const storyboardsRef = useRef(storyboards);
@@ -68,21 +71,343 @@ export default function StoryboardEditor({
   const [isTtsGenerating, setIsTtsGenerating] = useState(false);
   const [isTtsPlaying, setIsTtsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // 视频生成状态：支持多个分镜并行生成，包含进度和状态文本
+  const [videoGeneratingMap, setVideoGeneratingMap] = useState<
+    Map<string, { progress: number; status: string }>
+  >(new Map());
+  // 媒体视图模式：'video' 默认显示视频，'image' 显示图片
+  const [mediaViewMode, setMediaViewMode] = useState<'video' | 'image'>(
+    'video',
+  );
 
-  // 初始化或 URL 变更时重置播放器
+  // 任务持久化相关辅助函数
+  const savePendingTask = (itemId: string, taskId: string) => {
+    try {
+      const tasks = JSON.parse(
+        localStorage.getItem('tiktok_pending_tasks') || '{}',
+      );
+      tasks[itemId] = taskId;
+      localStorage.setItem('tiktok_pending_tasks', JSON.stringify(tasks));
+    } catch (e) {
+      console.error('Failed to save pending task', e);
+    }
+  };
+
+  const removePendingTask = (itemId: string) => {
+    try {
+      const tasks = JSON.parse(
+        localStorage.getItem('tiktok_pending_tasks') || '{}',
+      );
+      delete tasks[itemId];
+      localStorage.setItem('tiktok_pending_tasks', JSON.stringify(tasks));
+    } catch (e) {
+      console.error('Failed to remove pending task', e);
+    }
+  };
+
+  // 统一处理视频生成成功后的保存逻辑
+  const handleVideoSuccess = async (
+    itemId: string,
+    videoUrl: string,
+    shotNumber: number,
+  ) => {
+    // 显示上传状态
+    setVideoGeneratingMap((prev) =>
+      new Map(prev).set(itemId, { progress: 100, status: 'uploading' }),
+    );
+
+    try {
+      const videoResponse = await fetch(videoUrl);
+      const videoBlob = await videoResponse.blob();
+      const uploadedUrl = await uploadGeneratedVideo(
+        videoBlob,
+        taskId,
+        shotNumber,
+      );
+
+      const updated = storyboardsRef.current.map((s) =>
+        s.id === itemId ? { ...s, videoUrl: uploadedUrl } : s,
+      );
+      onUpdateStoryboards(updated);
+      toast.success(`分镜 ${shotNumber} 视频生成并保存成功！`);
+    } catch (err) {
+      console.error('视频保存失败', err);
+      toast.error(`分镜 ${shotNumber} 视频保存失败`);
+    } finally {
+      removePendingTask(itemId);
+      setVideoGeneratingMap((prev) => {
+        const next = new Map(prev);
+        next.delete(itemId);
+        return next;
+      });
+    }
+  };
+
+  // 初始化：恢复未完成的任务
   useEffect(() => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio();
-      audioRef.current.onended = () => setIsTtsPlaying(false);
-      audioRef.current.onerror = () => {
-        setIsTtsPlaying(false);
-        toast.error('音频播放出错');
-      };
+    const recover = async () => {
+      const tasksStr = localStorage.getItem('tiktok_pending_tasks');
+      if (!tasksStr) return;
+
+      try {
+        const tasks = JSON.parse(tasksStr);
+        Object.entries(tasks).forEach(async ([itemId, taskId]) => {
+          // 找到对应的 item 以获取 shotNumber 等信息
+          // 注意：这里依赖 storyboards 已经加载。如果 storyboards 是异步获取的，可能需要更复杂的依赖处理
+          // 暂时假设 storyboardsRef.current 可用
+          const item = storyboardsRef.current.find((s) => s.id === itemId);
+          if (!item) {
+            // 如果找不到 item（可能是删除了），移除任务
+            removePendingTask(itemId);
+            return;
+          }
+
+          // 恢复状态显示
+          setVideoGeneratingMap((prev) =>
+            new Map(prev).set(itemId, { progress: 0, status: 'recovering' }),
+          );
+
+          try {
+            const videoUrl = await recoverVideoTask(
+              taskId as string,
+              (progress, status, _extraData) => {
+                setVideoGeneratingMap((prev) =>
+                  new Map(prev).set(itemId, { progress, status }),
+                );
+              },
+            );
+
+            await handleVideoSuccess(itemId, videoUrl, item.shotNumber);
+          } catch (err) {
+            console.error('恢复任务失败', err);
+            toast.error(`分镜 ${item.shotNumber} 任务恢复失败`);
+            removePendingTask(itemId);
+            setVideoGeneratingMap((prev) => {
+              const next = new Map(prev);
+              next.delete(itemId);
+              return next;
+            });
+          }
+        });
+      } catch (e) {
+        console.error('Error parsing pending tasks', e);
+      }
+    };
+
+    // 延迟一点执行以确保 storyboards 已加载 (简单处理)
+    if (storyboards.length > 0) {
+      recover();
     }
-    if (ttsAudioUrl) {
-      audioRef.current.src = ttsAudioUrl;
+  }, [storyboards.length]); // 仅在 storyboards 长度变化（初次加载）时尝试恢复
+
+  const handleGenerateVideo = async (inputItem: StoryboardItem) => {
+    // 获取最新的分镜数据，防止闭包导致的状态陈旧
+    const item =
+      storyboardsRef.current.find((s) => s.id === inputItem.id) || inputItem;
+
+    // 只需要视频提示词
+    if (!item.videoPrompt) {
+      toast.error('缺少视频提示词');
+      return;
     }
-  }, [ttsAudioUrl]);
+
+    // 如果该 item 已经在生成中，不重复触发
+    if (videoGeneratingMap.has(item.id)) {
+      toast.info('该分镜正在生成中，请稍候');
+      return;
+    }
+
+    // 添加到生成状态 Map
+    setVideoGeneratingMap((prev) =>
+      new Map(prev).set(item.id, { progress: 0, status: 'queued' }),
+    );
+
+    // 仅显示一个简单的开始提示，不持续更新
+    toast.info(`分镜 ${item.shotNumber} 开始生成视频...`);
+
+    try {
+      // 构造图片生成提示词 (包含内容与风格)
+      let imageGenPrompt = item.imagePrompt;
+      if (imageGenPrompt && item.stylePrompt) {
+        imageGenPrompt = `内容: ${imageGenPrompt}\n风格: ${item.stylePrompt}`;
+      }
+
+      // 1. 调用灵芽 AI 生成视频
+      const videoUrl = await generateVideo(
+        {
+          prompt: item.videoPrompt, // 视频生成提示词 (仅动态)
+          imagePrompt: imageGenPrompt || undefined, // 图片生成提示词 (内容+风格)
+          imageUrl: item.imageUrl || undefined, // 现有的参考图（如果有）
+          model: 'sora-2',
+          seconds: 10,
+          size: '1280x720',
+        },
+        async (progress, status, extraData) => {
+          setVideoGeneratingMap((prev) =>
+            new Map(prev).set(item.id, { progress, status }),
+          );
+
+          // 如果生成了参考图，自动保存
+          if (
+            status === 'generating_reference_success' &&
+            extraData?.imageUrl
+          ) {
+            try {
+              const imgRes = await fetch(extraData.imageUrl);
+              const imgBlob = await imgRes.blob();
+              const imgFile = new File([imgBlob], `ref-${item.id}.png`, {
+                type: 'image/png',
+              });
+
+              const savedUrl = await uploadStoryboardImage(
+                imgFile,
+                taskId,
+                item.shotNumber,
+              );
+
+              // 更新分镜数据中的图片
+              const updated = storyboardsRef.current.map((s) =>
+                s.id === item.id ? { ...s, imageUrl: savedUrl } : s,
+              );
+              storyboardsRef.current = updated; // 立即更新 Ref 防止后续状态不同步
+              onUpdateStoryboards(updated);
+
+              toast.success(`分镜 ${item.shotNumber} 参考图已保存`);
+            } catch (err) {
+              console.error('自动保存参考图失败:', err);
+            }
+          }
+        },
+        (taskId) => {
+          // 任务创建成功，保存到 localStorage
+          savePendingTask(item.id, taskId);
+        },
+      );
+
+      // 2. 下载视频并上传到 Supabase (抽离的公共逻辑)
+      await handleVideoSuccess(item.id, videoUrl, item.shotNumber);
+    } catch (error: any) {
+      console.error('视频生成失败:', error);
+      toast.error(
+        `分镜 ${item.shotNumber}: ${error.message || '视频生成失败'}`,
+      );
+      // 失败也要移除任务
+      removePendingTask(item.id);
+      setVideoGeneratingMap((prev) => {
+        const next = new Map(prev);
+        next.delete(item.id);
+        return next;
+      });
+    }
+  };
+  const handlePaste = async (e: React.ClipboardEvent, item: StoryboardItem) => {
+    const items = e.clipboardData.items;
+    let file = null;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        file = items[i].getAsFile();
+        break;
+      }
+    }
+
+    if (file) {
+      setUploadingMap((prev) => new Map(prev).set(item.id, true));
+      try {
+        const url = await uploadStoryboardImage(file, taskId, item.shotNumber);
+        const updated = storyboardsRef.current.map((s) =>
+          s.id === item.id ? { ...s, imageUrl: url } : s,
+        );
+        onUpdateStoryboards(updated);
+        toast.success(`分镜 ${item.shotNumber} 图片上传成功`);
+      } catch (error) {
+        console.error('Upload error:', error);
+        toast.error('上传图片失败');
+      } finally {
+        setUploadingMap((prev) => new Map(prev).set(item.id, false));
+      }
+    }
+  };
+
+  const handleFileSelect = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    item: StoryboardItem,
+  ) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setUploadingMap((prev) => new Map(prev).set(item.id, true));
+      try {
+        const url = await uploadStoryboardImage(file, taskId, item.shotNumber);
+        const updated = storyboardsRef.current.map((s) =>
+          s.id === item.id ? { ...s, imageUrl: url } : s,
+        );
+        onUpdateStoryboards(updated);
+        toast.success(`分镜 ${item.shotNumber} 图片上传成功`);
+      } catch (error) {
+        console.error('Upload error:', error);
+        toast.error('上传图片失败');
+      } finally {
+        setUploadingMap((prev) => new Map(prev).set(item.id, false));
+        // Reset input value to allow selecting same file again
+        e.target.value = '';
+      }
+    }
+  };
+
+  const handleVideoSelect = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    item: StoryboardItem,
+  ) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setUploadingMap((prev) => new Map(prev).set(item.id, true));
+      try {
+        const url = await uploadStoryboardVideo(file, taskId, item.shotNumber);
+        const updated = storyboardsRef.current.map((s) =>
+          s.id === item.id ? { ...s, videoUrl: url } : s,
+        );
+        onUpdateStoryboards(updated);
+        toast.success(`分镜 ${item.shotNumber} 视频上传成功`);
+      } catch (error) {
+        console.error('Upload error:', error);
+        toast.error('上传视频失败');
+      } finally {
+        setUploadingMap((prev) => new Map(prev).set(item.id, false));
+        e.target.value = '';
+      }
+    }
+  };
+
+  const handleRemoveImage = async (item: StoryboardItem) => {
+    if (item.imageUrl) {
+      try {
+        await deleteStoryboardImage(item.imageUrl);
+        const updated = storyboardsRef.current.map((s) =>
+          s.id === item.id ? { ...s, imageUrl: '' } : s,
+        );
+        onUpdateStoryboards(updated);
+        toast.success('图片已删除');
+      } catch (err) {
+        console.error('Delete image error:', err);
+        toast.error('删除图片失败');
+      }
+    }
+  };
+
+  const handleRemoveVideo = async (item: StoryboardItem) => {
+    if (item.videoUrl) {
+      try {
+        await deleteStoryboardImage(item.videoUrl); // Reuse delete image prompt for now as per previous logic
+        const updated = storyboardsRef.current.map((s) =>
+          s.id === item.id ? { ...s, videoUrl: '' } : s,
+        );
+        onUpdateStoryboards(updated);
+        toast.success('视频已删除');
+      } catch (err) {
+        console.error('Delete video error:', err);
+        toast.error('删除视频失败');
+      }
+    }
+  };
 
   const handleGenerateTts = async () => {
     // 拼接完整脚本
@@ -152,14 +477,6 @@ export default function StoryboardEditor({
       setIsTtsPlaying(true);
     }
   };
-  // 视频生成状态：支持多个分镜并行生成
-  const [videoGeneratingMap, setVideoGeneratingMap] = useState<
-    Map<string, number>
-  >(new Map());
-  // 媒体视图模式：'video' 默认显示视频，'image' 显示图片
-  const [mediaViewMode, setMediaViewMode] = useState<'video' | 'image'>(
-    'video',
-  );
 
   useEffect(() => {
     storyboardsRef.current = storyboards;
@@ -252,224 +569,6 @@ export default function StoryboardEditor({
       setIsFullScriptCopied(true);
       setTimeout(() => setIsFullScriptCopied(false), 1500);
     } catch {}
-  };
-
-  const handlePaste = async (e: React.ClipboardEvent, item: StoryboardItem) => {
-    const clipboardItems = e.clipboardData?.items;
-    if (!clipboardItems) return;
-    for (const clipItem of clipboardItems) {
-      if (clipItem.type.startsWith('image/')) {
-        e.preventDefault();
-        setIsProcessing(true);
-        const file = clipItem.getAsFile();
-        if (file) {
-          try {
-            const imageUrl = await uploadStoryboardImage(
-              file,
-              taskId,
-              item.shotNumber,
-            );
-            const updated = storyboards.map((s) =>
-              s.id === item.id ? { ...s, imageUrl } : s,
-            );
-            onUpdateStoryboards(updated);
-            setEditingId(null);
-          } catch {
-            toast.error('图片上传失败');
-          }
-        }
-        setIsProcessing(false);
-        return;
-      }
-    }
-  };
-
-  const handleFileSelect = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-    item: StoryboardItem,
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file || !file.type.startsWith('image/')) return;
-    setIsProcessing(true);
-    try {
-      const imageUrl = await uploadStoryboardImage(
-        file,
-        taskId,
-        item.shotNumber,
-      );
-      const updated = storyboards.map((s) =>
-        s.id === item.id ? { ...s, imageUrl } : s,
-      );
-      onUpdateStoryboards(updated);
-      setEditingId(null);
-    } catch {
-      toast.error('图片上传失败');
-    }
-    setIsProcessing(false);
-  };
-
-  const handleRemoveImage = async (item: StoryboardItem) => {
-    if (item.imageUrl) await deleteStoryboardImage(item.imageUrl);
-    const updated = storyboards.map((s) =>
-      s.id === item.id ? { ...s, imageUrl: '' } : s,
-    );
-    onUpdateStoryboards(updated);
-  };
-
-  const handleVideoSelect = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-    item: StoryboardItem,
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file || !file.type.startsWith('video/')) return;
-    setIsProcessing(true);
-    try {
-      const videoUrl = await uploadStoryboardVideo(
-        file,
-        taskId,
-        item.shotNumber,
-      );
-      const updated = storyboards.map((s) =>
-        s.id === item.id ? { ...s, videoUrl } : s,
-      );
-      onUpdateStoryboards(updated);
-      setEditingId(null);
-    } catch {
-      toast.error('视频上传失败');
-    }
-    setIsProcessing(false);
-  };
-
-  const handleRemoveVideo = async (item: StoryboardItem) => {
-    if (item.videoUrl) await deleteStoryboardImage(item.videoUrl);
-    const updated = storyboards.map((s) =>
-      s.id === item.id ? { ...s, videoUrl: '' } : s,
-    );
-    onUpdateStoryboards(updated);
-  };
-
-  const handleGenerateVideo = async (inputItem: StoryboardItem) => {
-    // 获取最新的分镜数据，防止闭包导致的状态陈旧
-    const item =
-      storyboardsRef.current.find((s) => s.id === inputItem.id) || inputItem;
-
-    // 只需要视频提示词
-    if (!item.videoPrompt) {
-      toast.error('缺少视频提示词');
-      return;
-    }
-
-    // 如果该 item 已经在生成中，不重复触发
-    if (videoGeneratingMap.has(item.id)) {
-      toast.info('该分镜正在生成中，请稍候');
-      return;
-    }
-
-    // 添加到生成状态 Map
-    setVideoGeneratingMap((prev) => new Map(prev).set(item.id, 0));
-
-    const loadingToast = toast.loading(
-      `分镜 ${item.shotNumber} 正在生成视频...`,
-      {
-        description: '这可能需要几分钟，请耐心等待\n(多个任务可同时进行)', // 增加提示
-      },
-    );
-
-    try {
-      // 构造图片生成提示词 (包含内容与风格)
-      let imageGenPrompt = item.imagePrompt;
-      if (imageGenPrompt && item.stylePrompt) {
-        imageGenPrompt = `内容: ${imageGenPrompt}\n风格: ${item.stylePrompt}`;
-      }
-
-      // 1. 调用灵芽 AI 生成视频
-      // 如果有 imagePrompt 但没有 imageUrl，generateVideo 内部会自动先生成参考图
-      // 此时 prompt 只需包含视频动态描述，因为画面内容由参考图决定
-      const videoUrl = await generateVideo(
-        {
-          prompt: item.videoPrompt, // 视频生成提示词 (仅动态)
-          imagePrompt: imageGenPrompt || undefined, // 图片生成提示词 (内容+风格)
-          imageUrl: item.imageUrl || undefined, // 现有的参考图（如果有）
-          model: 'sora-2',
-          seconds: 10,
-          size: '1280x720',
-        },
-        async (progress, status, extraData) => {
-          setVideoGeneratingMap((prev) => new Map(prev).set(item.id, progress));
-          toast.loading(`分镜 ${item.shotNumber}: ${progress}%`, {
-            id: loadingToast,
-            description: status === 'queued' ? '排队中...' : '处理中...',
-          });
-
-          // 如果生成了参考图，自动保存
-          if (
-            status === 'generating_reference_success' &&
-            extraData?.imageUrl
-          ) {
-            try {
-              const imgRes = await fetch(extraData.imageUrl);
-              const imgBlob = await imgRes.blob();
-              // 转换为 File 对象以适应 uploadStoryboardImage 签名 (虽然它可能接受 Blob 但是为了类型安全)
-              const imgFile = new File([imgBlob], `ref-${item.id}.png`, {
-                type: 'image/png',
-              });
-
-              const savedUrl = await uploadStoryboardImage(
-                imgFile,
-                taskId,
-                item.shotNumber,
-              );
-
-              // 更新分镜数据中的图片
-              const updated = storyboardsRef.current.map((s) =>
-                s.id === item.id ? { ...s, imageUrl: savedUrl } : s,
-              );
-              storyboardsRef.current = updated; // 立即更新 Ref 防止后续状态不同步
-              onUpdateStoryboards(updated);
-
-              toast.success('参考图已保存');
-            } catch (err) {
-              console.error('自动保存参考图失败:', err);
-            }
-          }
-        },
-      );
-
-      // 2. 下载视频并上传到 Supabase
-      toast.loading(`分镜 ${item.shotNumber} 正在保存...`, {
-        id: loadingToast,
-      });
-      const videoResponse = await fetch(videoUrl);
-      const videoBlob = await videoResponse.blob();
-      const uploadedUrl = await uploadGeneratedVideo(
-        videoBlob,
-        taskId,
-        item.shotNumber,
-      );
-
-      // 3. 更新分镜数据（使用 ref 获取最新状态）
-      const updated = storyboardsRef.current.map((s) =>
-        s.id === item.id ? { ...s, videoUrl: uploadedUrl } : s,
-      );
-      onUpdateStoryboards(updated);
-
-      toast.success(`分镜 ${item.shotNumber} 视频生成成功！`, {
-        id: loadingToast,
-      });
-    } catch (error: any) {
-      console.error('视频生成失败:', error);
-      toast.error(
-        `分镜 ${item.shotNumber}: ${error.message || '视频生成失败'}`,
-        { id: loadingToast },
-      );
-    } finally {
-      // 从生成状态 Map 中移除
-      setVideoGeneratingMap((prev) => {
-        const next = new Map(prev);
-        next.delete(item.id);
-        return next;
-      });
-    }
   };
 
   if (storyboards.length === 0 && !isRawMode) {
@@ -600,6 +699,48 @@ export default function StoryboardEditor({
           </div>
         )}
 
+        {/* 右侧视频生成任务列表 - 仅预览模式显示 */}
+        {!isRawMode && videoGeneratingMap.size > 0 && (
+          <div className="fixed right-6 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3 w-64 pointer-events-none">
+            {Array.from(videoGeneratingMap.entries()).map(([id, state]) => {
+              const item = storyboards.find((s) => s.id === id);
+              if (!item) return null;
+              return (
+                <div
+                  key={id}
+                  className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl p-3 shadow-2xl animate-in slide-in-from-right-4 fade-in duration-300 pointer-events-auto"
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[10px] font-black uppercase text-primary tracking-wider">
+                      SHOT {item.shotNumber}
+                    </span>
+                    <span className="text-[10px] foont-mono text-white/50">
+                      {state.progress}%
+                    </span>
+                  </div>
+                  <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden mb-1.5">
+                    <div
+                      className="h-full bg-primary transition-all duration-300 ease-out"
+                      style={{ width: `${state.progress}%` }}
+                    />
+                  </div>
+                  <div className="text-[9px] text-white/40 truncate">
+                    {state.status === 'queued'
+                      ? '排队中...'
+                      : state.status === 'generating_image'
+                        ? '生成参考图中...'
+                        : state.status === 'generating_video'
+                          ? '生成视频中...'
+                          : state.status === 'uploading'
+                            ? '保存结果中...'
+                            : '处理中...'}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         <div className="w-full max-w-5xl mx-auto px-4 flex flex-col h-full grow">
           {isRawMode ? (
             <div className="animate-in fade-in slide-in-from-top-2 duration-300">
@@ -684,7 +825,7 @@ export default function StoryboardEditor({
                                         tabIndex={0}
                                       >
                                         <label className="cursor-pointer flex flex-col items-center gap-3">
-                                          {isProcessing ? (
+                                          {uploadingMap.get(item.id) ? (
                                             <div className="animate-spin w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full" />
                                           ) : (
                                             <>
@@ -870,21 +1011,33 @@ export default function StoryboardEditor({
                                           <Loader2 className="w-12 h-12 text-purple-500 animate-spin" />
                                           <div className="absolute inset-0 flex items-center justify-center">
                                             <span className="text-[10px] font-black text-purple-400">
-                                              {videoGeneratingMap.get(
-                                                item.id,
-                                              ) || 0}
+                                              {videoGeneratingMap.get(item.id)
+                                                ?.progress || 0}
                                               %
                                             </span>
                                           </div>
                                         </div>
                                         <div className="text-center">
                                           <p className="text-sm font-bold text-purple-400">
-                                            AI 视频生成中
+                                            {videoGeneratingMap.get(item.id)
+                                              ?.status === 'generating_image'
+                                              ? 'AI 生成参考图中'
+                                              : videoGeneratingMap.get(item.id)
+                                                    ?.status === 'uploading'
+                                                ? '保存结果中'
+                                                : 'AI 视频生成中'}
                                           </p>
                                           <p className="text-xs text-white/30 mt-1">
                                             请耐心等待...
                                           </p>
                                         </div>
+                                      </div>
+                                    ) : uploadingMap.get(item.id) ? (
+                                      <div className="w-full h-full flex flex-col items-center justify-center gap-4">
+                                        <Loader2 className="w-10 h-10 text-white/50 animate-spin" />
+                                        <p className="text-xs font-bold text-white/50">
+                                          上传视频中...
+                                        </p>
                                       </div>
                                     ) : (
                                       <div className="w-full h-full flex flex-col items-center justify-center gap-5">
@@ -950,7 +1103,16 @@ export default function StoryboardEditor({
                                             tabIndex={0}
                                           >
                                             <label className="cursor-pointer flex flex-col items-center gap-3">
-                                              {isProcessing ? (
+                                              {videoGeneratingMap.get(item.id)
+                                                ?.status ===
+                                              'generating_image' ? (
+                                                <div className="flex flex-col items-center gap-2">
+                                                  <div className="animate-spin w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full" />
+                                                  <span className="text-xs text-blue-400 font-bold">
+                                                    AI 生成中...
+                                                  </span>
+                                                </div>
+                                              ) : uploadingMap.get(item.id) ? (
                                                 <div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" />
                                               ) : (
                                                 <>

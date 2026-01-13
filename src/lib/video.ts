@@ -183,7 +183,7 @@ export async function getVideoContent(videoId: string): Promise<Blob> {
  */
 export async function waitForVideoCompletion(
   videoId: string,
-  onProgress?: (progress: number, status: string) => void,
+  onProgress?: (progress: number, status: string, extraData?: any) => void,
   maxWaitMs: number = 600000, // 视频生成较慢，延长到10分钟
   pollIntervalMs: number = 5000, // 每 5 秒轮询一次
 ): Promise<VideoTaskResponse> {
@@ -193,7 +193,7 @@ export async function waitForVideoCompletion(
     const task = await getVideoTask(videoId);
 
     if (onProgress) {
-      onProgress(task.progress, task.status);
+      onProgress(task.progress, task.status, (task as any).extraData || task);
     }
 
     if (task.status === 'completed') {
@@ -215,17 +215,29 @@ export async function waitForVideoCompletion(
 }
 
 /**
+ * 恢复视频生成任务 (用于页面刷新后恢复轮询)
+ */
+export async function recoverVideoTask(
+  taskId: string,
+  onProgress?: (progress: number, status: string, extraData?: any) => void,
+): Promise<string> {
+  const completedTask = await waitForVideoCompletion(taskId, onProgress);
+
+  if (!completedTask.video_url) {
+    throw new Error('未找到生成的视频 URL');
+  }
+  return completedTask.video_url;
+}
+
+/**
  * 完整的视频生成流程：
- * 1. (该逻辑已调整) 如果提供了 imagePrompt 但没有 imageUrl，则先生成图片作为 references
+ * 1. 如果提供了 imagePrompt 但没有 imageUrl，则先生成图片作为 references
  * 2. 创建视频任务 -> 等待完成 -> 返回视频 URL
  */
 export async function generateVideo(
   req: VideoGenerateRequest,
-  onProgress?: (
-    progress: number,
-    status: string,
-    extraData?: { imageUrl?: string },
-  ) => void,
+  onProgress?: (progress: number, status: string, extraData?: any) => void,
+  onTaskCreated?: (taskId: string) => void,
 ): Promise<string> {
   let referenceImageUrl = req.imageUrl;
 
@@ -235,7 +247,7 @@ export async function generateVideo(
       if (onProgress) onProgress(0, 'generating_reference');
       // 显式等待图片生成完成
       const generatedUrl = await generateImageBanana(req.imagePrompt, (msg) => {
-        // 将图片生成的进度通过 onProgress 简单透传（虽然状态都是 generating_reference）
+        // 将图片生成的进度通过 onProgress 简单透传
         if (onProgress) onProgress(0, `generating_reference: ${msg}`);
       });
 
@@ -266,6 +278,11 @@ export async function generateVideo(
     ...req,
     imageUrl: referenceImageUrl,
   });
+
+  // 任务创建回调
+  if (onTaskCreated) {
+    onTaskCreated(task.id);
+  }
 
   if (onProgress) {
     onProgress(0, 'queued');
