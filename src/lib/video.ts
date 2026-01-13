@@ -204,8 +204,11 @@ export async function waitForVideoCompletion(
       throw new Error(task.error?.message || '视频生成失败');
     }
 
-    // 等待下一次轮询
-    await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+    // 等待下一次轮询 (增加 0-2s 的随机抖动，避免多任务并发时的惊群效应)
+    const jitter = Math.random() * 2000;
+    await new Promise((resolve) =>
+      setTimeout(resolve, pollIntervalMs + jitter),
+    );
   }
 
   throw new Error('视频生成超时');

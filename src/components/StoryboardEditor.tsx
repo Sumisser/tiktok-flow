@@ -348,7 +348,11 @@ export default function StoryboardEditor({
     onUpdateStoryboards(updated);
   };
 
-  const handleGenerateVideo = async (item: StoryboardItem) => {
+  const handleGenerateVideo = async (inputItem: StoryboardItem) => {
+    // 获取最新的分镜数据，防止闭包导致的状态陈旧
+    const item =
+      storyboardsRef.current.find((s) => s.id === inputItem.id) || inputItem;
+
     // 只需要视频提示词
     if (!item.videoPrompt) {
       toast.error('缺少视频提示词');
@@ -367,7 +371,7 @@ export default function StoryboardEditor({
     const loadingToast = toast.loading(
       `分镜 ${item.shotNumber} 正在生成视频...`,
       {
-        description: '这可能需要几分钟，请耐心等待',
+        description: '这可能需要几分钟，请耐心等待\n(多个任务可同时进行)', // 增加提示
       },
     );
 
