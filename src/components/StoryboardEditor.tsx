@@ -280,21 +280,19 @@ export default function StoryboardEditor({
     );
 
     try {
-      // 构建提示词：如果没有参考图片，将画面提示词和视频提示词合并
-      let fullPrompt = item.videoPrompt;
-      if (!item.imageUrl && item.imagePrompt) {
-        fullPrompt = `场景: ${item.imagePrompt}\n\n动态: ${item.videoPrompt}`;
-        if (item.stylePrompt) {
-          fullPrompt = `${fullPrompt}\n\n风格: ${item.stylePrompt}`;
-        }
+      // 构造图片生成提示词 (包含内容与风格)
+      let imageGenPrompt = item.imagePrompt;
+      if (imageGenPrompt && item.stylePrompt) {
+        imageGenPrompt = `内容: ${imageGenPrompt}\n风格: ${item.stylePrompt}`;
       }
 
       // 1. 调用灵芽 AI 生成视频
       // 如果有 imagePrompt 但没有 imageUrl，generateVideo 内部会自动先生成参考图
+      // 此时 prompt 只需包含视频动态描述，因为画面内容由参考图决定
       const videoUrl = await generateVideo(
         {
-          prompt: fullPrompt, // 视频生成提示词
-          imagePrompt: item.imagePrompt || undefined, // 图片生成提示词（用于自动生图）
+          prompt: item.videoPrompt, // 视频生成提示词 (仅动态)
+          imagePrompt: imageGenPrompt || undefined, // 图片生成提示词 (内容+风格)
           imageUrl: item.imageUrl || undefined, // 现有的参考图（如果有）
           model: 'sora-2',
           seconds: 10,
