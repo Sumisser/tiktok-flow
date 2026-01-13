@@ -132,6 +132,14 @@ export default function WorkflowStep({
       name: '✨ 精选风格',
       styles: [
         {
+          id: 'philosophy_ambience',
+          label: '🌌 哲思意境',
+          description:
+            '专为哲学心理学内容设计的意境风格。柔和梦幻的光影，剪影式构图，空灵留白，象征性意象，温暖与冷静并存的色调，适合内心探索、概念阐释、情感共鸣类内容。视频动画友好。',
+          prompt:
+            '梦幻意境风格，柔和朦胧的光线，剪影式人物构图，空灵留白，黄金时刻或黎明微光，温暖与冷静色调交织，薄雾或微尘颗粒感，广袤自然景观（草原、天际线、水面倒影），象征性视觉隐喻，沉思冥想的氛围，电影感构图，梦境般的柔焦效果，动画友好风格',
+        },
+        {
           id: 'oil_painting_artistic',
           label: '🎨 诗意油画',
           description:

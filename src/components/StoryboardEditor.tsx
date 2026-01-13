@@ -286,13 +286,13 @@ export default function StoryboardEditor({
         fullPrompt = `Scene: ${item.imagePrompt}\n\nMotion: ${item.videoPrompt}`;
       }
 
-      // 1. 调用灵芽 AI 生成视频（如果有图片则作为参考，否则纯文本生成）
+      // 1. 调用灵芽 AI 生成视频（使用 sora-2-pro 以获得更好的稳定性）
       const videoUrl = await generateVideo(
         {
           prompt: fullPrompt,
           imageUrl: item.imageUrl || undefined,
           model: 'sora-2',
-          seconds: 15,
+          seconds: 10,
           size: '1280x720',
         },
         (progress, status) => {

@@ -9,7 +9,7 @@ export interface VideoGenerateRequest {
   prompt: string;
   imageUrl?: string;
   model?: 'sora-2' | 'sora-2-pro';
-  seconds?: 4 | 10 | 15 | 25;
+  seconds?: 4 | 10 | 15 | 20 | 25;
   size?: '1280x720' | '720x1280' | '1792x1024' | '1024x1792';
 }
 
@@ -43,7 +43,7 @@ export async function createVideoTask(
   const formData = new FormData();
   formData.append('prompt', req.prompt);
   formData.append('model', req.model || 'sora-2');
-  formData.append('seconds', String(req.seconds || 4));
+  formData.append('seconds', String(req.seconds || 10));
   formData.append('size', req.size || '1280x720');
 
   // 如果有图片参考，添加图片 URL
