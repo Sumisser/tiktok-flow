@@ -506,6 +506,7 @@ export default function WorkflowStep({
             onReset={handleResetClick}
             ttsAudioUrl={ttsAudioUrl}
             onUpdateTtsAudioUrl={onUpdateTtsAudioUrl}
+            taskTitle={step.title}
           />
         </div>
       ) : (

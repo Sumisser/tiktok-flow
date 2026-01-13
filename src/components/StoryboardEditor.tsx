@@ -6,7 +6,11 @@ import {
   deleteStoryboardImage,
   uploadGeneratedVideo,
 } from '../lib/storage';
-import { generateVideo, recoverVideoTask } from '../lib/video';
+import {
+  generateVideo,
+  recoverVideoTask,
+  generateImageBanana,
+} from '../lib/video';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -31,6 +35,8 @@ import {
 import { parseStoryboardTable } from '../lib/storyboard';
 import { generateMinimaxTts } from '../lib/tts';
 import { uploadTtsAudio, deleteTtsAudio } from '../lib/storage';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 
 interface StoryboardEditorProps {
   taskId: string;
@@ -43,6 +49,7 @@ interface StoryboardEditorProps {
   onReset?: () => void;
   ttsAudioUrl?: string;
   onUpdateTtsAudioUrl?: (url: string) => void;
+  taskTitle?: string;
 }
 
 export default function StoryboardEditor({
@@ -55,6 +62,7 @@ export default function StoryboardEditor({
   onBack,
   ttsAudioUrl,
   onUpdateTtsAudioUrl,
+  taskTitle,
 }: StoryboardEditorProps) {
   /* eslint-disable react-hooks/exhaustive-deps */
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -79,6 +87,7 @@ export default function StoryboardEditor({
   const [mediaViewMode, setMediaViewMode] = useState<'video' | 'image'>(
     'video',
   );
+  const [isExporting, setIsExporting] = useState(false);
 
   // 任务持久化相关辅助函数
   const savePendingTask = (itemId: string, taskId: string) => {
@@ -199,6 +208,65 @@ export default function StoryboardEditor({
       recover();
     }
   }, [storyboards.length]); // 仅在 storyboards 长度变化（初次加载）时尝试恢复
+
+  const handleGenerateImage = async (inputItem: StoryboardItem) => {
+    const item =
+      storyboardsRef.current.find((s) => s.id === inputItem.id) || inputItem;
+
+    if (!item.imagePrompt) {
+      toast.error('缺少画面提示词');
+      return;
+    }
+
+    if (videoGeneratingMap.has(item.id)) {
+      toast.info('该分镜正在处理中');
+      return;
+    }
+
+    setVideoGeneratingMap((prev) =>
+      new Map(prev).set(item.id, { progress: 0, status: 'generating_image' }),
+    );
+
+    try {
+      let prompt = item.imagePrompt;
+      if (item.stylePrompt) {
+        prompt = `内容: ${prompt}\n风格: ${item.stylePrompt}`;
+      }
+
+      const imageUrl = await generateImageBanana(prompt);
+
+      // 下载并上传到储存
+      const res = await fetch(imageUrl);
+      const blob = await res.blob();
+      const file = new File(
+        [blob],
+        `${item.shotNumber === 0 ? 'cover' : `ref-${item.shotNumber}`}.png`,
+        { type: 'image/png' },
+      );
+
+      const savedUrl = await uploadStoryboardImage(
+        file,
+        taskId,
+        item.shotNumber,
+      );
+
+      const updated = storyboardsRef.current.map((s) =>
+        s.id === item.id ? { ...s, imageUrl: savedUrl } : s,
+      );
+      storyboardsRef.current = updated;
+      onUpdateStoryboards(updated);
+      toast.success(item.shotNumber === 0 ? '封面生成成功' : '参考图生成成功');
+    } catch (error: any) {
+      console.error('Image generation failed:', error);
+      toast.error(`生成失败: ${error.message || '未知错误'}`);
+    } finally {
+      setVideoGeneratingMap((prev) => {
+        const next = new Map(prev);
+        next.delete(item.id);
+        return next;
+      });
+    }
+  };
 
   const handleGenerateVideo = async (inputItem: StoryboardItem) => {
     // 获取最新的分镜数据，防止闭包导致的状态陈旧
@@ -571,6 +639,74 @@ export default function StoryboardEditor({
     } catch {}
   };
 
+  const handleExportAll = async () => {
+    if (!storyboards.length) return;
+    setIsExporting(true);
+    const toastId = toast.loading('正在打包导出所有媒体...');
+
+    try {
+      const zip = new JSZip();
+      const safeTitle = (taskTitle || 'project').replace(/[\\/:*?"<>|]/g, '_');
+      const rootFolder = zip.folder(safeTitle);
+
+      if (!rootFolder) throw new Error('Failed to create ZIP folder');
+
+      // 1. 导出音频
+      if (ttsAudioUrl) {
+        try {
+          const audioRes = await fetch(ttsAudioUrl);
+          const audioBlob = await audioRes.blob();
+          rootFolder.file('full-audio.mp3', audioBlob);
+        } catch (err) {
+          console.error('Failed to fetch audio for export', err);
+        }
+      }
+
+      // 2. 导出分镜媒体
+      const fetchPromises = storyboards.map(async (item) => {
+        const shotName =
+          item.shotNumber === 0 ? 'cover' : `shot-${item.shotNumber}`;
+
+        // 图片
+        if (item.imageUrl) {
+          try {
+            const res = await fetch(item.imageUrl);
+            const blob = await res.blob();
+            // Try to get extension from URL or default to png
+            const extension =
+              item.imageUrl.split('.').pop()?.split('?')[0] || 'png';
+            rootFolder.file(`${shotName}.${extension}`, blob);
+          } catch (err) {
+            console.error(`Failed to fetch image for ${shotName}`, err);
+          }
+        }
+
+        // 视频
+        if (item.videoUrl) {
+          try {
+            const res = await fetch(item.videoUrl);
+            const blob = await res.blob();
+            rootFolder.file(`${shotName}.mp4`, blob);
+          } catch (err) {
+            console.error(`Failed to fetch video for ${shotName}`, err);
+          }
+        }
+      });
+
+      await Promise.all(fetchPromises);
+
+      // 3. 生成并下载 ZIP
+      const content = await zip.generateAsync({ type: 'blob' });
+      saveAs(content, `${safeTitle}.zip`);
+      toast.success('导出完成！', { id: toastId });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('导出失败，请重试', { id: toastId });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (storyboards.length === 0 && !isRawMode) {
     return (
       <div
@@ -656,17 +792,23 @@ export default function StoryboardEditor({
               )}
             </Button>
 
-            {/* 只有存在音频时才显示的额外操作：下载 */}
+            {/* 语音合成后的导操作：导出全部 */}
             {ttsAudioUrl && (
               <div className="flex flex-col gap-2 animate-in slide-in-from-top-2 fade-in duration-300">
-                <a
-                  href={ttsAudioUrl}
-                  download={`tts-${taskId}.mp3`}
-                  className="w-12 h-12 flex items-center justify-center rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all"
-                  title="下载音频"
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleExportAll}
+                  disabled={isExporting}
+                  className="w-12 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all"
+                  title="导出全部媒体 (ZIP)"
                 >
-                  <Download className="w-4 h-4" />
-                </a>
+                  {isExporting ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -777,7 +919,7 @@ export default function StoryboardEditor({
                       )}
                     >
                       {isCover ? (
-                        /* 封面专用 UI - 只有图片上传，无脚本和视频 */
+                        /* 封面专用 UI - 支持 AI 生成和上传 */
                         <div className="bg-black/40 backdrop-blur-3xl rounded-3xl border border-white/10 overflow-hidden shadow-2xl h-full flex flex-col">
                           <div className="px-6 py-4 border-b border-white/5 bg-gradient-to-br from-amber-500/10 to-transparent shrink-0">
                             <div className="flex items-center gap-3">
@@ -816,46 +958,49 @@ export default function StoryboardEditor({
                                       ×
                                     </button>
                                   </>
-                                ) : (
+                                ) : videoGeneratingMap.has(item.id) ? (
                                   <div className="w-full h-full flex flex-col items-center justify-center gap-4">
-                                    {editingId === item.id ? (
-                                      <div
-                                        onPaste={(e) => handlePaste(e, item)}
-                                        className="w-full h-full flex flex-col items-center justify-center p-4 outline-none"
-                                        tabIndex={0}
+                                    <div className="relative">
+                                      <Loader2 className="w-12 h-12 text-amber-500 animate-spin" />
+                                    </div>
+                                    <div className="text-center">
+                                      <p className="text-sm font-bold text-amber-400">
+                                        AI 生成封面中
+                                      </p>
+                                      <p className="text-xs text-white/30 mt-1">
+                                        请耐心等待...
+                                      </p>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="w-full h-full flex flex-col items-center justify-center gap-5">
+                                    <ImageIcon className="w-16 h-16 text-white/5" />
+                                    <div className="flex gap-3">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                          handleGenerateImage(item)
+                                        }
+                                        disabled={videoGeneratingMap.has(
+                                          item.id,
+                                        )}
+                                        className="h-10 rounded-xl border-amber-500/30 text-amber-400 hover:bg-amber-500/20 font-bold px-6 text-sm disabled:opacity-50"
                                       >
-                                        <label className="cursor-pointer flex flex-col items-center gap-3">
-                                          {uploadingMap.get(item.id) ? (
-                                            <div className="animate-spin w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full" />
-                                          ) : (
-                                            <>
-                                              <ImageIcon className="w-16 h-16 text-amber-500/40" />
-                                              <span className="text-sm text-amber-400/70 font-bold">
-                                                Ctrl+V 粘贴 或 点击上传
-                                              </span>
-                                              <input
-                                                type="file"
-                                                accept="image/*"
-                                                className="hidden"
-                                                onChange={(e) =>
-                                                  handleFileSelect(e, item)
-                                                }
-                                              />
-                                            </>
-                                          )}
-                                        </label>
-                                      </div>
-                                    ) : (
-                                      <button
-                                        onClick={() => setEditingId(item.id)}
-                                        className="flex flex-col items-center gap-4 text-white/20 hover:text-amber-500 transition-all group/add"
-                                      >
-                                        <ImageIcon className="w-20 h-20 group-hover/add:scale-110 transition-transform" />
-                                        <span className="text-sm font-bold">
-                                          添加封面图
-                                        </span>
-                                      </button>
-                                    )}
+                                        ✨ AI 生成封面
+                                      </Button>
+                                      <label className="h-10 flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-6 text-sm font-bold text-white/40 hover:bg-white/10 cursor-pointer">
+                                        上传封面
+                                        <input
+                                          type="file"
+                                          accept="image/*"
+                                          className="hidden"
+                                          onChange={(e) =>
+                                            handleFileSelect(e, item)
+                                          }
+                                        />
+                                      </label>
+                                    </div>
                                   </div>
                                 )}
                               </div>
