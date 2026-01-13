@@ -1,12 +1,69 @@
 /**
- * 灵芽 AI Sora-2 视频生成 API
- * 文档: https://api.lingyaai.cn/doc/#/coding/sora-2
+ * 灵芽 AI 图像与视频生成 API
+ * 图片生成: https://api.lingyaai.cn/doc/#/coding/nano-banana
+ * 视频生成: https://api.lingyaai.cn/doc/#/coding/sora-2
  */
 
 const LINGYA_API_URL = 'https://api.lingyaai.cn';
 
+// --- 图像生成相关 (Nano Banana) ---
+
+export interface ImageGenerateRequest {
+  prompt: string;
+  model: 'banana-pro';
+  size: '1024x1024' | '1280x720' | '720x1280';
+}
+
+export interface ImageTaskResponse {
+  id: string;
+  status: 'queued' | 'processing' | 'completed' | 'failed';
+  data: Array<{ url: string }>;
+  created: number;
+}
+
+export async function generateImageBanana(
+  prompt: string,
+  onProgress?: (msg: string) => void,
+): Promise<string> {
+  const apiKey = import.meta.env.VITE_AI_API_KEY;
+  if (!apiKey) throw new Error('Missing VITE_AI_API_KEY');
+
+  if (onProgress) onProgress('正在生成参考图...');
+
+  // 1. 创建文生图任务
+  const response = await fetch(`${LINGYA_API_URL}/v1/images/generations`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'banana-pro', // 强制使用 nano-banana pro 模型
+      prompt: prompt,
+      n: 1,
+      size: '1280x720', // 与视频默认尺寸保持一致
+    } as ImageGenerateRequest),
+  });
+
+  if (!response.ok) {
+    throw new Error(`图像生成请求失败: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const imageUrl = data.data?.[0]?.url;
+
+  if (!imageUrl) {
+    throw new Error('图像生成成功但未返回 URL');
+  }
+
+  return imageUrl;
+}
+
+// --- 视频生成相关 (Sora-2) ---
+
 export interface VideoGenerateRequest {
   prompt: string;
+  imagePrompt?: string; // 新增：用于单独生成参考图的提示词
   imageUrl?: string;
   model?: 'sora-2' | 'sora-2-pro';
   seconds?: 4 | 10 | 15 | 20 | 25;
@@ -48,6 +105,7 @@ export async function createVideoTask(
 
   // 如果有图片参考，添加图片 URL
   if (req.imageUrl) {
+    // 确保 url 是可访问的
     formData.append('input_reference', req.imageUrl);
   }
 
@@ -126,8 +184,8 @@ export async function getVideoContent(videoId: string): Promise<Blob> {
 export async function waitForVideoCompletion(
   videoId: string,
   onProgress?: (progress: number, status: string) => void,
-  maxWaitMs: number = 300000, // 默认最多等待 5 分钟
-  pollIntervalMs: number = 3000, // 每 3 秒轮询一次
+  maxWaitMs: number = 600000, // 视频生成较慢，延长到10分钟
+  pollIntervalMs: number = 5000, // 每 5 秒轮询一次
 ): Promise<VideoTaskResponse> {
   const startTime = Date.now();
 
@@ -154,23 +212,50 @@ export async function waitForVideoCompletion(
 }
 
 /**
- * 完整的视频生成流程：创建任务 -> 等待完成 -> 返回视频 URL
+ * 完整的视频生成流程：
+ * 1. (该逻辑已调整) 如果提供了 imagePrompt 但没有 imageUrl，则先生成图片作为 references
+ * 2. 创建视频任务 -> 等待完成 -> 返回视频 URL
  */
 export async function generateVideo(
   req: VideoGenerateRequest,
   onProgress?: (progress: number, status: string) => void,
 ): Promise<string> {
-  // 1. 创建任务
-  const task = await createVideoTask(req);
+  let referenceImageUrl = req.imageUrl;
+
+  // 1. 如果没有参考图但提供了 imagePrompt，则先生成图片 (Banana Pro)
+  if (!referenceImageUrl && req.imagePrompt) {
+    try {
+      if (onProgress) onProgress(0, 'generating_reference');
+      referenceImageUrl = await generateImageBanana(req.imagePrompt, (msg) => {
+        // 这里可以细化图片生成的进度回调，暂时简化
+        console.log(msg);
+      });
+      console.log('Generated reference image:', referenceImageUrl);
+    } catch (e) {
+      console.error(
+        'Reference image generation failed, falling back to pure text generation:',
+        e,
+      );
+      // 图片生成失败，回退到仅使用文本生成视频，或者直接抛出错误
+      // 这里选择回退，不阻断流程，但效果可能不如图生视频稳定
+    }
+  }
+
+  // 2. 创建视频任务 (Sora-2)
+  // 如果之前生成了图片，这里会将 referenceImageUrl 传入
+  const task = await createVideoTask({
+    ...req,
+    imageUrl: referenceImageUrl,
+  });
 
   if (onProgress) {
     onProgress(0, 'queued');
   }
 
-  // 2. 等待完成
+  // 3. 等待完成
   const completedTask = await waitForVideoCompletion(task.id, onProgress);
 
-  // 3. 返回视频 URL
+  // 4. 返回视频 URL
   if (!completedTask.video_url) {
     throw new Error('视频生成完成但未返回 URL');
   }
