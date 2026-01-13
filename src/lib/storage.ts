@@ -154,3 +154,70 @@ export async function deleteTaskImages(taskId: string): Promise<void> {
     console.error('Failed to delete task images room storage:', error);
   }
 }
+
+/**
+ * 上传 TTS 音频到 Supabase Storage
+ * @param audioBlob - 音频 Blob
+ * @param taskId - 任务ID
+ * @returns 音频的公开访问 URL
+ */
+export async function uploadTtsAudio(
+  audioBlob: Blob,
+  taskId: string,
+): Promise<string> {
+  try {
+    const timestamp = Date.now();
+    const fileName = `${taskId}/tts-audio-${timestamp}.mp3`;
+
+    const { data, error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(fileName, audioBlob, {
+        contentType: 'audio/mpeg',
+        cacheControl: '3600',
+        upsert: true,
+      });
+
+    if (error) {
+      console.error('Error uploading TTS audio:', error);
+      throw error;
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from(BUCKET_NAME).getPublicUrl(data.path);
+
+    return publicUrl;
+  } catch (error) {
+    console.error('Failed to upload TTS audio:', error);
+    throw error;
+  }
+}
+
+/**
+ * 删除 TTS 音频文件
+ * @param audioUrl - 音频的公开访问 URL
+ */
+export async function deleteTtsAudio(audioUrl: string): Promise<void> {
+  try {
+    const url = new URL(audioUrl);
+    const pathParts = url.pathname.split('/');
+    const bucketIndex = pathParts.indexOf(BUCKET_NAME);
+
+    if (bucketIndex === -1) {
+      console.warn('Invalid audio URL, cannot extract file path');
+      return;
+    }
+
+    const filePath = pathParts.slice(bucketIndex + 1).join('/');
+
+    const { error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .remove([filePath]);
+
+    if (error) {
+      console.error('Error deleting TTS audio:', error);
+    }
+  } catch (error) {
+    console.error('Failed to delete TTS audio:', error);
+  }
+}

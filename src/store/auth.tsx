@@ -20,6 +20,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthorized: boolean;
   signInWithEmail: (email: string) => Promise<{ error: Error | null }>;
+  signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -80,6 +81,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: null };
   };
 
+  // Google 登录
+  const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+    if (error) {
+      console.error('Google 登录失败:', error);
+      return { error };
+    }
+    return { error: null };
+  };
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -96,6 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         isAuthorized,
         signInWithEmail,
+        signInWithGoogle,
         signOut,
       }}
     >

@@ -9,6 +9,7 @@ export interface Task {
   tags?: string[];
   user_id?: string;
   user_email?: string;
+  ttsAudioUrl?: string;
 }
 
 // 工作流步骤类型

@@ -298,6 +298,10 @@ export default function Workflow() {
                 onUpdateStoryboards={(storyboards) =>
                   updateStoryboards(task.id, storyboards)
                 }
+                ttsAudioUrl={task.ttsAudioUrl}
+                onUpdateTtsAudioUrl={(url) =>
+                  updateTask(task.id, { ttsAudioUrl: url })
+                }
               />
             )}
           </div>

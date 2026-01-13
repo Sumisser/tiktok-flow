@@ -33,6 +33,8 @@ interface StoryboardEditorProps {
   setIsRawMode: (mode: boolean) => void;
   onBack?: () => void;
   onReset?: () => void;
+  ttsAudioUrl?: string;
+  onUpdateTtsAudioUrl?: (url: string) => void;
 }
 
 export default function StoryboardEditor({
@@ -43,6 +45,8 @@ export default function StoryboardEditor({
   isRawMode,
   setIsRawMode,
   onBack,
+  ttsAudioUrl,
+  onUpdateTtsAudioUrl,
 }: StoryboardEditorProps) {
   /* eslint-disable react-hooks/exhaustive-deps */
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -751,6 +755,9 @@ export default function StoryboardEditor({
           .filter((s) => s.shotNumber !== 0)
           .map((s) => s.script)
           .join('\n\n')}
+        taskId={taskId}
+        savedAudioUrl={ttsAudioUrl}
+        onAudioSaved={(url) => onUpdateTtsAudioUrl?.(url)}
       />
     </>
   );
