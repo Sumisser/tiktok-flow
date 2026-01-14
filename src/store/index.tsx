@@ -15,6 +15,7 @@ import {
 } from './utils';
 import { getRandomWallpaper } from '../lib/unsplash';
 import { useAuth } from './auth';
+import { deleteTaskImages } from '../lib/storage';
 
 // Provider 组件
 export function TaskProvider({ children }: { children: ReactNode }) {
@@ -98,7 +99,6 @@ export function TaskProvider({ children }: { children: ReactNode }) {
 
     // 如果任务存在，异步清理存储中的图片
     if (taskToDelete) {
-      const { deleteTaskImages } = await import('../lib/storage');
       await deleteTaskImages(id);
     }
   };
