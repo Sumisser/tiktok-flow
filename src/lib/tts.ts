@@ -32,12 +32,12 @@ export async function generateMinimaxTts(req: TtsRequest) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'speech-02-hd',
+      model: 'speech-2.6-hd',
       text: req.text,
       stream: false,
       timbre_weights: [
         {
-          voice_id: 'Boyan_new_platform',
+          voice_id: req.voice_id || 'Boyan_new_platform',
           weight: 100,
         },
       ],

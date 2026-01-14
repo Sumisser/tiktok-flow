@@ -517,11 +517,19 @@ export default function StoryboardEditor({
 
       toast.success('语音合成成功', { id: toastId });
 
-      // 自动播放
+      // 自动播放处理
       if (audioRef.current) {
+        // 先停止当前播放
+        audioRef.current.pause();
+        // 设置新源码并加载
         audioRef.current.src = uploadedUrl;
-        audioRef.current.play();
-        setIsTtsPlaying(true);
+        audioRef.current.load();
+
+        // 尝试播放 (可能会被浏览器自动播放策略拦截，所以需要 catch)
+        audioRef.current.play().catch((err) => {
+          console.warn('自动播放被拦截或失败:', err);
+          // 不在这里设置状态，由事件监听器统一处理
+        });
       }
     } catch (error: any) {
       console.error('TTS Error:', error);
@@ -536,15 +544,49 @@ export default function StoryboardEditor({
 
     if (isTtsPlaying) {
       audioRef.current.pause();
-      setIsTtsPlaying(false);
     } else {
+      // 确保 src 正确且已加载
+      if (
+        !audioRef.current.src ||
+        audioRef.current.src === '' ||
+        audioRef.current.src.indexOf('undefined') !== -1
+      ) {
+        audioRef.current.src = ttsAudioUrl;
+        audioRef.current.load();
+      }
+
       audioRef.current.play().catch((err) => {
         console.error('Play error:', err);
-        toast.error('播放失败');
+        toast.error('播放失败，请重试');
       });
-      setIsTtsPlaying(true);
     }
   };
+
+  // 同步音频状态
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handlePlay = () => setIsTtsPlaying(true);
+    const handlePause = () => setIsTtsPlaying(false);
+    const handleEnded = () => setIsTtsPlaying(false);
+    const handleError = (e: any) => {
+      console.error('音频播放错误:', e);
+      setIsTtsPlaying(false);
+    };
+
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('error', handleError);
+
+    return () => {
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('error', handleError);
+    };
+  }, []);
 
   useEffect(() => {
     storyboardsRef.current = storyboards;
@@ -633,7 +675,13 @@ export default function StoryboardEditor({
       .map((s) => s.script)
       .join('\n\n');
     try {
-      await navigator.clipboard.writeText(fullScript);
+      // 将标点替换为换行以方便提词器阅读，并清理重复换行
+      const cleanedScript = fullScript
+        .replace(/[^\u4e00-\u9fa5a-zA-Z0-9\s]/g, '\n')
+        .replace(/[ \t]+/g, ' ')
+        .replace(/\n\s*\n/g, '\n\n')
+        .trim();
+      await navigator.clipboard.writeText(cleanedScript);
       setIsFullScriptCopied(true);
       setTimeout(() => setIsFullScriptCopied(false), 1500);
     } catch {}
@@ -1106,7 +1154,17 @@ export default function StoryboardEditor({
                                   variant="ghost"
                                   size="icon"
                                   onClick={() =>
-                                    handleCopy(item.script, `s-${item.id}`)
+                                    handleCopy(
+                                      item.script
+                                        .replace(
+                                          /[^\u4e00-\u9fa5a-zA-Z0-9\s]/g,
+                                          '\n',
+                                        )
+                                        .replace(/[ \t]+/g, ' ')
+                                        .replace(/\n\s*\n/g, '\n')
+                                        .trim(),
+                                      `s-${item.id}`,
+                                    )
                                   }
                                   className="h-8 w-8 rounded-lg bg-white/5 hover:bg-white/10 transition-all"
                                 >
@@ -1442,6 +1500,13 @@ export default function StoryboardEditor({
           )}
         </div>
       </div>
+      {/* 隐藏的音频播放器用于全局 TTS 播放 */}
+      <audio
+        ref={audioRef}
+        src={ttsAudioUrl}
+        className="hidden"
+        preload="auto"
+      />
     </>
   );
 }
