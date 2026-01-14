@@ -24,8 +24,8 @@ TikFlow 是一个以“AI 创作流”为核心的生产力工具。它不仅是
 
 - **LLM (`src/lib/ai.ts`)**:
   - `openai`: 通用 LLM 客户端，用于辅助任务。
-  - `domesticOpenai`: **核心客户端**。专用国产 AI 接口（灵芽代理），用于生成剧本与分镜。使用独立的 `VITE_DOMESTIC_AI_API_KEY`。
-  - 支持模型：`deepseek-v3.2`, `qwen-flash`, `doubao-seed-1.8` 等。
+  - `domesticOpenai`: **核心客户端**。专用国产 AI 接口（灵芽代理），用于生成剧本、分镜文案以及 **高清图片 (`qwen-image-max`)**。使用独立的 `VITE_DOMESTIC_AI_API_KEY`。
+  - 支持模型：`deepseek-v3.2`, `qwen-flash`, `qwen-image-max` 等。
 - **Video (`src/lib/video.ts`)**:
   - 采用“创建任务 -> 轮询状态”模式。
   - **重要逻辑**: 视频生成耗时较长，`StoryboardEditor` 在挂载时会检查是否有未完成的 `taskId` 并恢复轮询，确保刷新页面不丢失进度。

@@ -4,6 +4,8 @@
  * 视频生成: https://api.lingyaai.cn/doc/#/coding/sora-2
  */
 
+import { domesticOpenai } from './ai';
+
 const LINGYA_API_URL = 'https://api.lingyaai.cn';
 
 // --- 图像生成相关 (Nano Banana) ---
@@ -25,35 +27,19 @@ export async function generateImageBanana(
   prompt: string,
   onProgress?: (msg: string) => void,
 ): Promise<string> {
-  const apiKey = import.meta.env.VITE_AI_API_KEY;
-  if (!apiKey) throw new Error('Missing VITE_AI_API_KEY');
+  if (onProgress) onProgress('正在启动 Qwen 高清绘画引擎...');
 
-  if (onProgress) onProgress('正在生成参考图...');
-
-  // 1. 创建文生图任务
-  const response = await fetch(`${LINGYA_API_URL}/v1/images/generations`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'nano-banana', // 使用 nano-banana 模型
-      prompt: prompt,
-      n: 1,
-      size: '1280x720', // 与视频默认尺寸保持一致
-    } as ImageGenerateRequest),
+  const response = await domesticOpenai.images.generate({
+    model: 'qwen-image-max',
+    prompt: prompt,
+    n: 1,
+    size: '1280x720' as any,
   });
 
-  if (!response.ok) {
-    throw new Error(`图像生成请求失败: ${response.status}`);
-  }
-
-  const data = await response.json();
-  const imageUrl = data.data?.[0]?.url;
+  const imageUrl = response.data?.[0]?.url;
 
   if (!imageUrl) {
-    throw new Error('图像生成成功但未返回 URL');
+    throw new Error('图像生成任务已接收但未返回预览 URL');
   }
 
   return imageUrl;
