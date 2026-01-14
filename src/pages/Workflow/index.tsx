@@ -302,6 +302,7 @@ export default function Workflow() {
                 onUpdateTtsAudioUrl={(url) =>
                   updateTask(task.id, { ttsAudioUrl: url })
                 }
+                taskTitle={task.title}
               />
             )}
           </div>
