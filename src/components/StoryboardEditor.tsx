@@ -910,7 +910,7 @@ export default function StoryboardEditor({
                 <Textarea
                   value={rawText}
                   onChange={(e) => handleRawTextChange(e.target.value)}
-                  placeholder="| 镜号 | 脚本 | 画面提示词 | 视频生成提示词 |"
+                  placeholder="支持 JSON 格式或 Markdown 表格: | 镜号 | 脚本 | 画面提示词 | 视频生成提示词 |"
                   className="h-[500px] bg-black/40 border-white/10 focus:border-primary/50 placeholder:text-white/10 font-mono text-sm leading-relaxed text-white/80 resize-none p-6 rounded-2xl backdrop-blur-xl"
                 />
                 <div className="absolute bottom-4 right-4 flex items-center gap-2 text-[10px] text-green-500 font-bold bg-green-500/10 px-3 py-1.5 rounded-lg border border-green-500/20">
