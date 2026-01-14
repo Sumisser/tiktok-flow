@@ -65,7 +65,6 @@ export default function StoryboardEditor({
   taskTitle,
 }: StoryboardEditorProps) {
   /* eslint-disable react-hooks/exhaustive-deps */
-  const [editingId, setEditingId] = useState<string | null>(null);
   // 上传状态管理：支持多个分镜并行上传
   const [uploadingMap, setUploadingMap] = useState<Map<string, boolean>>(
     new Map(),
@@ -366,33 +365,6 @@ export default function StoryboardEditor({
         next.delete(item.id);
         return next;
       });
-    }
-  };
-  const handlePaste = async (e: React.ClipboardEvent, item: StoryboardItem) => {
-    const items = e.clipboardData.items;
-    let file = null;
-    for (let i = 0; i < items.length; i++) {
-      if (items[i].type.indexOf('image') !== -1) {
-        file = items[i].getAsFile();
-        break;
-      }
-    }
-
-    if (file) {
-      setUploadingMap((prev) => new Map(prev).set(item.id, true));
-      try {
-        const url = await uploadStoryboardImage(file, taskId, item.shotNumber);
-        const updated = storyboardsRef.current.map((s) =>
-          s.id === item.id ? { ...s, imageUrl: url } : s,
-        );
-        onUpdateStoryboards(updated);
-        toast.success(`分镜 ${item.shotNumber} 图片上传成功`);
-      } catch (error) {
-        console.error('Upload error:', error);
-        toast.error('上传图片失败');
-      } finally {
-        setUploadingMap((prev) => new Map(prev).set(item.id, false));
-      }
     }
   };
 
@@ -1295,59 +1267,58 @@ export default function StoryboardEditor({
                                           ×
                                         </button>
                                       </>
-                                    ) : (
+                                    ) : videoGeneratingMap.has(item.id) &&
+                                      videoGeneratingMap.get(item.id)
+                                        ?.status === 'generating_image' ? (
                                       <div className="w-full h-full flex flex-col items-center justify-center gap-4">
-                                        {editingId === item.id ? (
-                                          <div
-                                            onPaste={(e) =>
-                                              handlePaste(e, item)
+                                        <div className="relative">
+                                          <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
+                                        </div>
+                                        <div className="text-center">
+                                          <p className="text-sm font-bold text-blue-400">
+                                            AI 生成图片中
+                                          </p>
+                                          <p className="text-xs text-white/30 mt-1">
+                                            请耐心等待...
+                                          </p>
+                                        </div>
+                                      </div>
+                                    ) : uploadingMap.get(item.id) ? (
+                                      <div className="w-full h-full flex flex-col items-center justify-center gap-4">
+                                        <Loader2 className="w-10 h-10 text-white/50 animate-spin" />
+                                        <p className="text-xs font-bold text-white/50">
+                                          上传图片中...
+                                        </p>
+                                      </div>
+                                    ) : (
+                                      <div className="w-full h-full flex flex-col items-center justify-center gap-5">
+                                        <ImageIcon className="w-16 h-16 text-white/5" />
+                                        <div className="flex gap-3">
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() =>
+                                              handleGenerateImage(item)
                                             }
-                                            className="w-full h-full flex flex-col items-center justify-center p-4 outline-none"
-                                            tabIndex={0}
+                                            disabled={videoGeneratingMap.has(
+                                              item.id,
+                                            )}
+                                            className="h-10 rounded-xl border-blue-500/30 text-blue-400 hover:bg-blue-500/20 font-bold px-6 text-sm disabled:opacity-50"
                                           >
-                                            <label className="cursor-pointer flex flex-col items-center gap-3">
-                                              {videoGeneratingMap.get(item.id)
-                                                ?.status ===
-                                              'generating_image' ? (
-                                                <div className="flex flex-col items-center gap-2">
-                                                  <div className="animate-spin w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full" />
-                                                  <span className="text-xs text-blue-400 font-bold">
-                                                    AI 生成中...
-                                                  </span>
-                                                </div>
-                                              ) : uploadingMap.get(item.id) ? (
-                                                <div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" />
-                                              ) : (
-                                                <>
-                                                  <ImageIcon className="w-12 h-12 text-blue-500/40" />
-                                                  <span className="text-sm text-blue-400/70 font-bold">
-                                                    Ctrl+V 粘贴 或 点击上传
-                                                  </span>
-                                                  <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    className="hidden"
-                                                    onChange={(e) =>
-                                                      handleFileSelect(e, item)
-                                                    }
-                                                  />
-                                                </>
-                                              )}
-                                            </label>
-                                          </div>
-                                        ) : (
-                                          <>
-                                            <ImageIcon className="w-16 h-16 text-white/5" />
-                                            <button
-                                              onClick={() =>
-                                                setEditingId(item.id)
+                                            ✨ AI 生成图片
+                                          </Button>
+                                          <label className="h-10 flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-6 text-sm font-bold text-white/40 hover:bg-white/10 cursor-pointer">
+                                            上传图片
+                                            <input
+                                              type="file"
+                                              accept="image/*"
+                                              className="hidden"
+                                              onChange={(e) =>
+                                                handleFileSelect(e, item)
                                               }
-                                              className="h-10 flex items-center justify-center rounded-xl border border-blue-500/30 bg-blue-500/10 px-6 text-sm font-bold text-blue-400 hover:bg-blue-500/20 transition-all"
-                                            >
-                                              添加参考图片
-                                            </button>
-                                          </>
-                                        )}
+                                            />
+                                          </label>
+                                        </div>
                                       </div>
                                     )}
                                   </>
