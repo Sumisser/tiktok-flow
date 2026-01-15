@@ -304,7 +304,7 @@ export default function StoryboardEditor({
           imageUrl: item.imageUrl || undefined, // 现有的参考图（如果有）
           model: 'sora-2',
           seconds: 10,
-          size: '1280x720',
+          size: '960x720',
         },
         async (progress, status, extraData) => {
           setVideoGeneratingMap((prev) =>
@@ -917,7 +917,7 @@ export default function StoryboardEditor({
           </div>
         )}
 
-        <div className="w-[92vw] max-w-[1400px] mx-auto px-2 flex flex-col h-full grow">
+        <div className="w-full flex flex-col h-full grow">
           {isRawMode ? (
             <div className="animate-in fade-in slide-in-from-top-2 duration-300">
               <div className="relative group">
@@ -935,7 +935,7 @@ export default function StoryboardEditor({
           ) : (
             <div className="space-y-2 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-1 h-full flex flex-col grow">
               {/* 分镜卡片轮播区域 */}
-              <div className="relative h-[72vh] min-h-[500px] w-full shrink-0">
+              <div className="relative h-[80vh] min-h-[500px] w-full shrink-0">
                 {storyboards.map((item, idx) => {
                   // 判断是否是封面镜头
                   const isCover = item.shotNumber === 0;

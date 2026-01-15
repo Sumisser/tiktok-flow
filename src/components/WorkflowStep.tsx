@@ -211,7 +211,7 @@ export default function WorkflowStep({
       {isGenerating ? (
         <GeneratingView streamingText={streamingText} onCancel={handleCancel} />
       ) : showResultView && storyboards.length > 0 ? (
-        <div className="relative w-full">
+        <div className="w-[calc(100vw-12rem)] max-w-[1400px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
           <StoryboardEditor
             taskId={taskId}
             output={output}
@@ -226,8 +226,8 @@ export default function WorkflowStep({
           />
         </div>
       ) : (
-        <div className="w-[92vw] max-w-[1400px] mx-auto">
-          <Card className="glass-card border-primary/20 ring-1 ring-primary/10 shadow-2xl relative overflow-hidden gap-0 py-0 h-[76vh] min-h-[540px] flex flex-col">
+        <div className="w-[calc(100vw-12rem)] max-w-[1400px] mx-auto">
+          <Card className="glass-card border-primary/20 ring-1 ring-primary/10 shadow-2xl relative overflow-hidden gap-0 py-0 h-[85vh] min-h-[540px] flex flex-col">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
 
             <CardHeader className="px-5 py-4 border-b border-white/5 flex flex-row items-center justify-between bg-white/[0.01]">

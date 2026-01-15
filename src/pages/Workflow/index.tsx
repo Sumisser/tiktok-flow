@@ -288,34 +288,32 @@ export default function Workflow() {
       </header>
 
       {/* 主要内容 */}
-      <main className="w-full pt-20 h-full overflow-y-auto flex flex-col">
-        <div className="flex-1 w-full px-4 md:px-12 lg:px-24 flex flex-col items-center">
-          <div className="w-full max-w-7xl mx-auto py-8">
-            <WorkflowStep
-              key={task.steps[0].id}
-              taskId={task.id}
-              step={task.steps[0]}
-              stepNumber={1}
-              prevStepOutput=""
-              onUpdate={(updates) =>
-                updateStep(task.id, task.steps[0].id, updates)
-              }
-              storyboards={task.storyboards || []}
-              onUpdateStoryboards={(storyboards) =>
-                updateStoryboards(task.id, storyboards)
-              }
-              ttsAudioUrl={task.ttsAudioUrl}
-              onUpdateTtsAudioUrl={(url) =>
-                updateTask(task.id, { ttsAudioUrl: url })
-              }
-              taskTitle={task.title}
-              showResultView={showResultView}
-              setShowResultView={setShowResultView}
-              isGenerating={isGenerating}
-              setIsGenerating={setIsGenerating}
-            />
-          </div>
-        </div>
+      <main className="w-full pt-20 h-screen overflow-y-auto">
+        {/* <div className="flex-1 w-full flex flex-col items-center"> */}
+        {/* <div className="w-full flex-1 flex flex-col items-center"> */}
+        <WorkflowStep
+          key={task.steps[0].id}
+          taskId={task.id}
+          step={task.steps[0]}
+          stepNumber={1}
+          prevStepOutput=""
+          onUpdate={(updates) => updateStep(task.id, task.steps[0].id, updates)}
+          storyboards={task.storyboards || []}
+          onUpdateStoryboards={(storyboards) =>
+            updateStoryboards(task.id, storyboards)
+          }
+          ttsAudioUrl={task.ttsAudioUrl}
+          onUpdateTtsAudioUrl={(url) =>
+            updateTask(task.id, { ttsAudioUrl: url })
+          }
+          taskTitle={task.title}
+          showResultView={showResultView}
+          setShowResultView={setShowResultView}
+          isGenerating={isGenerating}
+          setIsGenerating={setIsGenerating}
+        />
+        {/* </div> */}
+        {/* </div> */}
       </main>
     </div>
   );
