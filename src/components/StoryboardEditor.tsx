@@ -853,49 +853,84 @@ export default function StoryboardEditor({
       </div>
 
       <div className="relative w-full flex flex-col items-center h-full">
-        {/* 右侧视频生成任务列表 - 仅预览模式显示 */}
+        {/* 顶部居中的生成进度提示 - 水平紧凑布局 */}
         {!isRawMode && videoGeneratingMap.size > 0 && (
-          <div className="fixed right-6 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3 w-64 pointer-events-none">
-            {Array.from(videoGeneratingMap.entries()).map(([id, state]) => {
-              const item = storyboards.find((s) => s.id === id);
-              if (!item) return null;
-              return (
-                <div
-                  key={id}
-                  className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl p-3 shadow-2xl animate-in slide-in-from-right-4 fade-in duration-300 pointer-events-auto"
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-[10px] font-black uppercase text-primary tracking-wider">
-                      SHOT {item.shotNumber}
-                    </span>
-                    <span className="text-[10px] foont-mono text-white/50">
-                      {state.progress}%
-                    </span>
-                  </div>
-                  <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden mb-1.5">
-                    <div
-                      className="h-full bg-primary transition-all duration-300 ease-out"
-                      style={{ width: `${state.progress}%` }}
-                    />
-                  </div>
-                  <div className="text-[9px] text-white/40 truncate">
-                    {state.status === 'queued'
-                      ? '排队中...'
-                      : state.status === 'generating_image'
-                        ? '生成参考图中...'
-                        : state.status === 'generating_video'
-                          ? '生成视频中...'
-                          : state.status === 'uploading'
-                            ? '保存结果中...'
-                            : '处理中...'}
-                  </div>
-                </div>
-              );
-            })}
+          <div className="fixed top-18 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 pointer-events-none">
+            <div
+              className="flex items-center gap-2.5 px-3 py-1 rounded-full backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300 pointer-events-auto"
+              style={{
+                background:
+                  'linear-gradient(135deg, rgba(15, 10, 30, 0.85) 0%, rgba(30, 20, 50, 0.8) 100%)',
+                boxShadow:
+                  '0 4px 20px rgba(139, 92, 246, 0.25), inset 0 1px 0 rgba(255,255,255,0.1)',
+                border: '1px solid rgba(139, 92, 246, 0.5)',
+              }}
+            >
+              {/* 流光效果 */}
+              <div
+                className="absolute inset-0 rounded-full overflow-hidden"
+                style={{
+                  background:
+                    'linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)',
+                  animation: 'shimmer 2s infinite',
+                }}
+              />
+
+              {/* 魔力图标 */}
+              <div className="relative flex-shrink-0">
+                <Loader2 className="w-4 h-4 text-primary animate-spin" />
+              </div>
+
+              {/* 任务列表 - 水平排列 */}
+              <div className="flex items-center gap-3">
+                {Array.from(videoGeneratingMap.entries()).map(
+                  ([id, state], index) => {
+                    const item = storyboards.find((s) => s.id === id);
+                    if (!item) return null;
+
+                    const statusEmoji =
+                      state.status === 'queued'
+                        ? '⏳'
+                        : state.status === 'generating_image'
+                          ? '🖼️'
+                          : state.status === 'generating_video'
+                            ? '🎬'
+                            : state.status === 'uploading'
+                              ? '💾'
+                              : '⚡';
+
+                    return (
+                      <div key={id} className="flex items-center gap-1.5">
+                        {index > 0 && <span className="text-white/20">·</span>}
+                        <span className="text-[10px]">{statusEmoji}</span>
+                        <span className="text-xs font-bold text-white/90 tabular-nums">
+                          #{item.shotNumber}
+                        </span>
+                        <div className="w-8 h-1 bg-white/10 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-300"
+                            style={{
+                              width: `${state.progress}%`,
+                              background:
+                                'linear-gradient(90deg, #8b5cf6, #3b82f6)',
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  },
+                )}
+              </div>
+
+              {/* 总体状态 */}
+              <span className="text-[10px] text-white/50 font-medium pl-2 border-l border-white/10">
+                {videoGeneratingMap.size} 个任务
+              </span>
+            </div>
           </div>
         )}
 
-        <div className="w-full max-w-5xl mx-auto px-4 flex flex-col h-full grow">
+        <div className="w-[92vw] max-w-[1400px] mx-auto px-2 flex flex-col h-full grow">
           {isRawMode ? (
             <div className="animate-in fade-in slide-in-from-top-2 duration-300">
               <div className="relative group">
@@ -911,9 +946,9 @@ export default function StoryboardEditor({
               </div>
             </div>
           ) : (
-            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-2 h-full flex flex-col grow">
+            <div className="space-y-2 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-1 h-full flex flex-col grow">
               {/* 分镜卡片轮播区域 */}
-              <div className="relative h-[480px] w-full shrink-0">
+              <div className="relative h-[72vh] min-h-[500px] w-full shrink-0">
                 {storyboards.map((item, idx) => {
                   // 判断是否是封面镜头
                   const isCover = item.shotNumber === 0;
@@ -1417,7 +1452,7 @@ export default function StoryboardEditor({
               </div>
 
               {/* 底部居中轮播导航 - 增强视觉样式 */}
-              <div className="flex items-center gap-6 shrink-0 bg-black/40 backdrop-blur-2xl px-6 py-1.5 rounded-full border border-white/10 shadow-2xl mx-auto mt-2">
+              <div className="flex items-center gap-6 shrink-0 bg-black/40 backdrop-blur-2xl px-6 py-1.5 rounded-full border border-white/10 shadow-2xl mx-auto">
                 <Button
                   variant="ghost"
                   size="icon"

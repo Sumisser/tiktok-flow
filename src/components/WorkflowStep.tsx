@@ -213,109 +213,111 @@ export default function WorkflowStep({
           />
         </div>
       ) : (
-        <Card className="glass-card border-primary/20 ring-1 ring-primary/10 shadow-2xl relative overflow-hidden gap-0 py-0">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
+        <div className="w-[92vw] max-w-[1400px] mx-auto">
+          <Card className="glass-card border-primary/20 ring-1 ring-primary/10 shadow-2xl relative overflow-hidden gap-0 py-0 h-[76vh] min-h-[540px] flex flex-col">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
 
-          <CardHeader className="px-5 py-4 border-b border-white/5 flex flex-row items-center justify-between bg-white/[0.01]">
-            <div className="flex items-center gap-3.5">
-              <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-inner">
-                <ListTodo className="w-4 h-4" />
+            <CardHeader className="px-5 py-4 border-b border-white/5 flex flex-row items-center justify-between bg-white/[0.01]">
+              <div className="flex items-center gap-3.5">
+                <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-inner">
+                  <ListTodo className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-base font-black text-white tracking-wide leading-tight">
+                    创意分镜生成
+                  </h2>
+                  <p className="text-[10px] text-muted-foreground font-medium mt-0.5">
+                    输入想法，AI 自动生成视觉分镜与提示词
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-base font-black text-white tracking-wide leading-tight">
-                  创意分镜生成
-                </h2>
-                <p className="text-[10px] text-muted-foreground font-medium mt-0.5">
-                  输入想法，AI 自动生成视觉分镜与提示词
-                </p>
-              </div>
-            </div>
 
-            <div className="flex items-center gap-2">
-              {storyboards.length > 0 && (
+              <div className="flex items-center gap-2">
+                {storyboards.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowResultView(true)}
+                    className="h-8 text-[10px] font-black uppercase tracking-widest text-primary border-primary/20 hover:bg-primary/10 rounded-lg px-3 transition-all"
+                  >
+                    查看结果
+                    <ArrowRight className="w-3 h-3 ml-1.5" />
+                  </Button>
+                )}
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  onClick={() => setShowResultView(true)}
-                  className="h-8 text-[10px] font-black uppercase tracking-widest text-primary border-primary/20 hover:bg-primary/10 rounded-lg px-3 transition-all"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsPromptSidebarOpen(true);
+                  }}
+                  className="h-8 text-xs font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg px-3 transition-all"
                 >
-                  查看结果
-                  <ArrowRight className="w-3 h-3 ml-1.5" />
+                  <ListTodo className="w-3.5 h-3.5 mr-1.5" />
+                  查看 System Prompt
                 </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsPromptSidebarOpen(true);
-                }}
-                className="h-8 text-xs font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg px-3 transition-all"
-              >
-                <ListTodo className="w-3.5 h-3.5 mr-1.5" />
-                查看 System Prompt
-              </Button>
-            </div>
-          </CardHeader>
-
-          <CardContent className="px-5 py-5 space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-primary font-bold text-[11px] uppercase tracking-wider">
-                <span className="w-1 h-1 rounded-full bg-primary" />
-                创意描述
               </div>
-              <Textarea
-                value={input}
-                onChange={(e) => handleInputChange(e.target.value)}
-                placeholder="例如：一个年轻人在下雨的城市街道上奔跑，突然回头看到了..."
-                className="min-h-[100px] bg-black/20 border-white/10 focus:border-primary/50 focus:ring-primary/20 placeholder:text-white/10 resize-none rounded-xl p-3 text-xs leading-relaxed font-medium transition-all shadow-inner text-white"
+            </CardHeader>
+
+            <CardContent className="px-5 py-5 space-y-4 flex-1 flex flex-col overflow-hidden">
+              <div className="space-y-2 flex-1 flex flex-col min-h-0">
+                <div className="flex items-center gap-2 text-primary font-bold text-[11px] uppercase tracking-wider shrink-0">
+                  <span className="w-1 h-1 rounded-full bg-primary" />
+                  创意描述
+                </div>
+                <Textarea
+                  value={input}
+                  onChange={(e) => handleInputChange(e.target.value)}
+                  placeholder="例如：一个年轻人在下雨的城市街道上奔跑，突然回头看到了..."
+                  className="flex-1 min-h-[100px] bg-black/20 border-white/10 focus:border-primary/50 focus:ring-primary/20 placeholder:text-white/10 resize-none rounded-xl p-3 text-xs leading-relaxed font-medium transition-all shadow-inner text-white"
+                />
+              </div>
+
+              <StyleSelector
+                selectedStyle={selectedStyle}
+                onStyleSelect={setSelectedStyle}
               />
-            </div>
 
-            <StyleSelector
-              selectedStyle={selectedStyle}
-              onStyleSelect={setSelectedStyle}
-            />
+              <div className="pt-3 border-t border-white/5 w-full space-y-3">
+                <ModelSelector
+                  selectedModel={selectedModel}
+                  onModelSelect={setSelectedModel}
+                />
 
-            <div className="pt-3 border-t border-white/5 w-full space-y-3">
-              <ModelSelector
-                selectedModel={selectedModel}
-                onModelSelect={setSelectedModel}
-              />
-
-              <Button
-                onClick={handleGenerate}
-                disabled={!input.trim() || isGenerating}
-                className={cn(
-                  'w-full h-12 rounded-xl text-xs font-black tracking-widest transition-all duration-300 shadow-lg uppercase relative overflow-hidden group',
-                  input.trim() && !isGenerating
-                    ? 'bg-gradient-to-r from-primary to-violet-600 text-white hover:scale-[1.01] hover:shadow-primary/25 border border-white/10'
-                    : 'bg-muted text-muted-foreground',
-                )}
-              >
-                <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                {isGenerating ? (
-                  <div className="flex items-center gap-3">
-                    <span className="relative flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
-                    </span>
-                    <span>正在进行 AI 创意构思...</span>
-                  </div>
-                ) : isCopied ? (
-                  <>
-                    <Check className="w-5 h-5 mr-3" />
-                    已复制提示词 (即将开始)
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="w-5 h-5 mr-3" />✨ AI 一键生成影片分镜
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                <Button
+                  onClick={handleGenerate}
+                  disabled={!input.trim() || isGenerating}
+                  className={cn(
+                    'w-full h-12 rounded-xl text-xs font-black tracking-widest transition-all duration-300 shadow-lg uppercase relative overflow-hidden group',
+                    input.trim() && !isGenerating
+                      ? 'bg-gradient-to-r from-primary to-violet-600 text-white hover:scale-[1.01] hover:shadow-primary/25 border border-white/10'
+                      : 'bg-muted text-muted-foreground',
+                  )}
+                >
+                  <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                  {isGenerating ? (
+                    <div className="flex items-center gap-3">
+                      <span className="relative flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                      </span>
+                      <span>正在进行 AI 创意构思...</span>
+                    </div>
+                  ) : isCopied ? (
+                    <>
+                      <Check className="w-5 h-5 mr-3" />
+                      已复制提示词 (即将开始)
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="w-5 h-5 mr-3" />✨ AI 一键生成影片分镜
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       <PromptSidebar
