@@ -3,7 +3,7 @@ import { useAuth } from '../../store/auth';
 import TaskCard from '../../components/TaskCard';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, X, Search, CloudRain, LogOut } from 'lucide-react';
+import { Plus, X, Search, LogOut } from 'lucide-react';
 
 const useTime = () => {
   const [time, setTime] = useState(new Date());
@@ -14,47 +14,6 @@ const useTime = () => {
   }, []);
 
   return time;
-};
-
-const useWeather = () => {
-  const [data, setData] = useState<{
-    city: string;
-    temp: string;
-    condition: string;
-  } | null>(null);
-
-  useEffect(() => {
-    const fetchWeather = async () => {
-      try {
-        // Step 1: Get location via IP (using ip-api.com - no API key needed for basic usage)
-        const locRes = await fetch('http://ip-api.com/json/');
-        const locData = await locRes.json();
-
-        if (locData.status === 'success') {
-          // Step 2: Get weather via Open-Meteo (open API)
-          const weatherRes = await fetch(
-            `https://api.open-meteo.com/v1/forecast?latitude=${locData.lat}&longitude=${locData.lon}&current_weather=true`,
-          );
-          const weatherData = await weatherRes.json();
-
-          setData({
-            city: locData.city,
-            temp: `${Math.round(weatherData.current_weather.temperature)}°`,
-            condition: 'Clear', // Simplified context for now
-          });
-        }
-      } catch (error) {
-        console.error('Weather fetch failed:', error);
-        setData({ city: 'Shanghai', temp: '12°', condition: 'Cloudy' }); // Fallback
-      }
-    };
-
-    fetchWeather();
-    const interval = setInterval(fetchWeather, 1800000); // Update every 30 mins
-    return () => clearInterval(interval);
-  }, []);
-
-  return data;
 };
 
 const useQuote = () => {
@@ -107,7 +66,6 @@ export default function Home() {
   const [newTitle, setNewTitle] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const currentTime = useTime();
-  const weather = useWeather();
   const quote = useQuote();
 
   const timeString = currentTime.toLocaleTimeString([], {
@@ -221,14 +179,7 @@ export default function Home() {
               <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
             </div>
           )}
-          {weather && (
-            <div className="flex items-center gap-3 animate-in fade-in duration-1000">
-              <CloudRain className="w-4 h-4 opacity-40" />
-              <span className="text-[11px] font-black tracking-widest uppercase opacity-40">
-                {weather.city} {weather.temp}
-              </span>
-            </div>
-          )}
+
           {/* Unsplash 归属信息 */}
           {wallpaperAttribution && (
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-full text-[10px] text-white/80 drop-shadow-md animate-in fade-in duration-1000">
