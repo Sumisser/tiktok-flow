@@ -16,7 +16,20 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
-import { ListTodo, Wand2, X, LayoutGrid, Sparkles } from 'lucide-react';
+import {
+  ListTodo,
+  Wand2,
+  LayoutGrid,
+  Sparkles,
+  FileCode,
+  Copy,
+  Check,
+  AudioWaveform,
+  Play,
+  Pause,
+  Download,
+  Loader2,
+} from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -38,6 +51,11 @@ import { MODELS, STYLE_CATEGORIES } from '../constants/workflow';
 import GeneratingView from './Workflow/GeneratingView';
 import StyleSelector from './Workflow/StyleSelector';
 import ModelSelector from './Workflow/ModelSelector';
+import { toast } from 'sonner';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
+import { generateMinimaxTts } from '../lib/tts';
+import { uploadTtsAudio, deleteTtsAudio } from '../lib/storage';
 
 interface WorkflowStepProps {
   taskId: string;
@@ -79,6 +97,18 @@ export default function WorkflowStep({
   const [selectedModel, setSelectedModel] = useState(MODELS[0].id); // 默认 Qwen-Flash
   const [streamingText, setStreamingText] = useState(''); // 新增：用于展示流式文本
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  // TTS & Export States (Lifted from StoryboardEditor)
+  const [isTtsGenerating, setIsTtsGenerating] = useState(false);
+  const [isTtsPlaying, setIsTtsPlaying] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isFullScriptCopied, setIsFullScriptCopied] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const storyboardsRef = useRef(storyboards);
+
+  useEffect(() => {
+    storyboardsRef.current = storyboards;
+  }, [storyboards]);
 
   // Sync state
   useEffect(() => {
@@ -197,14 +227,190 @@ export default function WorkflowStep({
   const handleCancel = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
-      setIsGenerating(false);
-      setShowResultView(false);
     }
+    setIsGenerating(false);
+    setShowResultView(false);
   };
 
   const handleSavePrompt = (newPrompt: string) => {
     onUpdate({ basePrompt: newPrompt });
     setIsPromptSidebarOpen(false);
+  };
+
+  const handleCopyFullScript = async () => {
+    const fullScript = storyboards
+      .filter((s) => s.shotNumber !== 0)
+      .map((s) => s.script)
+      .join('\n\n');
+    try {
+      const cleanedScript = fullScript
+        .replace(/[^\u4e00-\u9fa5a-zA-Z0-9\s]/g, '\n')
+        .replace(/[ \t]+/g, ' ')
+        .replace(/\n\s*\n/g, '\n\n')
+        .trim();
+      await navigator.clipboard.writeText(cleanedScript);
+      setIsFullScriptCopied(true);
+      setTimeout(() => setIsFullScriptCopied(false), 1500);
+    } catch {
+      toast.error('复制失败');
+    }
+  };
+
+  const handleGenerateTts = async () => {
+    const fullScript = storyboards
+      .filter((s) => s.shotNumber !== 0)
+      .map((s) => s.script)
+      .join('\n\n');
+
+    if (!fullScript.trim()) {
+      toast.error('脚本内容为空，无法生成语音');
+      return;
+    }
+
+    setIsTtsGenerating(true);
+    const toastId = toast.loading('正在合成语音...');
+
+    try {
+      if (ttsAudioUrl) {
+        deleteTtsAudio(ttsAudioUrl).catch(console.error);
+      }
+
+      const localUrl = await generateMinimaxTts({
+        text: fullScript,
+        voice_id: 'Boyan_new_platform',
+      });
+
+      const response = await fetch(localUrl);
+      const audioBlob = await response.blob();
+      const uploadedUrl = await uploadTtsAudio(audioBlob, taskId);
+
+      onUpdateTtsAudioUrl?.(uploadedUrl);
+      URL.revokeObjectURL(localUrl);
+
+      toast.success('语音合成成功', { id: toastId });
+
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = uploadedUrl;
+        audioRef.current.load();
+        audioRef.current.play().catch((err) => {
+          console.warn('自动播放被拦截:', err);
+        });
+      }
+    } catch (error: any) {
+      console.error('TTS Error:', error);
+      toast.error(error.message || '语音合成失败', { id: toastId });
+    } finally {
+      setIsTtsGenerating(false);
+    }
+  };
+
+  const handlePlayPauseTts = () => {
+    if (!audioRef.current || !ttsAudioUrl) return;
+
+    if (isTtsPlaying) {
+      audioRef.current.pause();
+    } else {
+      if (
+        !audioRef.current.src ||
+        audioRef.current.src === '' ||
+        audioRef.current.src.indexOf('undefined') !== -1
+      ) {
+        audioRef.current.src = ttsAudioUrl;
+        audioRef.current.load();
+      }
+      audioRef.current.play().catch((err) => {
+        console.error('Play error:', err);
+        toast.error('播放失败，请重试');
+      });
+    }
+  };
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handlePlay = () => setIsTtsPlaying(true);
+    const handlePause = () => setIsTtsPlaying(false);
+    const handleEnded = () => setIsTtsPlaying(false);
+    const handleError = (e: any) => {
+      console.error('音频播放错误:', e);
+      setIsTtsPlaying(false);
+    };
+
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('error', handleError);
+
+    return () => {
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('error', handleError);
+    };
+  }, []);
+
+  const handleExportAll = async () => {
+    if (!storyboards.length) return;
+    setIsExporting(true);
+    const toastId = toast.loading('正在打包导出所有媒体...');
+
+    try {
+      const zip = new JSZip();
+      const safeTitle = (taskTitle || 'project').replace(/[\\/:*?"<>|]/g, '_');
+      const rootFolder = zip.folder(safeTitle);
+
+      if (!rootFolder) throw new Error('Failed to create ZIP folder');
+
+      if (ttsAudioUrl) {
+        try {
+          const audioRes = await fetch(ttsAudioUrl);
+          const audioBlob = await audioRes.blob();
+          rootFolder.file('full-audio.mp3', audioBlob);
+        } catch (err) {
+          console.error('Failed to fetch audio for export', err);
+        }
+      }
+
+      const fetchPromises = storyboards.map(async (item) => {
+        const shotName =
+          item.shotNumber === 0 ? 'cover' : `shot-${item.shotNumber}`;
+
+        if (item.imageUrl) {
+          try {
+            const res = await fetch(item.imageUrl);
+            const blob = await res.blob();
+            const extension =
+              item.imageUrl.split('.').pop()?.split('?')[0] || 'png';
+            rootFolder.file(`${shotName}.${extension}`, blob);
+          } catch (err) {
+            console.error(`Failed to fetch image for ${shotName}`, err);
+          }
+        }
+
+        if (item.videoUrl) {
+          try {
+            const res = await fetch(item.videoUrl);
+            const blob = await res.blob();
+            rootFolder.file(`${shotName}.mp4`, blob);
+          } catch (err) {
+            console.error(`Failed to fetch video for ${shotName}`, err);
+          }
+        }
+      });
+
+      await Promise.all(fetchPromises);
+
+      const content = await zip.generateAsync({ type: 'blob' });
+      saveAs(content, `${safeTitle}.zip`);
+      toast.success('导出完成！', { id: toastId });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('导出失败，请重试', { id: toastId });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleResetClick = () => {
@@ -221,8 +427,286 @@ export default function WorkflowStep({
   };
 
   return (
-    <div className="space-y-6 relative">
+    <div className="space-y-6 relative h-full">
+      <audio ref={audioRef} className="hidden" />
+
+      {/* 统一视图控制容器 - 确保工具栏始终挂载 */}
       <div className="w-full h-full transform-gpu">
+        {/* 垂直工具栏 - 这里的逻辑在判断渲染视图容器之外 */}
+        <div
+          className={cn(
+            'fixed left-6 top-[20vh] z-50 flex flex-col gap-2 p-1.5 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl transition-all duration-300',
+            isGenerating
+              ? 'opacity-0 pointer-events-none translate-x-[-20px]'
+              : 'opacity-100 translate-x-0',
+          )}
+        >
+          <TooltipProvider delayDuration={0}>
+            {!showResultView ? (
+              /* 创意描述态工具栏 */
+              <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowResultView(true)}
+                      disabled={storyboards.length === 0}
+                      className={cn(
+                        'w-12 h-12 rounded-xl transition-all',
+                        showResultView
+                          ? 'text-primary bg-primary/10'
+                          : 'text-white/50 hover:text-primary hover:bg-primary/10',
+                      )}
+                    >
+                      <LayoutGrid className="w-5 h-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    className="bg-black/80 backdrop-blur-xl border-white/10 text-white font-bold text-xs py-2 px-3"
+                  >
+                    查看分镜预览
+                  </TooltipContent>
+                </Tooltip>
+
+                <div className="h-px w-8 mx-auto bg-white/5" />
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setIsPromptSidebarOpen(true)}
+                      className="w-12 h-12 rounded-xl text-white/50 hover:text-primary hover:bg-primary/10 transition-all"
+                    >
+                      <ListTodo className="w-5 h-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    className="bg-black/80 backdrop-blur-xl border-white/10 text-white font-bold text-xs py-2 px-3"
+                  >
+                    查看系统提示词
+                  </TooltipContent>
+                </Tooltip>
+
+                <div className="h-px w-8 mx-auto bg-white/5" />
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleGenerate}
+                      disabled={!input.trim()}
+                      className={cn(
+                        'w-12 h-12 rounded-xl transition-all duration-500 relative overflow-hidden group border',
+                        input.trim()
+                          ? 'text-white bg-gradient-to-br from-primary via-violet-500 to-fuchsia-500 border-primary/50 shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:scale-110'
+                          : 'text-white/50 bg-white/5 border-white/10 hover:text-primary hover:bg-primary/10',
+                      )}
+                    >
+                      <Wand2
+                        className={cn(
+                          'w-5 h-5 transition-transform group-hover:rotate-12',
+                          input.trim() && 'animate-pulse',
+                        )}
+                      />
+                      {input.trim() && (
+                        <>
+                          <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                          <div className="absolute -inset-1 bg-gradient-to-r from-primary to-fuchsia-500 blur-lg opacity-30 group-hover:opacity-60 transition-opacity -z-10" />
+                        </>
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    className="bg-black/80 backdrop-blur-xl border-white/10 text-white font-bold text-xs py-2 px-3"
+                  >
+                    生成视觉分镜
+                  </TooltipContent>
+                </Tooltip>
+              </>
+            ) : (
+              /* 分镜预览视图工具栏 (从 StoryboardEditor 迁移) */
+              <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowResultView(false)}
+                      className="w-12 h-12 rounded-xl text-white/50 hover:text-primary hover:bg-primary/10 transition-all"
+                    >
+                      <Sparkles className="w-5 h-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    className="bg-black/80 backdrop-blur-xl border-white/10 text-white font-bold text-xs py-2 px-3"
+                  >
+                    返回创意生成
+                  </TooltipContent>
+                </Tooltip>
+
+                <div className="h-px w-8 mx-auto bg-white/5" />
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() =>
+                        setIsStoryboardRawMode(!isStoryboardRawMode)
+                      }
+                      className={cn(
+                        'w-12 h-12 rounded-xl transition-all',
+                        isStoryboardRawMode
+                          ? 'text-primary bg-primary/10'
+                          : 'text-white/50 hover:text-primary hover:bg-primary/10',
+                      )}
+                    >
+                      {isStoryboardRawMode ? (
+                        <LayoutGrid className="w-5 h-5" />
+                      ) : (
+                        <FileCode className="w-5 h-5" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    className="bg-black/80 backdrop-blur-xl border-white/10 text-white font-bold text-xs py-2 px-3"
+                  >
+                    {isStoryboardRawMode ? '返回分镜预览' : '分镜文本编辑'}
+                  </TooltipContent>
+                </Tooltip>
+
+                <TooltipProvider delayDuration={0}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleCopyFullScript}
+                        className="w-12 h-12 rounded-xl text-white/50 hover:text-primary hover:bg-primary/10 transition-all"
+                      >
+                        {isFullScriptCopied ? (
+                          <Check className="w-5 h-5 text-green-500" />
+                        ) : (
+                          <Copy className="w-5 h-5" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="right"
+                      className="bg-black/80 backdrop-blur-xl border-white/10 text-white font-bold text-xs py-2 px-3"
+                    >
+                      复制全卷脚本
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <div className="h-px w-8 mx-auto bg-white/5" />
+
+                  <div className="flex flex-col gap-2 items-center">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={
+                            ttsAudioUrl ? handlePlayPauseTts : handleGenerateTts
+                          }
+                          disabled={isTtsGenerating}
+                          className={cn(
+                            'w-12 h-12 rounded-xl transition-all relative',
+                            ttsAudioUrl
+                              ? isTtsPlaying
+                                ? 'text-green-400 bg-green-400/10 hover:bg-green-400/20'
+                                : 'text-primary bg-primary/10 hover:bg-primary/20'
+                              : 'text-white/50 hover:text-primary hover:bg-primary/10',
+                          )}
+                        >
+                          {isTtsGenerating ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                          ) : ttsAudioUrl ? (
+                            isTtsPlaying ? (
+                              <Pause className="w-5 h-5" />
+                            ) : (
+                              <Play className="w-5 h-5 ml-0.5" />
+                            )
+                          ) : (
+                            <AudioWaveform className="w-5 h-5" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="right"
+                        className="bg-black/80 backdrop-blur-xl border-white/10 text-white font-bold text-xs py-2 px-3"
+                      >
+                        {ttsAudioUrl
+                          ? isTtsPlaying
+                            ? '暂停'
+                            : '播放语音'
+                          : '生成语音'}
+                      </TooltipContent>
+                    </Tooltip>
+
+                    {ttsAudioUrl && (
+                      <div className="flex flex-col gap-2 animate-in slide-in-from-top-2 fade-in duration-300">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={handleExportAll}
+                              disabled={isExporting}
+                              className="w-12 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all"
+                            >
+                              {isExporting ? (
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                              ) : (
+                                <Download className="w-4 h-4" />
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent
+                            side="right"
+                            className="bg-black/80 backdrop-blur-xl border-white/10 text-white font-bold text-xs py-2 px-3"
+                          >
+                            导出全部媒体 (ZIP)
+                          </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={handleGenerateTts}
+                              disabled={isTtsGenerating}
+                              className="w-12 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all"
+                            >
+                              <AudioWaveform className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent
+                            side="right"
+                            className="bg-black/80 backdrop-blur-xl border-white/10 text-white font-bold text-xs py-2 px-3"
+                          >
+                            重新生成语音
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    )}
+                  </div>
+                </TooltipProvider>
+              </>
+            )}
+          </TooltipProvider>
+        </div>
+
         {/* 生成状态视图 - 保持挂载以响应流式文本 */}
         <div
           className={cn(
@@ -230,39 +714,16 @@ export default function WorkflowStep({
             isGenerating ? 'block' : 'hidden',
           )}
         >
-          {/* 生成态工具栏 - 只有停止按钮 */}
-          <div className="fixed left-6 top-[20vh] z-50 flex flex-col gap-2 p-1.5 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl">
-            <TooltipProvider delayDuration={0}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleCancel}
-                    className="w-12 h-12 rounded-xl text-red-500 bg-red-500/10 border border-red-500/50 animate-pulse"
-                  >
-                    <X className="w-5 h-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="right"
-                  className="bg-black/80 backdrop-blur-xl border-white/10 text-white font-bold text-xs py-2 px-3"
-                >
-                  停止生成
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
           <GeneratingView
             streamingText={streamingText}
             onCancel={handleCancel}
           />
         </div>
 
-        {/* 结果预览视图 - StoryboardEditor 内部自带其独立的工具栏 */}
+        {/* 结果预览视图 */}
         <div
           className={cn(
-            'w-[calc(100vw-12rem)] max-w-[1400px] mx-auto animate-in fade-in duration-300',
+            'w-[calc(100vw-12rem)] max-w-[1400px] mx-auto animate-in fade-in duration-300 h-full',
             !isGenerating && showResultView && storyboards.length > 0
               ? 'block'
               : 'hidden',
@@ -276,111 +737,16 @@ export default function WorkflowStep({
             isRawMode={isStoryboardRawMode}
             setIsRawMode={setIsStoryboardRawMode}
             onReset={handleResetClick}
-            ttsAudioUrl={ttsAudioUrl}
-            onUpdateTtsAudioUrl={onUpdateTtsAudioUrl}
-            taskTitle={taskTitle}
-            setShowResultView={setShowResultView}
           />
         </div>
 
-        {/* 创意描述视图 - 包含其独立的工具栏 */}
+        {/* 创意描述视图 */}
         <div
           className={cn(
             'w-[calc(100vw-12rem)] max-w-[1400px] mx-auto animate-in fade-in duration-300',
             !isGenerating && !showResultView ? 'block' : 'hidden',
           )}
         >
-          <div className="fixed left-6 top-[20vh] z-50 flex flex-col gap-2 p-1.5 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl">
-            <TooltipProvider delayDuration={0}>
-              {/* 切换视图按钮 */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowResultView(!showResultView)}
-                    disabled={storyboards.length === 0}
-                    className={cn(
-                      'w-12 h-12 rounded-xl transition-all',
-                      showResultView
-                        ? 'text-primary bg-primary/10'
-                        : 'text-white/50 hover:text-primary hover:bg-primary/10',
-                    )}
-                  >
-                    <LayoutGrid className="w-5 h-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="right"
-                  className="bg-black/80 backdrop-blur-xl border-white/10 text-white font-bold text-xs py-2 px-3"
-                >
-                  查看分镜预览
-                </TooltipContent>
-              </Tooltip>
-
-              <div className="h-px w-8 mx-auto bg-white/5" />
-
-              {/* 系统提示词按钮 */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsPromptSidebarOpen(true)}
-                    className="w-12 h-12 rounded-xl text-white/50 hover:text-primary hover:bg-primary/10 transition-all"
-                  >
-                    <ListTodo className="w-5 h-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="right"
-                  className="bg-black/80 backdrop-blur-xl border-white/10 text-white font-bold text-xs py-2 px-3"
-                >
-                  查看系统提示词
-                </TooltipContent>
-              </Tooltip>
-
-              <div className="h-px w-8 mx-auto bg-white/5" />
-
-              {/* 生成按钮 */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleGenerate}
-                    disabled={!input.trim()}
-                    className={cn(
-                      'w-12 h-12 rounded-xl transition-all duration-500 relative overflow-hidden group border',
-                      input.trim()
-                        ? 'text-white bg-gradient-to-br from-primary via-violet-500 to-fuchsia-500 border-primary/50 shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:scale-110'
-                        : 'text-white/50 bg-white/5 border-white/10 hover:text-primary hover:bg-primary/10',
-                    )}
-                  >
-                    <Wand2
-                      className={cn(
-                        'w-5 h-5 transition-transform group-hover:rotate-12',
-                        input.trim() && 'animate-pulse',
-                      )}
-                    />
-                    {input.trim() && (
-                      <>
-                        <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                        <div className="absolute -inset-1 bg-gradient-to-r from-primary to-fuchsia-500 blur-lg opacity-30 group-hover:opacity-60 transition-opacity -z-10" />
-                      </>
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="right"
-                  className="bg-black/80 backdrop-blur-xl border-white/10 text-white font-bold text-xs py-2 px-3"
-                >
-                  生成视觉分镜
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-
           <Card className="glass-card border-primary/20 ring-1 ring-primary/10 shadow-2xl relative overflow-hidden gap-0 py-0 h-[85vh] min-h-[540px] flex flex-col">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
 
@@ -400,7 +766,7 @@ export default function WorkflowStep({
               </div>
             </CardHeader>
 
-            <CardContent className="px-5 py-5 space-y-4 flex-1 flex flex-col overflow-hidden">
+            <CardContent className="px-5 py-5 space-y-4 flex-1 flex flex-col overflow-hidden h-full">
               <div className="space-y-2 flex-1 flex flex-col min-h-0">
                 <div className="flex items-center gap-2 text-primary font-bold text-[11px] uppercase tracking-wider shrink-0">
                   <span className="w-1 h-1 rounded-full bg-primary" />
@@ -410,7 +776,7 @@ export default function WorkflowStep({
                   value={input}
                   onChange={(e) => handleInputChange(e.target.value)}
                   placeholder="例如：一个年轻人在雨后的城市街道上奔跑..."
-                  className="flex-1 min-h-[100px] bg-black/20 border-white/10 focus:border-primary/50 focus:ring-primary/20 placeholder:text-white/10 resize-none rounded-xl p-3 text-xs leading-relaxed font-medium transition-all shadow-inner text-white"
+                  className="flex-1 min-h-[100px] bg-black/20 border-white/10 focus:border-primary/50 focus:ring-primary/20 placeholder:text-white/10 resize-none rounded-xl p-3 text-xs leading-relaxed font-medium transition-all shadow-inner text-white h-screen"
                 />
               </div>
 

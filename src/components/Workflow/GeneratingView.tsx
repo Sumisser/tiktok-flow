@@ -103,7 +103,7 @@ export default function GeneratingView({
                 <div className="absolute inset-0 bg-white/5 backdrop-blur-md border border-white/10 group-hover:bg-white/10 transition-colors" />
                 <div className="relative flex items-center gap-2 text-white/40 group-hover:text-white/80 transition-colors font-black text-xs uppercase tracking-[0.2em]">
                   <X className="w-3.5 h-3.5" />
-                  停止生成 / Cancel
+                  停止生成
                 </div>
               </button>
             </div>
