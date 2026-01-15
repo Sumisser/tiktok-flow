@@ -744,123 +744,115 @@ export default function StoryboardEditor({
   return (
     <>
       {/* 左侧集成垂直工具栏 - 移除所有动画以防位置闪烁 */}
-      {!isRawMode && (
-        <div className="fixed left-6 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2 p-1.5 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onBack}
-            className="w-12 h-12 rounded-xl text-white/50 hover:text-primary hover:bg-primary/10 transition-all"
-            title="返回输入"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="h-px w-8 mx-auto bg-white/5" />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsRawMode(true)}
-            className="w-12 h-12 rounded-xl text-white/50 hover:text-primary hover:bg-primary/10 transition-all"
-            title="源码编辑"
-          >
+      <div className="fixed left-6 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2 p-1.5 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onBack}
+          className="w-12 h-12 rounded-xl text-white/50 hover:text-primary hover:bg-primary/10 transition-all"
+          title="返回输入"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <div className="h-px w-8 mx-auto bg-white/5" />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsRawMode(!isRawMode)}
+          className={cn(
+            'w-12 h-12 rounded-xl transition-all',
+            isRawMode
+              ? 'text-primary bg-primary/10'
+              : 'text-white/50 hover:text-primary hover:bg-primary/10',
+          )}
+          title={isRawMode ? '返回预览' : '源码编辑'}
+        >
+          {isRawMode ? (
+            <LayoutGrid className="w-5 h-5" />
+          ) : (
             <FileCode className="w-5 h-5" />
-          </Button>
+          )}
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleCopyFullScript}
+          className="w-12 h-12 rounded-xl text-white/50 hover:text-primary hover:bg-primary/10 transition-all"
+          title="复制全卷脚本"
+        >
+          {isFullScriptCopied ? (
+            <Check className="w-5 h-5 text-green-500" />
+          ) : (
+            <Copy className="w-5 h-5" />
+          )}
+        </Button>
+        <div className="h-px w-8 mx-auto bg-white/5" />
+
+        {/* TTS 语音合成与播放控制 */}
+        <div className="flex flex-col gap-2 items-center">
           <Button
             variant="ghost"
             size="icon"
-            onClick={handleCopyFullScript}
-            className="w-12 h-12 rounded-xl text-white/50 hover:text-primary hover:bg-primary/10 transition-all"
-            title="复制全卷脚本"
+            onClick={ttsAudioUrl ? handlePlayPauseTts : handleGenerateTts}
+            disabled={isTtsGenerating}
+            className={cn(
+              'w-12 h-12 rounded-xl transition-all relative',
+              ttsAudioUrl
+                ? isTtsPlaying
+                  ? 'text-green-400 bg-green-400/10 hover:bg-green-400/20'
+                  : 'text-primary bg-primary/10 hover:bg-primary/20'
+                : 'text-white/50 hover:text-primary hover:bg-primary/10',
+            )}
+            title={
+              ttsAudioUrl ? (isTtsPlaying ? '暂停' : '播放语音') : '生成语音'
+            }
           >
-            {isFullScriptCopied ? (
-              <Check className="w-5 h-5 text-green-500" />
+            {isTtsGenerating ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : ttsAudioUrl ? (
+              isTtsPlaying ? (
+                <Pause className="w-5 h-5" />
+              ) : (
+                <Play className="w-5 h-5 ml-0.5" />
+              )
             ) : (
-              <Copy className="w-5 h-5" />
+              <AudioWaveform className="w-5 h-5" />
             )}
           </Button>
-          <div className="h-px w-8 mx-auto bg-white/5" />
 
-          {/* TTS 语音合成与播放控制 */}
-          <div className="flex flex-col gap-2 items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={ttsAudioUrl ? handlePlayPauseTts : handleGenerateTts}
-              disabled={isTtsGenerating}
-              className={cn(
-                'w-12 h-12 rounded-xl transition-all relative',
-                ttsAudioUrl
-                  ? isTtsPlaying
-                    ? 'text-green-400 bg-green-400/10 hover:bg-green-400/20'
-                    : 'text-primary bg-primary/10 hover:bg-primary/20'
-                  : 'text-white/50 hover:text-primary hover:bg-primary/10',
-              )}
-              title={
-                ttsAudioUrl ? (isTtsPlaying ? '暂停' : '播放语音') : '生成语音'
-              }
-            >
-              {isTtsGenerating ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : ttsAudioUrl ? (
-                isTtsPlaying ? (
-                  <Pause className="w-5 h-5" />
+          {/* 语音合成后的导操作：导出全部 */}
+          {ttsAudioUrl && (
+            <div className="flex flex-col gap-2 animate-in slide-in-from-top-2 fade-in duration-300">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleExportAll}
+                disabled={isExporting}
+                className="w-12 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all"
+                title="导出全部媒体 (ZIP)"
+              >
+                {isExporting ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
-                  <Play className="w-5 h-5 ml-0.5" />
-                )
-              ) : (
-                <AudioWaveform className="w-5 h-5" />
-              )}
-            </Button>
-
-            {/* 语音合成后的导操作：导出全部 */}
-            {ttsAudioUrl && (
-              <div className="flex flex-col gap-2 animate-in slide-in-from-top-2 fade-in duration-300">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleExportAll}
-                  disabled={isExporting}
-                  className="w-12 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all"
-                  title="导出全部媒体 (ZIP)"
-                >
-                  {isExporting ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <Download className="w-4 h-4" />
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleGenerateTts}
-                  disabled={isTtsGenerating}
-                  className="w-12 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all"
-                  title="重新生成语音"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                </Button>
-              </div>
-            )}
-          </div>
+                  <Download className="w-4 h-4" />
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleGenerateTts}
+                disabled={isTtsGenerating}
+                className="w-12 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all"
+                title="重新生成语音"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       <div className="relative w-full flex flex-col items-center h-full">
-        {/* 源码模式退出按钮 */}
-        {isRawMode && (
-          <div className="fixed top-8 right-8 z-50">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsRawMode(false)}
-              className="bg-black/40 backdrop-blur-xl border-white/10 text-primary font-black uppercase tracking-widest text-[10px] rounded-full px-6 h-10"
-            >
-              <LayoutGrid className="w-4 h-4 mr-2" />
-              返回预览
-            </Button>
-          </div>
-        )}
-
         {/* 右侧视频生成任务列表 - 仅预览模式显示 */}
         {!isRawMode && videoGeneratingMap.size > 0 && (
           <div className="fixed right-6 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3 w-64 pointer-events-none">

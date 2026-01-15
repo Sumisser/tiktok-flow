@@ -6,7 +6,10 @@ import type {
   StoryboardItem,
 } from '../types';
 
-import { parseStoryboardTable } from '../lib/storyboard';
+import {
+  parseStoryboardTable,
+  extractJsonFromMarkdown,
+} from '../lib/storyboard';
 import StoryboardEditor from './StoryboardEditor';
 import PromptSidebar from './PromptSidebar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -149,8 +152,10 @@ export default function WorkflowStep({
 
       if (text) {
         const stylePrefix = selectedStyleConfig?.prompt || '';
-        setOutput(text);
-        onUpdate({ output: text, status: 'in-progress' });
+        // 清理 Markdown 格式，提取纯 JSON 保存
+        const cleanedOutput = extractJsonFromMarkdown(text);
+        setOutput(cleanedOutput);
+        onUpdate({ output: cleanedOutput, status: 'in-progress' });
 
         const rawStoryboards = parseStoryboardTable(text);
         const styledStoryboards = rawStoryboards.map((item) => {

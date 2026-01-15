@@ -1,6 +1,196 @@
 import type { StoryboardItem } from '../types';
 
 /**
+ * 从可能包含 Markdown 代码块或 Markdown 表格的文本中提取并转换为纯 JSON 字符串
+ *
+ * 处理以下情况：
+ * 1. 包含 ```json ... ``` 或 ```markdown ... ``` 代码块
+ * 2. 包含 ``` ... ``` 代码块（无语言标识）
+ * 3. Markdown 格式：包含 "### 1. 完整口播文稿" 和表格
+ * 4. 纯文本中嵌入的 JSON 对象
+ * 5. 已经是纯 JSON 字符串
+ *
+ * @returns 纯 JSON 字符串，如果无法提取则返回原始输入
+ */
+export function extractJsonFromMarkdown(input: string): string {
+  if (!input || typeof input !== 'string') return input;
+
+  const trimmed = input.trim();
+
+  // 1. 如果输入已经是有效 JSON 且包含 storyboard，直接返回
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (parsed && parsed.storyboard) {
+      return trimmed;
+    }
+  } catch {
+    // 不是有效 JSON，继续处理
+  }
+
+  // 2. 尝试提取 ```json ... ``` 代码块
+  const jsonCodeBlockMatch = trimmed.match(/```json\s*([\s\S]*?)\s*```/);
+  if (jsonCodeBlockMatch) {
+    const extracted = jsonCodeBlockMatch[1].trim();
+    try {
+      const parsed = JSON.parse(extracted);
+      if (parsed && parsed.storyboard) {
+        return extracted;
+      }
+    } catch {
+      // 提取失败，继续尝试其他方式
+    }
+  }
+
+  // 3. 尝试提取 ``` ... ``` 代码块（可能是 ```markdown 或无标识）
+  const codeBlockMatch = trimmed.match(/```(?:markdown)?\s*([\s\S]*?)\s*```/);
+  if (codeBlockMatch) {
+    const extracted = codeBlockMatch[1].trim();
+    // 先尝试作为 JSON 解析
+    try {
+      const parsed = JSON.parse(extracted);
+      if (parsed && parsed.storyboard) {
+        return extracted;
+      }
+    } catch {
+      // 不是 JSON，尝试作为 Markdown 解析
+      const jsonResult = convertMarkdownToJson(extracted);
+      if (jsonResult) {
+        return jsonResult;
+      }
+    }
+  }
+
+  // 4. 尝试寻找最外层的 {} 作为 JSON 对象
+  const firstBrace = trimmed.indexOf('{');
+  const lastBrace = trimmed.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    const extracted = trimmed.substring(firstBrace, lastBrace + 1);
+    try {
+      const parsed = JSON.parse(extracted);
+      if (parsed && parsed.storyboard) {
+        return extracted;
+      }
+    } catch {
+      // 提取失败
+    }
+  }
+
+  // 5. 检测是否为 Markdown 格式（包含标题或表格）
+  if (isMarkdownFormat(trimmed)) {
+    const jsonResult = convertMarkdownToJson(trimmed);
+    if (jsonResult) {
+      return jsonResult;
+    }
+  }
+
+  return input;
+}
+
+/**
+ * 检测文本是否为 Markdown 格式
+ */
+function isMarkdownFormat(text: string): boolean {
+  // 检查是否包含 Markdown 标题或表格
+  return (
+    text.includes('### ') ||
+    text.includes('## ') ||
+    text.includes('完整口播文稿') ||
+    text.includes('视觉分镜表') ||
+    (text.includes('|') && text.includes('镜号'))
+  );
+}
+
+/**
+ * 将 Markdown 格式转换为 JSON 字符串
+ */
+function convertMarkdownToJson(markdown: string): string | null {
+  try {
+    let fullScript = '';
+    const storyboard: Array<{
+      shot_number: number;
+      script: string;
+      image_prompt: string;
+      video_prompt: string;
+    }> = [];
+
+    // 提取完整口播文稿
+    // 匹配 "### 1. 完整口播文稿" 或类似标题后的内容，直到下一个 ### 或表格开始
+    const scriptMatch = markdown.match(
+      /###?\s*\d*\.?\s*完整口播文稿\s*\n+([\s\S]*?)(?=\n###|\n\||\n##|$)/i,
+    );
+    if (scriptMatch) {
+      fullScript = scriptMatch[1].trim();
+    }
+
+    // 解析表格
+    const lines = markdown.split('\n');
+    let inTable = false;
+
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+
+      // 检测表格开始（表头行）
+      if (
+        trimmedLine.includes('|') &&
+        (trimmedLine.includes('镜号') || trimmedLine.includes('Shot'))
+      ) {
+        inTable = true;
+        continue;
+      }
+
+      // 跳过分隔行
+      if (/^[\s|:-]+$/.test(trimmedLine)) {
+        continue;
+      }
+
+      // 解析表格数据行
+      if (inTable && trimmedLine.includes('|')) {
+        const cells = trimmedLine
+          .split('|')
+          .map((cell) => cell.trim())
+          .filter((cell, index, array) => {
+            // 移除首尾空单元格
+            if (index === 0 && cell === '' && array.length > 2) return false;
+            if (index === array.length - 1 && cell === '') return false;
+            return true;
+          });
+
+        // 跳过全是分隔符的行
+        if (cells.length > 0 && cells.every((cell) => /^[-:]+$/.test(cell))) {
+          continue;
+        }
+
+        if (cells.length >= 2) {
+          const parsedShot = parseInt(cells[0].replace(/[^0-9]/g, ''));
+          const shotNumber = isNaN(parsedShot) ? storyboard.length : parsedShot;
+
+          storyboard.push({
+            shot_number: shotNumber,
+            script: cells[1] || '',
+            image_prompt: cells[2] || '',
+            video_prompt: cells[3] || '-',
+          });
+        }
+      }
+    }
+
+    // 如果成功解析到分镜数据，返回 JSON
+    if (storyboard.length > 0 || fullScript) {
+      const result = {
+        full_script: fullScript,
+        storyboard: storyboard,
+      };
+      return JSON.stringify(result, null, 2);
+    }
+
+    return null;
+  } catch (e) {
+    console.error('Markdown to JSON conversion failed:', e);
+    return null;
+  }
+}
+
+/**
  * 解析 Markdown 表格生成分镜列表
  *
  * 核心规则：
