@@ -134,7 +134,6 @@ export default function StoryboardEditor({
         s.id === itemId ? { ...s, videoUrl: uploadedUrl } : s,
       );
       onUpdateStoryboards(updated);
-      toast.success(`分镜 ${shotNumber} 视频生成并保存成功！`);
     } catch (err) {
       console.error('视频保存失败', err);
       toast.error(`分镜 ${shotNumber} 视频保存失败`);
@@ -215,7 +214,6 @@ export default function StoryboardEditor({
     }
 
     if (videoGeneratingMap.has(item.id)) {
-      toast.info('该分镜正在处理中');
       return;
     }
 
@@ -251,7 +249,6 @@ export default function StoryboardEditor({
       );
       storyboardsRef.current = updated;
       onUpdateStoryboards(updated);
-      toast.success(item.shotNumber === 0 ? '封面生成成功' : '参考图生成成功');
     } catch (error: any) {
       console.error('Image generation failed:', error);
       toast.error(`生成失败: ${error.message || '未知错误'}`);
@@ -277,7 +274,6 @@ export default function StoryboardEditor({
 
     // 如果该 item 已经在生成中，不重复触发
     if (videoGeneratingMap.has(item.id)) {
-      toast.info('该分镜正在生成中，请稍候');
       return;
     }
 
@@ -285,9 +281,6 @@ export default function StoryboardEditor({
     setVideoGeneratingMap((prev) =>
       new Map(prev).set(item.id, { progress: 0, status: 'queued' }),
     );
-
-    // 仅显示一个简单的开始提示，不持续更新
-    toast.info(`分镜 ${item.shotNumber} 开始生成视频...`);
 
     try {
       // 构造图片生成提示词 (包含内容与风格)
@@ -304,7 +297,7 @@ export default function StoryboardEditor({
           imageUrl: item.imageUrl || undefined, // 现有的参考图（如果有）
           model: 'sora-2',
           seconds: 10,
-          size: '960x720',
+          size: '1280x720',
         },
         async (progress, status, extraData) => {
           setVideoGeneratingMap((prev) =>
@@ -335,8 +328,6 @@ export default function StoryboardEditor({
               );
               storyboardsRef.current = updated; // 立即更新 Ref 防止后续状态不同步
               onUpdateStoryboards(updated);
-
-              toast.success(`分镜 ${item.shotNumber} 参考图已保存`);
             } catch (err) {
               console.error('自动保存参考图失败:', err);
             }
@@ -840,80 +831,117 @@ export default function StoryboardEditor({
       </div>
 
       <div className="relative w-full flex flex-col items-center h-full">
-        {/* 顶部居中的生成进度提示 - 恢复至顶部视觉焦点 */}
+        {/* 右侧竖向悬浮的生成进度指示器 */}
         {!isRawMode && videoGeneratingMap.size > 0 && (
-          <div className="fixed top-18 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 pointer-events-none">
-            <div
-              className="flex items-center gap-2.5 px-3 py-1 rounded-full backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300 pointer-events-auto"
-              style={{
-                background:
-                  'linear-gradient(135deg, rgba(15, 10, 30, 0.85) 0%, rgba(30, 20, 50, 0.8) 100%)',
-                boxShadow:
-                  '0 4px 20px rgba(139, 92, 246, 0.25), inset 0 1px 0 rgba(255,255,255,0.1)',
-                border: '1px solid rgba(139, 92, 246, 0.5)',
-              }}
-            >
-              {/* 流光效果 */}
-              <div
-                className="absolute inset-0 rounded-full overflow-hidden"
-                style={{
-                  background:
-                    'linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)',
-                  animation: 'shimmer 2s infinite',
-                }}
-              />
+          <div className="fixed right-6 top-1/2 -translate-y-1/2 z-[60] flex flex-col gap-4 items-end pointer-events-none">
+            {Array.from(videoGeneratingMap.entries()).map(([id, state]) => {
+              const item = storyboards.find((s) => s.id === id);
+              if (!item) return null;
 
-              {/* 魔力图标 */}
-              <div className="relative flex-shrink-0">
-                <Loader2 className="w-4 h-4 text-primary animate-spin" />
-              </div>
+              const isImage =
+                state.status.includes('image') ||
+                state.status.includes('reference');
+              const themeColor = isImage ? '#3b82f6' : '#8b5cf6';
 
-              {/* 任务列表 - 水平排列 */}
-              <div className="flex items-center gap-3">
-                {Array.from(videoGeneratingMap.entries()).map(
-                  ([id, state], index) => {
-                    const item = storyboards.find((s) => s.id === id);
-                    if (!item) return null;
+              return (
+                <div
+                  key={id}
+                  className="group relative flex items-center justify-end pointer-events-auto"
+                >
+                  {/* 状态详情悬浮标签 */}
+                  <div className="absolute right-12 px-2.5 py-1.5 bg-black/80 backdrop-blur-xl rounded-lg border border-white/10 text-[10px] text-white/90 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0 shadow-2xl">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-black uppercase tracking-widest text-[#8b5cf6]">
+                        {state.status === 'queued'
+                          ? '排队中'
+                          : state.status.includes('image')
+                            ? '图片生成'
+                            : state.status.includes('video')
+                              ? '视频生成'
+                              : '媒体处理'}
+                      </span>
+                      <span className="text-white/40">
+                        {state.progress}% 已完成
+                      </span>
+                    </div>
+                  </div>
 
-                    const statusEmoji =
-                      state.status === 'queued'
-                        ? '⏳'
-                        : state.status === 'generating_image'
-                          ? '🖼️'
-                          : state.status === 'generating_video'
-                            ? '🎬'
-                            : state.status === 'uploading'
-                              ? '💾'
-                              : '⚡';
+                  {/* 环形进度组件 - 极简缩小版 */}
+                  <div
+                    className={cn(
+                      'relative w-10 h-10 flex items-center justify-center group/circle transition-all duration-300 hover:scale-110',
+                      state.status !== 'queued' &&
+                        'drop-shadow-[0_0_8px_rgba(var(--theme-color-rgb),0.5)]',
+                    )}
+                    style={
+                      {
+                        // @ts-ignore
+                        '--theme-color-rgb': isImage
+                          ? '59, 130, 246'
+                          : '139, 92, 246',
+                      } as any
+                    }
+                  >
+                    {/* 活跃状态的发光扩散层 */}
+                    {state.status !== 'queued' && (
+                      <div className="absolute inset-0 rounded-full animate-ping opacity-20 bg-[rgb(var(--theme-color-rgb))]" />
+                    )}
 
-                    return (
-                      <div key={id} className="flex items-center gap-1.5">
-                        {index > 0 && <span className="text-white/20">·</span>}
-                        <span className="text-[10px]">{statusEmoji}</span>
-                        <span className="text-xs font-bold text-white/90 tabular-nums">
-                          #{item.shotNumber}
-                        </span>
-                        <div className="w-8 h-1 bg-white/10 rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all duration-300"
-                            style={{
-                              width: `${state.progress}%`,
-                              background:
-                                'linear-gradient(90deg, #8b5cf6, #3b82f6)',
-                            }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  },
-                )}
-              </div>
+                    <svg
+                      className={cn(
+                        'w-10 h-10 transform -rotate-90',
+                        state.status !== 'queued' &&
+                          'animate-[spin_4s_linear_infinite]',
+                      )}
+                    >
+                      {/* 背景环 */}
+                      <circle
+                        cx="20"
+                        cy="20"
+                        r="16"
+                        fill="none"
+                        stroke="rgba(255,255,255,0.1)"
+                        strokeWidth="3"
+                      />
+                      {/* 进度环 */}
+                      <circle
+                        cx="20"
+                        cy="20"
+                        r="16"
+                        fill="none"
+                        stroke={themeColor}
+                        strokeWidth="3"
+                        strokeDasharray={2 * Math.PI * 16}
+                        style={{
+                          strokeDashoffset:
+                            2 * Math.PI * 16 -
+                            (state.progress / 100) * (2 * Math.PI * 16),
+                          transition: 'stroke-dashoffset 0.5s ease-out',
+                        }}
+                        strokeLinecap="round"
+                        className={cn(
+                          state.status !== 'queued' && 'animate-pulse',
+                        )}
+                      />
+                    </svg>
 
-              {/* 总体状态 */}
-              <span className="text-[10px] text-white/50 font-medium pl-2 border-l border-white/10">
-                {videoGeneratingMap.size} 个任务
-              </span>
-            </div>
+                    {/* 中心镜号标识 */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      {state.status !== 'queued' &&
+                      state.status !== 'completed' ? (
+                        <Loader2 className="w-2.5 h-2.5 text-white/40 animate-spin absolute top-1" />
+                      ) : null}
+                      <span className="text-[10px] font-black text-white leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                        S{item.shotNumber}
+                      </span>
+                      {state.status === 'queued' && (
+                        <div className="w-1 h-1 bg-amber-500 rounded-full mt-0.5 animate-pulse" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -1153,8 +1181,8 @@ export default function StoryboardEditor({
 
                           {/* 媒体与提示词区域 - 左右布局 */}
                           <div className="flex-1 flex overflow-hidden">
-                            {/* 左侧：媒体预览区（更宽） */}
-                            <div className="flex-[3] p-1 flex items-stretch">
+                            {/* 左侧：媒体预览区 */}
+                            <div className="flex-[2] p-1 flex items-stretch">
                               <div className="w-full overflow-hidden relative group/media">
                                 {mediaViewMode === 'video' ? (
                                   /* 视频视图 */
@@ -1325,7 +1353,7 @@ export default function StoryboardEditor({
                             </div>
 
                             {/* 右侧：仅显示当前模式对应的提示词 */}
-                            <div className="flex-1 p-3 bg-black/40 flex flex-col gap-3 overflow-y-auto min-w-[260px] max-w-[320px]">
+                            <div className="flex-1 p-3 bg-black/40 flex flex-col gap-3 overflow-y-auto min-w-[280px] max-w-[450px]">
                               {mediaViewMode === 'image'
                                 ? /* 图片模式：显示画面提示词 */
                                   item.imagePrompt && (

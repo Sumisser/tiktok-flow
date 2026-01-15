@@ -13,7 +13,7 @@ const LINGYA_API_URL = 'https://api.lingyaai.cn';
 export interface ImageGenerateRequest {
   prompt: string;
   model: 'nano-banana' | 'banana-pro';
-  size: '1024x1024' | '960x720' | '720x1280';
+  size: '1024x1024' | '1280x720' | '720x1280';
 }
 
 export interface ImageTaskResponse {
@@ -33,7 +33,7 @@ export async function generateImageBanana(
     model: 'qwen-image-max',
     prompt: prompt,
     n: 1,
-    size: '960x720' as any,
+    size: '1280x720' as any,
   });
 
   const imageUrl = response.data?.[0]?.url;
@@ -53,7 +53,7 @@ export interface VideoGenerateRequest {
   imageUrl?: string;
   model?: 'sora-2' | 'sora-2-pro';
   seconds?: 4 | 10 | 15 | 20 | 25;
-  size?: '960x720' | '720x1280' | '1792x1024' | '1024x1792';
+  size?: '1280x720' | '720x1280' | '1792x1024' | '1024x1792';
 }
 
 export interface VideoTaskResponse {
@@ -87,7 +87,7 @@ export async function createVideoTask(
   formData.append('prompt', req.prompt);
   formData.append('model', req.model || 'sora-2');
   formData.append('seconds', String(req.seconds || 10));
-  formData.append('size', req.size || '960x720');
+  formData.append('size', req.size || '1280x720');
 
   // 如果有图片参考，添加图片 URL
   if (req.imageUrl) {
