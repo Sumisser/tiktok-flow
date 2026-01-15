@@ -110,9 +110,12 @@ export default function TaskCard({ task, onDelete }: TaskCardProps) {
 
           {/* 右侧：信息区 */}
           <div className="flex flex-col justify-center flex-1 min-w-0 pr-10">
-            <h3 className="text-[15px] font-black text-white line-clamp-2 group-hover:text-primary transition-colors tracking-tight leading-snug mb-2">
-              {task.title}
-            </h3>
+            {/* 标题区：使用最小高度确保持续高度一致性 */}
+            <div className="min-h-[40px] flex items-center mb-1">
+              <h3 className="text-[15px] font-black text-white line-clamp-2 group-hover:text-primary transition-colors tracking-tight leading-snug">
+                {task.title}
+              </h3>
+            </div>
 
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-widest text-white/30">
@@ -120,23 +123,28 @@ export default function TaskCard({ task, onDelete }: TaskCardProps) {
                 {formatDate(task.updatedAt)}
               </div>
 
-              {task.tags && task.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-0.5">
-                  {task.tags.slice(0, 2).map((tag, i) => (
-                    <span
-                      key={i}
-                      className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary/80 border border-primary/10 rounded-md font-bold truncate max-w-[80px]"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                  {task.tags.length > 2 && (
-                    <span className="text-[10px] text-white/20 font-bold">
-                      +{task.tags.length - 2}
-                    </span>
-                  )}
-                </div>
-              )}
+              {/* 标签区域：始终占据固定高度空间 */}
+              <div className="flex flex-wrap gap-1.5 h-5 items-center">
+                {task.tags && task.tags.length > 0 ? (
+                  <>
+                    {task.tags.slice(0, 2).map((tag, i) => (
+                      <span
+                        key={i}
+                        className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary/80 border border-primary/10 rounded-md font-bold truncate max-w-[80px]"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                    {task.tags.length > 2 && (
+                      <span className="text-[10px] text-white/20 font-bold">
+                        +{task.tags.length - 2}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <div className="h-5 w-1 invisible" />
+                )}
+              </div>
             </div>
           </div>
 
