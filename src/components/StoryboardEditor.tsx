@@ -24,7 +24,6 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  ArrowLeft,
   Loader2,
   AudioWaveform,
   Play,
@@ -46,7 +45,6 @@ interface StoryboardEditorProps {
   onUpdateStoryboards: (storyboards: StoryboardItem[]) => void;
   isRawMode: boolean;
   setIsRawMode: (mode: boolean) => void;
-  onBack?: () => void;
   onReset?: () => void;
   ttsAudioUrl?: string;
   onUpdateTtsAudioUrl?: (url: string) => void;
@@ -60,7 +58,6 @@ export default function StoryboardEditor({
   onUpdateStoryboards,
   isRawMode,
   setIsRawMode,
-  onBack,
   ttsAudioUrl,
   onUpdateTtsAudioUrl,
   taskTitle,
@@ -749,16 +746,6 @@ export default function StoryboardEditor({
         <Button
           variant="ghost"
           size="icon"
-          onClick={onBack}
-          className="w-12 h-12 rounded-xl text-white/50 hover:text-primary hover:bg-primary/10 transition-all"
-          title="返回输入"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div className="h-px w-8 mx-auto bg-white/5" />
-        <Button
-          variant="ghost"
-          size="icon"
           onClick={() => setIsRawMode(!isRawMode)}
           className={cn(
             'w-12 h-12 rounded-xl transition-all',
@@ -854,7 +841,7 @@ export default function StoryboardEditor({
       </div>
 
       <div className="relative w-full flex flex-col items-center h-full">
-        {/* 顶部居中的生成进度提示 - 水平紧凑布局 */}
+        {/* 顶部居中的生成进度提示 - 恢复至顶部视觉焦点 */}
         {!isRawMode && videoGeneratingMap.size > 0 && (
           <div className="fixed top-18 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 pointer-events-none">
             <div
@@ -1369,20 +1356,20 @@ export default function StoryboardEditor({
                                         </Button>
                                       </div>
                                       <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-1 custom-scrollbar">
-                                        <div className="space-y-1">
-                                          <div className="text-[8px] text-blue-400/40 font-bold uppercase tracking-wider">
+                                        <div className="space-y-1.5">
+                                          <div className="text-[9px] text-blue-400/80 font-black uppercase tracking-[0.15em]">
                                             内容 (Content)
                                           </div>
-                                          <p className="text-[11px] text-blue-100/60 leading-relaxed font-mono">
+                                          <p className="text-[12px] text-white/90 leading-relaxed font-medium">
                                             {item.imagePrompt}
                                           </p>
                                         </div>
                                         {item.stylePrompt && (
-                                          <div className="space-y-1 pt-2 border-t border-white/5">
-                                            <div className="text-[8px] text-blue-400/40 font-bold uppercase tracking-wider">
+                                          <div className="space-y-1.5 pt-3 border-t border-white/10">
+                                            <div className="text-[9px] text-blue-300/80 font-black uppercase tracking-[0.15em]">
                                               风格 (Style)
                                             </div>
-                                            <p className="text-[10px] text-blue-400/30 leading-relaxed font-mono italic">
+                                            <p className="text-[11px] text-blue-200/70 leading-relaxed font-medium italic">
                                               {item.stylePrompt}
                                             </p>
                                           </div>
@@ -1402,7 +1389,7 @@ export default function StoryboardEditor({
                                           size="icon"
                                           onClick={() =>
                                             handleCopy(
-                                              item.videoPrompt!,
+                                              `${item.imagePrompt}\n\nStyle: ${item.stylePrompt || 'Default'}\n\nMotion: ${item.videoPrompt}`,
                                               `vp-${item.id}`,
                                             )
                                           }
@@ -1416,11 +1403,34 @@ export default function StoryboardEditor({
                                         </Button>
                                       </div>
                                       <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-1 custom-scrollbar">
-                                        <div className="space-y-1">
-                                          <div className="text-[8px] text-purple-400/40 font-bold uppercase tracking-wider">
+                                        {/* 内容部分 */}
+                                        <div className="space-y-1.5">
+                                          <div className="text-[9px] text-blue-400/80 font-black uppercase tracking-[0.15em]">
+                                            内容 (Content)
+                                          </div>
+                                          <p className="text-[12px] text-white/90 leading-relaxed font-medium">
+                                            {item.imagePrompt}
+                                          </p>
+                                        </div>
+
+                                        {/* 风格部分 */}
+                                        {item.stylePrompt && (
+                                          <div className="space-y-1.5 pt-3 border-t border-white/10">
+                                            <div className="text-[9px] text-blue-300/80 font-black uppercase tracking-[0.15em]">
+                                              风格 (Style)
+                                            </div>
+                                            <p className="text-[11px] text-blue-200/70 leading-relaxed font-medium italic">
+                                              {item.stylePrompt}
+                                            </p>
+                                          </div>
+                                        )}
+
+                                        {/* 动态部分 */}
+                                        <div className="space-y-1.5 pt-3 border-t border-white/10">
+                                          <div className="text-[9px] text-purple-400/80 font-black uppercase tracking-[0.15em]">
                                             动态 (Motion)
                                           </div>
-                                          <p className="text-[11px] text-purple-100/60 leading-relaxed font-mono">
+                                          <p className="text-[12px] text-white/90 leading-relaxed font-medium">
                                             {item.videoPrompt}
                                           </p>
                                         </div>

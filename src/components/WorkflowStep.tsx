@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { domesticOpenai } from '@/lib/ai';
 
 import type {
@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
-import { Check, ListTodo, Wand2, ArrowRight } from 'lucide-react';
+import { ListTodo, Wand2, X } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,6 +44,10 @@ interface WorkflowStepProps {
   ttsAudioUrl?: string;
   onUpdateTtsAudioUrl?: (url: string) => void;
   taskTitle: string;
+  showResultView: boolean;
+  setShowResultView: (show: boolean) => void;
+  isGenerating: boolean;
+  setIsGenerating: (generating: boolean) => void;
 }
 
 export default function WorkflowStep({
@@ -55,20 +59,20 @@ export default function WorkflowStep({
   ttsAudioUrl,
   onUpdateTtsAudioUrl,
   taskTitle,
+  showResultView,
+  setShowResultView,
+  isGenerating,
+  setIsGenerating,
 }: WorkflowStepProps) {
   const [input, setInput] = useState(step.input);
   const [output, setOutput] = useState(step.output);
-  const [isCopied, setIsCopied] = useState(false);
   const [isPromptSidebarOpen, setIsPromptSidebarOpen] = useState(false);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [isStoryboardRawMode, setIsStoryboardRawMode] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  // 视图切换：有分镜内容时默认显示结果视图
-  const [showResultView, setShowResultView] = useState(storyboards.length > 0);
 
   const [selectedModel, setSelectedModel] = useState(MODELS[1].id); // 默认 DeepSeek
   const [streamingText, setStreamingText] = useState(''); // 新增：用于展示流式文本
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Sync state
   useEffect(() => {
@@ -98,61 +102,53 @@ export default function WorkflowStep({
     const stylePlaceholder = '[STYLE_INSTRUCTION]';
     if (finalBasePrompt.includes(stylePlaceholder)) {
       finalBasePrompt = finalBasePrompt.replace(stylePlaceholder, stylePrompt);
-    } else {
-      finalBasePrompt =
-        finalBasePrompt + '\n\n' + `**画面风格要求：**\n${stylePrompt}`;
     }
 
-    const inputPlaceholder = '[USER_INPUT]';
-    if (finalBasePrompt.includes(inputPlaceholder)) {
-      finalBasePrompt = finalBasePrompt.replace(inputPlaceholder, input);
-    } else {
-      finalBasePrompt = finalBasePrompt + '\n' + input;
-    }
-
-    return finalBasePrompt.trim();
+    return finalBasePrompt.replace('[USER_INPUT]', input);
   };
 
   const handleGenerate = async () => {
-    if (!input.trim()) return;
-
-    try {
-      await navigator.clipboard.writeText(getFullPrompt());
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    } catch (err) {
-      console.error('复制失败:', err);
-    }
-
     setIsGenerating(true);
-    setStreamingText('');
-    try {
-      const stream = await domesticOpenai.chat.completions.create({
-        model: selectedModel,
-        messages: [
-          {
-            role: 'user',
-            content: getFullPrompt(),
-          },
-        ],
-        temperature: 0.7,
-        stream: true,
-      });
+    setStreamingText(''); // 重置流式文本
+    setShowResultView(false); // 生成时切换到输入预览视图
 
+    // 创建新的中止控制器
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    try {
       let fullText = '';
-      for await (const chunk of stream) {
+      const response = await domesticOpenai.chat.completions.create(
+        {
+          model: selectedModel,
+          messages: [
+            {
+              role: 'system',
+              content:
+                '你是一个专业的视频分镜脚本专家。请根据用户的需求，生成结构化的分镜脚本。',
+            },
+            {
+              role: 'user',
+              content: getFullPrompt(),
+            },
+          ],
+          stream: true,
+        },
+        {
+          signal: controller.signal,
+        },
+      );
+
+      for await (const chunk of response) {
         const content = chunk.choices[0]?.delta?.content || '';
-        if (content) {
-          fullText += content;
-          setStreamingText(fullText);
-        }
+        fullText += content;
+        setStreamingText(fullText);
       }
 
       const text = fullText;
 
       if (text) {
         const stylePrefix = selectedStyleConfig?.prompt || '';
-        // 清理 Markdown 格式，提取纯 JSON 保存
         const cleanedOutput = extractJsonFromMarkdown(text);
         setOutput(cleanedOutput);
         onUpdate({ output: cleanedOutput, status: 'in-progress' });
@@ -172,11 +168,29 @@ export default function WorkflowStep({
         }
         setShowResultView(true);
       }
-    } catch (error) {
-      console.error('AI 生成失败:', error);
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('生成已手动终止');
+      } else {
+        console.error('AI 生成失败:', error);
+      }
     } finally {
       setIsGenerating(false);
+      abortControllerRef.current = null;
     }
+  };
+
+  const handleCancel = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      setIsGenerating(false);
+      setShowResultView(false);
+    }
+  };
+
+  const handleSavePrompt = (newPrompt: string) => {
+    onUpdate({ basePrompt: newPrompt });
+    setIsPromptSidebarOpen(false);
   };
 
   const handleResetClick = () => {
@@ -193,9 +207,9 @@ export default function WorkflowStep({
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {isGenerating ? (
-        <GeneratingView streamingText={streamingText} />
+        <GeneratingView streamingText={streamingText} onCancel={handleCancel} />
       ) : showResultView && storyboards.length > 0 ? (
         <div className="relative w-full">
           <StoryboardEditor
@@ -205,7 +219,6 @@ export default function WorkflowStep({
             onUpdateStoryboards={onUpdateStoryboards}
             isRawMode={isStoryboardRawMode}
             setIsRawMode={setIsStoryboardRawMode}
-            onBack={() => setShowResultView(false)}
             onReset={handleResetClick}
             ttsAudioUrl={ttsAudioUrl}
             onUpdateTtsAudioUrl={onUpdateTtsAudioUrl}
@@ -227,23 +240,12 @@ export default function WorkflowStep({
                     创意分镜生成
                   </h2>
                   <p className="text-[10px] text-muted-foreground font-medium mt-0.5">
-                    输入想法，AI 自动生成视觉分镜与提示词
+                    输入你的想法，AI 将自动生成视觉预览与分镜提示词
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
-                {storyboards.length > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowResultView(true)}
-                    className="h-8 text-[10px] font-black uppercase tracking-widest text-primary border-primary/20 hover:bg-primary/10 rounded-lg px-3 transition-all"
-                  >
-                    查看结果
-                    <ArrowRight className="w-3 h-3 ml-1.5" />
-                  </Button>
-                )}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -254,7 +256,7 @@ export default function WorkflowStep({
                   className="h-8 text-xs font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg px-3 transition-all"
                 >
                   <ListTodo className="w-3.5 h-3.5 mr-1.5" />
-                  查看 System Prompt
+                  查看系统提示词
                 </Button>
               </div>
             </CardHeader>
@@ -268,7 +270,7 @@ export default function WorkflowStep({
                 <Textarea
                   value={input}
                   onChange={(e) => handleInputChange(e.target.value)}
-                  placeholder="例如：一个年轻人在下雨的城市街道上奔跑，突然回头看到了..."
+                  placeholder="例如：一个年轻人在雨后的城市街道上奔跑..."
                   className="flex-1 min-h-[100px] bg-black/20 border-white/10 focus:border-primary/50 focus:ring-primary/20 placeholder:text-white/10 resize-none rounded-xl p-3 text-xs leading-relaxed font-medium transition-all shadow-inner text-white"
                 />
               </div>
@@ -285,33 +287,28 @@ export default function WorkflowStep({
                 />
 
                 <Button
-                  onClick={handleGenerate}
-                  disabled={!input.trim() || isGenerating}
+                  onClick={isGenerating ? handleCancel : handleGenerate}
+                  disabled={!input.trim()}
                   className={cn(
                     'w-full h-12 rounded-xl text-xs font-black tracking-widest transition-all duration-300 shadow-lg uppercase relative overflow-hidden group',
-                    input.trim() && !isGenerating
-                      ? 'bg-gradient-to-r from-primary to-violet-600 text-white hover:scale-[1.01] hover:shadow-primary/25 border border-white/10'
+                    input.trim()
+                      ? isGenerating
+                        ? 'bg-red-500/90 hover:bg-red-600 text-white'
+                        : 'bg-gradient-to-r from-primary to-violet-600 text-white hover:scale-[1.01] hover:shadow-primary/25 border border-white/10'
                       : 'bg-muted text-muted-foreground',
                   )}
                 >
                   <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
                   {isGenerating ? (
                     <div className="flex items-center gap-3">
-                      <span className="relative flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
-                      </span>
-                      <span>正在进行 AI 创意构思...</span>
+                      <X className="w-4 h-4" />
+                      停止生成
                     </div>
-                  ) : isCopied ? (
-                    <>
-                      <Check className="w-5 h-5 mr-3" />
-                      已复制提示词 (即将开始)
-                    </>
                   ) : (
-                    <>
-                      <Wand2 className="w-5 h-5 mr-3" />✨ AI 一键生成影片分镜
-                    </>
+                    <div className="flex items-center gap-2">
+                      <Wand2 className="w-4 h-4" />
+                      生成视觉分镜
+                    </div>
                   )}
                 </Button>
               </div>
@@ -324,24 +321,28 @@ export default function WorkflowStep({
         isOpen={isPromptSidebarOpen}
         onClose={() => setIsPromptSidebarOpen(false)}
         basePrompt={step.basePrompt}
-        onSave={(newPrompt) => onUpdate({ basePrompt: newPrompt })}
+        onSave={handleSavePrompt}
       />
 
       <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-[400px] glass-card border-primary/20 shadow-2xl p-6 z-[100] bg-black/60 backdrop-blur-3xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>确认重置</AlertDialogTitle>
-            <AlertDialogDescription>
-              确定要重置当前步骤吗？所有输入和生成结果将被清空。
+            <AlertDialogTitle className="text-xl font-black text-white tracking-tight">
+              重置提示词与结果?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground font-medium py-3 text-sm">
+              此操作将清除您当前所有的输入内容和已生成的全部分镜数据。该操作无法撤销。
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogFooter className="gap-3">
+            <AlertDialogCancel className="rounded-xl border-white/5 bg-white/5 hover:bg-white/10 text-white h-11 px-6 font-bold">
+              取消
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmReset}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="rounded-xl bg-destructive hover:bg-destructive/90 text-white border-none shadow-lg shadow-destructive/20 h-11 px-6 font-bold"
             >
-              重置
+              确认重置
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -1,11 +1,15 @@
 import { useRef, useEffect } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, X } from 'lucide-react';
 
 interface GeneratingViewProps {
   streamingText: string;
+  onCancel?: () => void;
 }
 
-export default function GeneratingView({ streamingText }: GeneratingViewProps) {
+export default function GeneratingView({
+  streamingText,
+  onCancel,
+}: GeneratingViewProps) {
   const streamingContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -86,6 +90,22 @@ export default function GeneratingView({ streamingText }: GeneratingViewProps) {
                   正在尝试感知您的创意初衷...
                 </span>
               </div>
+            </div>
+          )}
+
+          {/* 取消按钮 */}
+          {onCancel && (
+            <div className="pt-6 animate-in fade-in slide-in-from-top-4 duration-1000 delay-500">
+              <button
+                onClick={onCancel}
+                className="group relative px-8 py-3 rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95"
+              >
+                <div className="absolute inset-0 bg-white/5 backdrop-blur-md border border-white/10 group-hover:bg-white/10 transition-colors" />
+                <div className="relative flex items-center gap-2 text-white/40 group-hover:text-white/80 transition-colors font-black text-xs uppercase tracking-[0.2em]">
+                  <X className="w-3.5 h-3.5" />
+                  停止生成 / Cancel
+                </div>
+              </button>
             </div>
           )}
         </div>

@@ -6,7 +6,17 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, Edit3, Check, X, Home, Tag } from 'lucide-react';
+import {
+  ChevronLeft,
+  Edit3,
+  Check,
+  X,
+  Home,
+  Tag,
+  ListTodo,
+  LayoutGrid,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function Workflow() {
   const { id } = useParams<{ id: string }>();
@@ -17,18 +27,25 @@ export default function Workflow() {
     updateStoryboards,
     isLoading,
     wallpaperUrl,
-    wallpaperAttribution,
   } = useTasks();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState('');
   const [isAddingTag, setIsAddingTag] = useState(false);
   const [tagInput, setTagInput] = useState('');
 
+  // 视图与生成状态关联
+  const [showResultView, setShowResultView] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+
   const task = getTask(id || '');
 
   useEffect(() => {
     if (task) {
       setTitleInput(task.title);
+      // 如果有分镜数据且不是正在生成，默认显示结果
+      if (task.storyboards && task.storyboards.length > 0 && !isGenerating) {
+        setShowResultView(true);
+      }
     }
   }, [task?.id]);
 
@@ -106,13 +123,6 @@ export default function Workflow() {
     }
   };
 
-  // const completedCount = task.steps.filter(
-  //   (s) => s.status === "completed"
-  // ).length;
-  // const progressPercent = Math.round(
-  //   (completedCount / task.steps.length) * 100
-  // );
-
   return (
     <div className="h-screen overflow-hidden relative text-white">
       {/* 背景图片 */}
@@ -124,187 +134,186 @@ export default function Workflow() {
               backgroundImage: `url(${wallpaperUrl})`,
             }}
           />
-          {/* 浅色遮罩层 */}
-          <div className="fixed inset-0 -z-10 bg-gradient-to-b from-black/20 via-black/10 to-black/30" />
+          {/* 遮罩层 */}
+          <div className="fixed inset-0 -z-10 bg-gradient-to-b from-black/40 via-black/20 to-black/50" />
         </>
       )}
+
       {/* 头部 */}
-      <header className="fixed top-0 left-0 right-0 border-b border-primary/20 py-3 px-4 md:px-12 lg:px-24  overflow-hidden z-20 bg-background/80 backdrop-blur-md">
+      <header className="fixed top-0 left-0 right-0 border-b border-primary/20 py-3 px-4 md:px-12 lg:px-24 overflow-hidden z-20 bg-black/40 backdrop-blur-xl">
         {/* 头部装饰背景 */}
-        <div className="absolute top-0 left-1/4 w-64 h-full bg-primary/10 blur-[100px] -z-10 animate-pulse" />
+        <div className="absolute top-0 left-1/4 w-64 h-full bg-primary/5 blur-[100px] -z-10 animate-pulse" />
 
-        <div className="max-w-6xl mx-auto flex items-center gap-6">
-          <Button
-            asChild
-            variant="ghost"
-            size="icon"
-            className="rounded-xl hover:bg-primary/10 shrink-0 h-10 w-10 border border-border group transition-all shadow-sm"
-          >
-            <Link to="/">
-              <Home className="w-5 h-5 group-hover:scale-110 transition-transform" />
-            </Link>
-          </Button>
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-6">
+          {/* 左侧：首页和标题 */}
+          <div className="flex items-center gap-4 min-w-0 flex-1">
+            <Button
+              asChild
+              variant="ghost"
+              size="icon"
+              className="rounded-xl hover:bg-white/5 shrink-0 h-10 w-10 border border-white/10 group transition-all"
+            >
+              <Link to="/">
+                <Home className="w-5 h-5 group-hover:scale-110 transition-transform text-white/70" />
+              </Link>
+            </Button>
 
-          <div className="flex-1 min-w-0">
-            {isEditingTitle ? (
-              <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-4 duration-500">
-                <Input
-                  value={titleInput}
-                  onChange={(e) => setTitleInput(e.target.value)}
-                  onKeyDown={handleTitleKeyDown}
-                  autoFocus
-                  className="text-2xl font-black bg-secondary border-primary/20 h-11 px-5 rounded-xl ring-primary/20 shadow-inner"
-                />
-                <Button
-                  onClick={handleTitleSave}
-                  className="h-11 px-5 rounded-xl shadow-xl shadow-primary/20 font-black tracking-wider uppercase text-sm"
-                >
-                  <Check className="w-4 h-4 mr-1.5" />
-                  保存
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => setIsEditingTitle(false)}
-                  className="h-11 w-11 rounded-xl text-muted-foreground hover:bg-secondary border border-border"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 group min-w-0">
-                  <h1 className="text-2xl font-black tracking-tight truncate text-gradient text-neon">
+            <div className="min-w-0 flex-1">
+              {isEditingTitle ? (
+                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-4">
+                  <Input
+                    value={titleInput}
+                    onChange={(e) => setTitleInput(e.target.value)}
+                    onKeyDown={handleTitleKeyDown}
+                    autoFocus
+                    className="text-xl font-black bg-black/40 border-primary/20 h-10 px-4 rounded-xl text-white"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleTitleSave}
+                    className="h-10 rounded-xl px-4"
+                  >
+                    <Check className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 group max-w-full">
+                  <h1 className="text-xl font-black tracking-tight truncate text-white/90">
                     {task.title}
                   </h1>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setIsEditingTitle(true)}
-                    className="w-9 h-9 md:opacity-0 group-hover:opacity-100 transition-all rounded-xl hover:bg-primary/5 hover:text-primary border border-border/50"
+                    className="w-8 h-8 opacity-0 group-hover:opacity-100 transition-all rounded-lg hover:bg-white/5"
                   >
-                    <Edit3 className="w-4 h-4" />
+                    <Edit3 className="w-3.5 h-3.5 text-white/40" />
                   </Button>
                 </div>
+              )}
+            </div>
+          </div>
 
-                {/* 标签管理区域 - 居中对齐 */}
-                <div className="flex flex-wrap items-center justify-end gap-2 animate-in fade-in slide-in-from-right-4 duration-500 shrink-0">
-                  {task.tags?.map((tag, index) => (
-                    <Badge
-                      key={index}
-                      variant="secondary"
-                      className="gap-1 pl-2.5 pr-1.5 py-0.5 h-6 text-[10px] bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors cursor-default"
-                    >
-                      {tag}
-                      <button
-                        onClick={() => {
-                          const newTags = task.tags?.filter(
-                            (_, i) => i !== index,
-                          );
-                          updateTask(task.id, { tags: newTags });
-                        }}
-                        className="ml-1 hover:bg-primary/20 rounded-full p-0.5 transition-colors"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  ))}
+          {/* 右侧：标签管理与视图切换 */}
+          <div className="flex items-center gap-4 shrink-0">
+            <div className="flex flex-wrap items-center justify-end gap-2 animate-in fade-in slide-in-from-right-4 duration-500">
+              {task.tags?.map((tag, index) => (
+                <Badge
+                  key={index}
+                  variant="secondary"
+                  className="gap-1 pl-2.5 pr-1.5 py-0.5 h-6 text-[10px] bg-white/5 text-white/60 border-white/10 hover:bg-white/10 transition-colors"
+                >
+                  {tag}
+                  <button
+                    onClick={() => {
+                      const newTags = task.tags?.filter((_, i) => i !== index);
+                      updateTask(task.id, { tags: newTags });
+                    }}
+                    className="ml-1 hover:bg-red-500/20 rounded-full p-0.5 transition-colors"
+                  >
+                    <X className="w-3 h-3 text-white/30" />
+                  </button>
+                </Badge>
+              ))}
 
-                  <div className="relative group/tag">
-                    {isAddingTag ? (
-                      <div className="flex items-center gap-2">
-                        <Input
-                          value={tagInput}
-                          onChange={(e) => setTagInput(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && tagInput.trim()) {
-                              const newTags = [
-                                ...(task.tags || []),
-                                tagInput.trim(),
-                              ];
-                              updateTask(task.id, { tags: newTags });
-                              setTagInput('');
-                              setIsAddingTag(false);
-                            } else if (e.key === 'Escape') {
-                              setIsAddingTag(false);
-                              setTagInput('');
-                            }
-                          }}
-                          autoFocus
-                          onBlur={() => {
-                            if (!tagInput.trim()) setIsAddingTag(false);
-                          }}
-                          placeholder="输入标签..."
-                          className="h-6 w-24 text-xs bg-black/20 border-white/10 px-2 rounded-lg"
-                        />
-                      </div>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setIsAddingTag(true)}
-                        className="h-6 px-2 text-[10px] font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 border border-transparent hover:border-primary/20 rounded-lg transition-all"
-                      >
-                        <Tag className="w-3 h-3 mr-1.5" />
-                        添加标签
-                      </Button>
-                    )}
-                  </div>
-
-                  {/* Unsplash 归属信息 */}
-                  {wallpaperAttribution && (
-                    <div className="flex items-center gap-1.5 ml-3 px-3 py-1 bg-black/40 backdrop-blur-md rounded-full text-[10px] text-white/80 drop-shadow-md">
-                      <span>Photo by</span>
-                      <a
-                        href={wallpaperAttribution.photographerUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-medium hover:text-white transition-colors"
-                      >
-                        {wallpaperAttribution.photographerName}
-                      </a>
-                      <span>on</span>
-                      <a
-                        href={wallpaperAttribution.unsplashUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-medium hover:text-white transition-colors"
-                      >
-                        Unsplash
-                      </a>
-                    </div>
-                  )}
-                </div>
+              <div className="relative mr-2">
+                {isAddingTag ? (
+                  <Input
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && tagInput.trim()) {
+                        const newTags = [...(task.tags || []), tagInput.trim()];
+                        updateTask(task.id, { tags: newTags });
+                        setTagInput('');
+                        setIsAddingTag(false);
+                      } else if (e.key === 'Escape') {
+                        setIsAddingTag(false);
+                      }
+                    }}
+                    autoFocus
+                    onBlur={() => {
+                      if (!tagInput.trim()) setIsAddingTag(false);
+                    }}
+                    className="h-6 w-24 text-[10px] bg-black/20 border-white/10 px-2 rounded-lg"
+                    placeholder="标签名称..."
+                  />
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsAddingTag(true)}
+                    className="h-6 px-3 text-[10px] font-black text-white/40 hover:text-white/80 hover:bg-white/5 border border-white/5 rounded-lg uppercase tracking-widest"
+                  >
+                    <Tag className="w-3 h-3 mr-1.5" />
+                    添加标签
+                  </Button>
+                )}
               </div>
-            )}
+            </div>
+
+            {/* 视图切换器 */}
+            {!isGenerating &&
+              task.storyboards &&
+              task.storyboards.length > 0 && (
+                <div className="flex items-center bg-white/5 border border-white/10 p-0.5 rounded-xl shadow-2xl backdrop-blur-md ring-1 ring-white/5">
+                  <button
+                    onClick={() => setShowResultView(false)}
+                    className={cn(
+                      'px-3.5 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-2 tracking-[0.1em] uppercase',
+                      !showResultView
+                        ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                        : 'text-white/30 hover:text-white/60 hover:bg-white/5',
+                    )}
+                  >
+                    <ListTodo className="w-3 h-3" />
+                    创意描述
+                  </button>
+                  <button
+                    onClick={() => setShowResultView(true)}
+                    className={cn(
+                      'px-3.5 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-2 tracking-[0.1em] uppercase',
+                      showResultView
+                        ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                        : 'text-white/30 hover:text-white/60 hover:bg-white/5',
+                    )}
+                  >
+                    <LayoutGrid className="w-3 h-3" />
+                    分镜预览
+                  </button>
+                </div>
+              )}
           </div>
         </div>
       </header>
 
       {/* 主要内容 */}
-      <main className="w-full pt-16 h-full overflow-y-auto overflow-x-hidden flex flex-col">
+      <main className="w-full pt-20 h-full overflow-y-auto flex flex-col">
         <div className="flex-1 w-full px-4 md:px-12 lg:px-24 flex flex-col items-center">
-          <div className="w-full max-w-7xl mx-auto my-auto py-8">
-            {task.steps.length > 0 && (
-              <WorkflowStep
-                key={task.steps[0].id}
-                taskId={task.id}
-                step={task.steps[0]}
-                stepNumber={1}
-                prevStepOutput="" // Single step workflow doesn't need prev output
-                onUpdate={(updates) =>
-                  updateStep(task.id, task.steps[0].id, updates)
-                }
-                storyboards={task.storyboards || []}
-                onUpdateStoryboards={(storyboards) =>
-                  updateStoryboards(task.id, storyboards)
-                }
-                ttsAudioUrl={task.ttsAudioUrl}
-                onUpdateTtsAudioUrl={(url) =>
-                  updateTask(task.id, { ttsAudioUrl: url })
-                }
-                taskTitle={task.title}
-              />
-            )}
+          <div className="w-full max-w-7xl mx-auto py-8">
+            <WorkflowStep
+              key={task.steps[0].id}
+              taskId={task.id}
+              step={task.steps[0]}
+              stepNumber={1}
+              prevStepOutput=""
+              onUpdate={(updates) =>
+                updateStep(task.id, task.steps[0].id, updates)
+              }
+              storyboards={task.storyboards || []}
+              onUpdateStoryboards={(storyboards) =>
+                updateStoryboards(task.id, storyboards)
+              }
+              ttsAudioUrl={task.ttsAudioUrl}
+              onUpdateTtsAudioUrl={(url) =>
+                updateTask(task.id, { ttsAudioUrl: url })
+              }
+              taskTitle={task.title}
+              showResultView={showResultView}
+              setShowResultView={setShowResultView}
+              isGenerating={isGenerating}
+              setIsGenerating={setIsGenerating}
+            />
           </div>
         </div>
       </main>
