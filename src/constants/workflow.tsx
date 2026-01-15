@@ -1,11 +1,29 @@
 // Workflow 相关的常量与图标定义
+import qwenLogo from '../assets/qwen.png';
+import deepseekLogo from '../assets/deepseek.png';
+import geminiLogo from '../assets/gemini.png';
+import xaiLogo from '../assets/xai.svg';
+import doubaoLogo from '../assets/doubao.png';
 
 export const MODELS = [
+  {
+    id: 'qwen-flash',
+    name: 'Qwen-Flash',
+    vendor: 'Alibaba',
+    color: '#8b5cf6',
+    logo: qwenLogo,
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
+        <path d="M12 2L4 21h16L12 2z" />
+      </svg>
+    ),
+  },
   {
     id: 'deepseek-v3.2',
     name: 'DeepSeek-V3.2',
     vendor: 'DeepSeek',
     color: '#60a5fa',
+    logo: deepseekLogo,
     icon: (
       <svg viewBox="0 0 1024 1024" className="w-4 h-4" fill="currentColor">
         <path d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm0 820c-205.4 0-372-166.6-372-372s166.6-372 372-372 372 166.6 372 372-166.6 372-372 372z" />
@@ -18,6 +36,7 @@ export const MODELS = [
     name: 'DeepSeek-Think',
     vendor: 'DeepSeek',
     color: '#34d399',
+    logo: deepseekLogo,
     icon: (
       <svg viewBox="0 0 1024 1024" className="w-4 h-4" fill="currentColor">
         <path d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm0 820c-205.4 0-372-166.6-372-372s166.6-372 372-372 372 166.6 372 372-166.6 372-372 372z" />
@@ -26,10 +45,11 @@ export const MODELS = [
     ),
   },
   {
-    id: 'qwen-flash',
-    name: 'Qwen-Flash',
+    id: 'qwen3-8b',
+    name: 'Qwen3-8B',
     vendor: 'Alibaba',
-    color: '#8b5cf6',
+    color: '#a78bfa',
+    logo: qwenLogo,
     icon: (
       <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
         <path d="M12 2L4 21h16L12 2z" />
@@ -37,27 +57,28 @@ export const MODELS = [
     ),
   },
   {
-    id: 'qwen3-8b',
-    name: 'Qwen3-8B',
-    vendor: 'Alibaba',
-    color: '#a78bfa',
-    icon: (
-      <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
-        <path d="M12 2L4 21h16L12 2z" />
-      </svg>
-    ),
+    id: 'gemini-3-flash-preview-search',
+    name: 'Gemini-3',
+    vendor: 'Google',
+    color: '#4285f4',
+    logo: geminiLogo,
+    icon: null,
+  },
+  {
+    id: 'grok-4-1-fast-reasoning',
+    name: 'Grok-4',
+    vendor: 'xAI',
+    color: '#ffffff',
+    logo: xaiLogo,
+    icon: null,
   },
   {
     id: 'doubao-seed-1.8',
     name: 'Doubao-1.8',
     vendor: 'ByteDance',
     color: '#f43f5e',
-    icon: (
-      <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
-        <circle cx="12" cy="12" r="10" />
-        <path d="M12 8v8M8 12h8" stroke="white" strokeWidth="2" fill="none" />
-      </svg>
-    ),
+    logo: doubaoLogo,
+    icon: null,
   },
 ];
 

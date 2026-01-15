@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { domesticOpenai } from '@/lib/ai';
+import { domesticOpenai, openai } from '@/lib/ai';
 
 import type {
   WorkflowStep as WorkflowStepType,
@@ -70,7 +70,7 @@ export default function WorkflowStep({
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [isStoryboardRawMode, setIsStoryboardRawMode] = useState(false);
 
-  const [selectedModel, setSelectedModel] = useState(MODELS[1].id); // 默认 DeepSeek
+  const [selectedModel, setSelectedModel] = useState(MODELS[0].id); // 默认 Qwen-Flash
   const [streamingText, setStreamingText] = useState(''); // 新增：用于展示流式文本
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -118,7 +118,15 @@ export default function WorkflowStep({
 
     try {
       let fullText = '';
-      const response = await domesticOpenai.chat.completions.create(
+
+      // 判断是否为国外模型，从而切换不同的 API Key 实例
+      const isOverseasModel = [
+        'gemini-3-flash-preview-search',
+        'grok-4-1-fast-reasoning',
+      ].includes(selectedModel);
+      const aiClient = isOverseasModel ? openai : domesticOpenai;
+
+      const response = await aiClient.chat.completions.create(
         {
           model: selectedModel,
           messages: [
