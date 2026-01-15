@@ -927,10 +927,6 @@ export default function StoryboardEditor({
 
                     {/* 中心镜号标识 */}
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      {state.status !== 'queued' &&
-                      state.status !== 'completed' ? (
-                        <Loader2 className="w-2.5 h-2.5 text-white/40 animate-spin absolute top-1" />
-                      ) : null}
                       <span className="text-[10px] font-black text-white leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                         S{item.shotNumber}
                       </span>
