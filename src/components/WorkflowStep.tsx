@@ -16,7 +16,13 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
-import { ListTodo, Wand2, X } from 'lucide-react';
+import { ListTodo, Wand2, X, LayoutGrid, Sparkles } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -215,11 +221,53 @@ export default function WorkflowStep({
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {isGenerating ? (
-        <GeneratingView streamingText={streamingText} onCancel={handleCancel} />
-      ) : showResultView && storyboards.length > 0 ? (
-        <div className="w-[calc(100vw-12rem)] max-w-[1400px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-6 relative">
+      <div className="w-full h-full transform-gpu">
+        {/* 生成状态视图 - 保持挂载以响应流式文本 */}
+        <div
+          className={cn(
+            'animate-in fade-in duration-300',
+            isGenerating ? 'block' : 'hidden',
+          )}
+        >
+          {/* 生成态工具栏 - 只有停止按钮 */}
+          <div className="fixed left-6 top-[20vh] z-50 flex flex-col gap-2 p-1.5 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl">
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleCancel}
+                    className="w-12 h-12 rounded-xl text-red-500 bg-red-500/10 border border-red-500/50 animate-pulse"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="right"
+                  className="bg-black/80 backdrop-blur-xl border-white/10 text-white font-bold text-xs py-2 px-3"
+                >
+                  停止生成
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <GeneratingView
+            streamingText={streamingText}
+            onCancel={handleCancel}
+          />
+        </div>
+
+        {/* 结果预览视图 - StoryboardEditor 内部自带其独立的工具栏 */}
+        <div
+          className={cn(
+            'w-[calc(100vw-12rem)] max-w-[1400px] mx-auto animate-in fade-in duration-300',
+            !isGenerating && showResultView && storyboards.length > 0
+              ? 'block'
+              : 'hidden',
+          )}
+        >
           <StoryboardEditor
             taskId={taskId}
             output={output}
@@ -231,41 +279,124 @@ export default function WorkflowStep({
             ttsAudioUrl={ttsAudioUrl}
             onUpdateTtsAudioUrl={onUpdateTtsAudioUrl}
             taskTitle={taskTitle}
+            setShowResultView={setShowResultView}
           />
         </div>
-      ) : (
-        <div className="w-[calc(100vw-12rem)] max-w-[1400px] mx-auto">
+
+        {/* 创意描述视图 - 包含其独立的工具栏 */}
+        <div
+          className={cn(
+            'w-[calc(100vw-12rem)] max-w-[1400px] mx-auto animate-in fade-in duration-300',
+            !isGenerating && !showResultView ? 'block' : 'hidden',
+          )}
+        >
+          <div className="fixed left-6 top-[20vh] z-50 flex flex-col gap-2 p-1.5 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl">
+            <TooltipProvider delayDuration={0}>
+              {/* 切换视图按钮 */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowResultView(!showResultView)}
+                    disabled={storyboards.length === 0}
+                    className={cn(
+                      'w-12 h-12 rounded-xl transition-all',
+                      showResultView
+                        ? 'text-primary bg-primary/10'
+                        : 'text-white/50 hover:text-primary hover:bg-primary/10',
+                    )}
+                  >
+                    <LayoutGrid className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="right"
+                  className="bg-black/80 backdrop-blur-xl border-white/10 text-white font-bold text-xs py-2 px-3"
+                >
+                  查看分镜预览
+                </TooltipContent>
+              </Tooltip>
+
+              <div className="h-px w-8 mx-auto bg-white/5" />
+
+              {/* 系统提示词按钮 */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsPromptSidebarOpen(true)}
+                    className="w-12 h-12 rounded-xl text-white/50 hover:text-primary hover:bg-primary/10 transition-all"
+                  >
+                    <ListTodo className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="right"
+                  className="bg-black/80 backdrop-blur-xl border-white/10 text-white font-bold text-xs py-2 px-3"
+                >
+                  查看系统提示词
+                </TooltipContent>
+              </Tooltip>
+
+              <div className="h-px w-8 mx-auto bg-white/5" />
+
+              {/* 生成按钮 */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleGenerate}
+                    disabled={!input.trim()}
+                    className={cn(
+                      'w-12 h-12 rounded-xl transition-all duration-500 relative overflow-hidden group border',
+                      input.trim()
+                        ? 'text-white bg-gradient-to-br from-primary via-violet-500 to-fuchsia-500 border-primary/50 shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:scale-110'
+                        : 'text-white/50 bg-white/5 border-white/10 hover:text-primary hover:bg-primary/10',
+                    )}
+                  >
+                    <Wand2
+                      className={cn(
+                        'w-5 h-5 transition-transform group-hover:rotate-12',
+                        input.trim() && 'animate-pulse',
+                      )}
+                    />
+                    {input.trim() && (
+                      <>
+                        <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                        <div className="absolute -inset-1 bg-gradient-to-r from-primary to-fuchsia-500 blur-lg opacity-30 group-hover:opacity-60 transition-opacity -z-10" />
+                      </>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="right"
+                  className="bg-black/80 backdrop-blur-xl border-white/10 text-white font-bold text-xs py-2 px-3"
+                >
+                  生成视觉分镜
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+
           <Card className="glass-card border-primary/20 ring-1 ring-primary/10 shadow-2xl relative overflow-hidden gap-0 py-0 h-[85vh] min-h-[540px] flex flex-col">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
 
             <CardHeader className="px-5 py-4 border-b border-white/5 flex flex-row items-center justify-between bg-white/[0.01]">
               <div className="flex items-center gap-3.5">
                 <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-inner">
-                  <ListTodo className="w-4 h-4" />
+                  <Sparkles className="w-4 h-4" />
                 </div>
                 <div>
                   <h2 className="text-base font-black text-white tracking-wide leading-tight">
-                    创意分镜生成
+                    创意描述
                   </h2>
                   <p className="text-[10px] text-muted-foreground font-medium mt-0.5">
                     输入你的想法，AI 将自动生成视觉预览与分镜提示词
                   </p>
                 </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsPromptSidebarOpen(true);
-                  }}
-                  className="h-8 text-xs font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg px-3 transition-all"
-                >
-                  <ListTodo className="w-3.5 h-3.5 mr-1.5" />
-                  查看系统提示词
-                </Button>
               </div>
             </CardHeader>
 
@@ -288,42 +419,16 @@ export default function WorkflowStep({
                 onStyleSelect={setSelectedStyle}
               />
 
-              <div className="pt-3 border-t border-white/5 w-full space-y-3">
+              <div className="pt-3 border-t border-white/5 w-full">
                 <ModelSelector
                   selectedModel={selectedModel}
                   onModelSelect={setSelectedModel}
                 />
-
-                <Button
-                  onClick={isGenerating ? handleCancel : handleGenerate}
-                  disabled={!input.trim()}
-                  className={cn(
-                    'w-full h-12 rounded-xl text-xs font-black tracking-widest transition-all duration-300 shadow-lg uppercase relative overflow-hidden group',
-                    input.trim()
-                      ? isGenerating
-                        ? 'bg-red-500/90 hover:bg-red-600 text-white'
-                        : 'bg-gradient-to-r from-primary to-violet-600 text-white hover:scale-[1.01] hover:shadow-primary/25 border border-white/10'
-                      : 'bg-muted text-muted-foreground',
-                  )}
-                >
-                  <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                  {isGenerating ? (
-                    <div className="flex items-center gap-3">
-                      <X className="w-4 h-4" />
-                      停止生成
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <Wand2 className="w-4 h-4" />
-                      生成视觉分镜
-                    </div>
-                  )}
-                </Button>
               </div>
             </CardContent>
           </Card>
         </div>
-      )}
+      </div>
 
       <PromptSidebar
         isOpen={isPromptSidebarOpen}

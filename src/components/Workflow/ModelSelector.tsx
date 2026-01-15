@@ -55,9 +55,6 @@ export default function ModelSelector({
           >
             {m.name}
           </span>
-          {selectedModel === m.id && (
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-primary rounded-full shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
-          )}
         </button>
       ))}
     </div>

@@ -6,17 +6,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import {
-  ChevronLeft,
-  Edit3,
-  Check,
-  X,
-  Home,
-  Tag,
-  ListTodo,
-  LayoutGrid,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ChevronLeft, Edit3, Check, X, Home, Tag } from 'lucide-react';
 
 export default function Workflow() {
   const { id } = useParams<{ id: string }>();
@@ -251,38 +241,6 @@ export default function Workflow() {
                 )}
               </div>
             </div>
-
-            {/* 视图切换器 */}
-            {!isGenerating &&
-              task.storyboards &&
-              task.storyboards.length > 0 && (
-                <div className="flex items-center bg-white/5 border border-white/10 p-0.5 rounded-xl shadow-2xl backdrop-blur-md ring-1 ring-white/5">
-                  <button
-                    onClick={() => setShowResultView(false)}
-                    className={cn(
-                      'px-3.5 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-2 tracking-[0.1em] uppercase',
-                      !showResultView
-                        ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                        : 'text-white/30 hover:text-white/60 hover:bg-white/5',
-                    )}
-                  >
-                    <ListTodo className="w-3 h-3" />
-                    创意描述
-                  </button>
-                  <button
-                    onClick={() => setShowResultView(true)}
-                    className={cn(
-                      'px-3.5 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-2 tracking-[0.1em] uppercase',
-                      showResultView
-                        ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                        : 'text-white/30 hover:text-white/60 hover:bg-white/5',
-                    )}
-                  >
-                    <LayoutGrid className="w-3 h-3" />
-                    分镜预览
-                  </button>
-                </div>
-              )}
           </div>
         </div>
       </header>

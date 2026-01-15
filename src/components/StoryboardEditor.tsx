@@ -31,6 +31,12 @@ import {
   Download,
   Sparkles,
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { parseStoryboardTable } from '../lib/storyboard';
 import { generateMinimaxTts } from '../lib/tts';
 import { uploadTtsAudio, deleteTtsAudio } from '../lib/storage';
@@ -48,6 +54,7 @@ interface StoryboardEditorProps {
   ttsAudioUrl?: string;
   onUpdateTtsAudioUrl?: (url: string) => void;
   taskTitle?: string;
+  setShowResultView: (show: boolean) => void;
 }
 
 export default function StoryboardEditor({
@@ -60,6 +67,7 @@ export default function StoryboardEditor({
   ttsAudioUrl,
   onUpdateTtsAudioUrl,
   taskTitle,
+  setShowResultView,
 }: StoryboardEditorProps) {
   /* eslint-disable react-hooks/exhaustive-deps */
   // 上传状态管理：支持多个分镜并行上传
@@ -731,103 +739,179 @@ export default function StoryboardEditor({
 
   return (
     <>
-      {/* 左侧集成垂直工具栏 - 移除所有动画以防位置闪烁 */}
-      <div className="fixed left-6 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2 p-1.5 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsRawMode(!isRawMode)}
-          className={cn(
-            'w-12 h-12 rounded-xl transition-all',
-            isRawMode
-              ? 'text-primary bg-primary/10'
-              : 'text-white/50 hover:text-primary hover:bg-primary/10',
-          )}
-          title={isRawMode ? '返回预览' : '源码编辑'}
-        >
-          {isRawMode ? (
-            <LayoutGrid className="w-5 h-5" />
-          ) : (
-            <FileCode className="w-5 h-5" />
-          )}
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleCopyFullScript}
-          className="w-12 h-12 rounded-xl text-white/50 hover:text-primary hover:bg-primary/10 transition-all"
-          title="复制全卷脚本"
-        >
-          {isFullScriptCopied ? (
-            <Check className="w-5 h-5 text-green-500" />
-          ) : (
-            <Copy className="w-5 h-5" />
-          )}
-        </Button>
-        <div className="h-px w-8 mx-auto bg-white/5" />
-
-        {/* TTS 语音合成与播放控制 */}
-        <div className="flex flex-col gap-2 items-center">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={ttsAudioUrl ? handlePlayPauseTts : handleGenerateTts}
-            disabled={isTtsGenerating}
-            className={cn(
-              'w-12 h-12 rounded-xl transition-all relative',
-              ttsAudioUrl
-                ? isTtsPlaying
-                  ? 'text-green-400 bg-green-400/10 hover:bg-green-400/20'
-                  : 'text-primary bg-primary/10 hover:bg-primary/20'
-                : 'text-white/50 hover:text-primary hover:bg-primary/10',
-            )}
-            title={
-              ttsAudioUrl ? (isTtsPlaying ? '暂停' : '播放语音') : '生成语音'
-            }
-          >
-            {isTtsGenerating ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : ttsAudioUrl ? (
-              isTtsPlaying ? (
-                <Pause className="w-5 h-5" />
-              ) : (
-                <Play className="w-5 h-5 ml-0.5" />
-              )
-            ) : (
-              <AudioWaveform className="w-5 h-5" />
-            )}
-          </Button>
-
-          {/* 语音合成后的导操作：导出全部 */}
-          {ttsAudioUrl && (
-            <div className="flex flex-col gap-2 animate-in slide-in-from-top-2 fade-in duration-300">
+      {/* 左侧集成垂直工具栏 */}
+      <div className="fixed left-6 top-[20vh] z-50 flex flex-col gap-2 p-1.5 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl">
+        <TooltipProvider delayDuration={0}>
+          {/* 返回生成按钮 */}
+          <Tooltip>
+            <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={handleExportAll}
-                disabled={isExporting}
-                className="w-12 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all"
-                title="导出全部媒体 (ZIP)"
+                onClick={() => setShowResultView(false)}
+                className="w-12 h-12 rounded-xl text-white/50 hover:text-primary hover:bg-primary/10 transition-all"
               >
-                {isExporting ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                <Sparkles className="w-5 h-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="right"
+              className="bg-black/80 backdrop-blur-xl border-white/10 text-white font-bold text-xs py-2 px-3"
+            >
+              返回创意生成
+            </TooltipContent>
+          </Tooltip>
+
+          <div className="h-px w-8 mx-auto bg-white/5" />
+
+          {/* 源码编辑/预览切换 */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsRawMode(!isRawMode)}
+                className={cn(
+                  'w-12 h-12 rounded-xl transition-all',
+                  isRawMode
+                    ? 'text-primary bg-primary/10'
+                    : 'text-white/50 hover:text-primary hover:bg-primary/10',
+                )}
+              >
+                {isRawMode ? (
+                  <LayoutGrid className="w-5 h-5" />
                 ) : (
-                  <Download className="w-4 h-4" />
+                  <FileCode className="w-5 h-5" />
                 )}
               </Button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="right"
+              className="bg-black/80 backdrop-blur-xl border-white/10 text-white font-bold text-xs py-2 px-3"
+            >
+              {isRawMode ? '返回分镜预览' : '分镜文本编辑'}
+            </TooltipContent>
+          </Tooltip>
+
+          {/* 复制脚本 */}
+          <Tooltip>
+            <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={handleGenerateTts}
-                disabled={isTtsGenerating}
-                className="w-12 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all"
-                title="重新生成语音"
+                onClick={handleCopyFullScript}
+                className="w-12 h-12 rounded-xl text-white/50 hover:text-primary hover:bg-primary/10 transition-all"
               >
-                <AudioWaveform className="w-4 h-4" />
+                {isFullScriptCopied ? (
+                  <Check className="w-5 h-5 text-green-500" />
+                ) : (
+                  <Copy className="w-5 h-5" />
+                )}
               </Button>
-            </div>
-          )}
-        </div>
+            </TooltipTrigger>
+            <TooltipContent
+              side="right"
+              className="bg-black/80 backdrop-blur-xl border-white/10 text-white font-bold text-xs py-2 px-3"
+            >
+              复制全卷脚本
+            </TooltipContent>
+          </Tooltip>
+
+          <div className="h-px w-8 mx-auto bg-white/5" />
+
+          {/* TTS 语音合成与播放控制 */}
+          <div className="flex flex-col gap-2 items-center">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={ttsAudioUrl ? handlePlayPauseTts : handleGenerateTts}
+                  disabled={isTtsGenerating}
+                  className={cn(
+                    'w-12 h-12 rounded-xl transition-all relative',
+                    ttsAudioUrl
+                      ? isTtsPlaying
+                        ? 'text-green-400 bg-green-400/10 hover:bg-green-400/20'
+                        : 'text-primary bg-primary/10 hover:bg-primary/20'
+                      : 'text-white/50 hover:text-primary hover:bg-primary/10',
+                  )}
+                >
+                  {isTtsGenerating ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : ttsAudioUrl ? (
+                    isTtsPlaying ? (
+                      <Pause className="w-5 h-5" />
+                    ) : (
+                      <Play className="w-5 h-5 ml-0.5" />
+                    )
+                  ) : (
+                    <AudioWaveform className="w-5 h-5" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="right"
+                className="bg-black/80 backdrop-blur-xl border-white/10 text-white font-bold text-xs py-2 px-3"
+              >
+                {ttsAudioUrl
+                  ? isTtsPlaying
+                    ? '暂停'
+                    : '播放语音'
+                  : '生成语音'}
+              </TooltipContent>
+            </Tooltip>
+
+            {/* 语音合成后的导操作：导出全部 */}
+            {ttsAudioUrl && (
+              <div className="flex flex-col gap-2 animate-in slide-in-from-top-2 fade-in duration-300">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleExportAll}
+                      disabled={isExporting}
+                      className="w-12 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all"
+                    >
+                      {isExporting ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Download className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    className="bg-black/80 backdrop-blur-xl border-white/10 text-white font-bold text-xs py-2 px-3"
+                  >
+                    导出全部媒体 (ZIP)
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleGenerateTts}
+                      disabled={isTtsGenerating}
+                      className="w-12 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all"
+                    >
+                      <AudioWaveform className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    className="bg-black/80 backdrop-blur-xl border-white/10 text-white font-bold text-xs py-2 px-3"
+                  >
+                    重新生成语音
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            )}
+          </div>
+        </TooltipProvider>
       </div>
 
       <div className="relative w-full flex flex-col items-center h-full">
