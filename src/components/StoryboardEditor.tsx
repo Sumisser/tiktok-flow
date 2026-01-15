@@ -29,7 +29,6 @@ import {
   Play,
   Pause,
   Download,
-  RotateCcw,
   Sparkles,
 } from 'lucide-react';
 import { parseStoryboardTable } from '../lib/storyboard';
@@ -833,7 +832,7 @@ export default function StoryboardEditor({
                 className="w-12 h-12 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all"
                 title="重新生成语音"
               >
-                <RotateCcw className="w-4 h-4" />
+                <AudioWaveform className="w-4 h-4" />
               </Button>
             </div>
           )}
@@ -1155,8 +1154,8 @@ export default function StoryboardEditor({
                           {/* 媒体与提示词区域 - 左右布局 */}
                           <div className="flex-1 flex overflow-hidden">
                             {/* 左侧：媒体预览区（更宽） */}
-                            <div className="flex-[3] p-3 bg-black/20 flex items-stretch">
-                              <div className="w-full bg-black/60 rounded-2xl overflow-hidden relative group/media ring-1 ring-white/10 shadow-xl">
+                            <div className="flex-[3] p-1 flex items-stretch">
+                              <div className="w-full overflow-hidden relative group/media">
                                 {mediaViewMode === 'video' ? (
                                   /* 视频视图 */
                                   <>
@@ -1330,7 +1329,7 @@ export default function StoryboardEditor({
                               {mediaViewMode === 'image'
                                 ? /* 图片模式：显示画面提示词 */
                                   item.imagePrompt && (
-                                    <div className="p-4 bg-blue-500/5 rounded-xl border border-blue-500/10 flex flex-col gap-3 h-full overflow-hidden">
+                                    <div className="flex flex-col gap-3 h-full overflow-hidden">
                                       <div className="flex items-center justify-between shrink-0">
                                         <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">
                                           画面提示词
@@ -1379,7 +1378,7 @@ export default function StoryboardEditor({
                                   )
                                 : /* 视频模式：显示视频提示词 */
                                   item.videoPrompt && (
-                                    <div className="p-4 bg-purple-500/5 rounded-xl border border-purple-500/10 flex flex-col gap-3 h-full overflow-hidden">
+                                    <div className="flex flex-col gap-3 h-full overflow-hidden">
                                       <div className="flex items-center justify-between shrink-0">
                                         <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">
                                           视频提示词
