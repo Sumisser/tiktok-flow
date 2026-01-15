@@ -31,6 +31,7 @@ import {
   Pause,
   Download,
   RotateCcw,
+  Sparkles,
 } from 'lucide-react';
 import { parseStoryboardTable } from '../lib/storyboard';
 import { generateMinimaxTts } from '../lib/tts';
@@ -966,145 +967,129 @@ export default function StoryboardEditor({
                       )}
                     >
                       {isCover ? (
-                        /* 封面专用 UI - 支持 AI 生成和上传 */
-                        <div className="bg-black/40 backdrop-blur-3xl rounded-3xl border border-white/10 overflow-hidden shadow-2xl h-full flex flex-col">
-                          <div className="px-6 py-4 border-b border-white/5 bg-gradient-to-br from-amber-500/10 to-transparent shrink-0">
-                            <div className="flex items-center gap-3">
-                              <span className="px-3 py-1 bg-amber-500 text-black rounded-full text-[9px] font-black uppercase tracking-[0.2em] shadow-lg">
-                                SHOT 0 /{' '}
-                                {
-                                  storyboards.filter((s) => s.shotNumber !== 0)
-                                    .length
-                                }
-                              </span>
-                              <span className="text-sm text-white/50 font-medium">
-                                视频封面
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* 内容区：图片 + 提示词 (左右排布) */}
-                          <div className="flex-1 grid grid-cols-2 gap-px bg-white/5 overflow-hidden">
-                            {/* 左侧：封面图上传区 */}
-                            <div className="p-6 flex flex-col items-center justify-center bg-black/20 overflow-hidden h-full">
-                              <div className="w-full aspect-video bg-black/60 rounded-2xl overflow-hidden relative group/media ring-2 ring-amber-500/30 shadow-2xl">
-                                <div className="absolute top-4 left-4 z-10 px-3 py-1 bg-amber-500/80 backdrop-blur-md rounded-lg text-[10px] text-black font-black uppercase tracking-widest flex items-center gap-2 shadow-lg">
-                                  <ImageIcon className="w-3.5 h-3.5" /> COVER
-                                  IMAGE
+                        /* 封面 UI - 极简一体化设计 */
+                        <div className="bg-black/40 backdrop-blur-3xl rounded-3xl border border-white/10 overflow-hidden shadow-2xl h-full relative">
+                          {/* 封面内容区：两栏布局 */}
+                          <div className="grid grid-cols-2 h-full">
+                            {/* 左侧：封面图预览区 - 填满整个半边 */}
+                            <div className="relative group/cover bg-black/40 overflow-hidden border-r border-white/5 flex flex-col items-center justify-center">
+                              {item.imageUrl ? (
+                                <>
+                                  <img
+                                    src={item.imageUrl}
+                                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover/cover:scale-105"
+                                  />
+                                  <div className="absolute inset-0 bg-black/20 group-hover/cover:bg-black/10 transition-colors" />
+                                  <button
+                                    onClick={() => handleRemoveImage(item)}
+                                    className="absolute top-6 right-6 w-10 h-10 bg-red-500/90 rounded-full flex items-center justify-center text-white text-xl opacity-0 group-hover/cover:opacity-100 transition-all hover:bg-red-500 shadow-2xl z-20"
+                                  >
+                                    ×
+                                  </button>
+                                </>
+                              ) : videoGeneratingMap.has(item.id) ? (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-amber-500/10 to-transparent">
+                                  <Loader2 className="w-12 h-12 text-amber-500 animate-spin" />
+                                  <p className="text-sm font-bold text-amber-500 animate-pulse">
+                                    魔力生成中...
+                                  </p>
                                 </div>
-                                {item.imageUrl ? (
-                                  <>
-                                    <img
-                                      src={item.imageUrl}
-                                      className="w-full h-full object-cover"
-                                    />
-                                    <button
-                                      onClick={() => handleRemoveImage(item)}
-                                      className="absolute top-4 right-4 w-8 h-8 bg-red-500/90 rounded-full flex items-center justify-center text-white text-sm opacity-0 group-hover/media:opacity-100 transition-all hover:bg-red-500 shadow-lg"
+                              ) : (
+                                <div className="relative z-10 flex flex-col items-center gap-6">
+                                  <div className="relative">
+                                    <ImageIcon className="w-24 h-24 text-white/[0.05]" />
+                                    <div className="absolute inset-0 bg-amber-500/10 blur-3xl rounded-full" />
+                                  </div>
+                                  <div className="flex flex-col gap-3">
+                                    <Button
+                                      variant="outline"
+                                      size="lg"
+                                      onClick={() => handleGenerateImage(item)}
+                                      disabled={videoGeneratingMap.has(item.id)}
+                                      className="rounded-2xl border-amber-500/40 text-amber-400 bg-amber-500/5 hover:bg-amber-500/20 font-bold px-10 h-14 text-base shadow-2xl shadow-amber-500/20"
                                     >
-                                      ×
-                                    </button>
-                                  </>
-                                ) : videoGeneratingMap.has(item.id) ? (
-                                  <div className="w-full h-full flex flex-col items-center justify-center gap-4">
-                                    <div className="relative">
-                                      <Loader2 className="w-12 h-12 text-amber-500 animate-spin" />
-                                    </div>
-                                    <div className="text-center">
-                                      <p className="text-sm font-bold text-amber-400">
-                                        AI 生成封面中
-                                      </p>
-                                      <p className="text-xs text-white/30 mt-1">
-                                        请耐心等待...
-                                      </p>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="w-full h-full flex flex-col items-center justify-center gap-5">
-                                    <ImageIcon className="w-16 h-16 text-white/5" />
-                                    <div className="flex gap-3">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() =>
-                                          handleGenerateImage(item)
+                                      ✨ AI 一键生成封面
+                                    </Button>
+                                    <label className="h-14 flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-10 text-sm font-bold text-white/40 hover:bg-white/10 cursor-pointer transition-all hover:text-white/60">
+                                      手动上传本地图片
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={(e) =>
+                                          handleFileSelect(e, item)
                                         }
-                                        disabled={videoGeneratingMap.has(
-                                          item.id,
-                                        )}
-                                        className="h-10 rounded-xl border-amber-500/30 text-amber-400 hover:bg-amber-500/20 font-bold px-6 text-sm disabled:opacity-50"
-                                      >
-                                        ✨ AI 生成封面
-                                      </Button>
-                                      <label className="h-10 flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-6 text-sm font-bold text-white/40 hover:bg-white/10 cursor-pointer">
-                                        上传封面
-                                        <input
-                                          type="file"
-                                          accept="image/*"
-                                          className="hidden"
-                                          onChange={(e) =>
-                                            handleFileSelect(e, item)
-                                          }
-                                        />
-                                      </label>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* 右侧：封面图提示词 */}
-                            <div className="p-6 flex flex-col bg-black/40 overflow-hidden h-full">
-                              {item.imagePrompt && (
-                                <div className="flex-1 flex flex-col gap-3 overflow-hidden">
-                                  <div className="p-5 bg-amber-500/5 rounded-2xl border border-amber-500/10 flex-1 flex flex-col overflow-hidden">
-                                    <div className="flex items-center justify-between mb-3 shrink-0">
-                                      <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest">
-                                        封面设计提示词
-                                      </span>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() =>
-                                          handleCopy(
-                                            item.stylePrompt
-                                              ? `内容: ${item.imagePrompt}\n风格: ${item.stylePrompt}`
-                                              : item.imagePrompt,
-                                            `ip-${item.id}`,
-                                          )
-                                        }
-                                        className="h-8 w-8 rounded-lg bg-amber-500/10"
-                                      >
-                                        {copiedId === `ip-${item.id}` ? (
-                                          <Check className="w-4 h-4 text-green-400" />
-                                        ) : (
-                                          <Copy className="w-4 h-4 text-amber-400/50" />
-                                        )}
-                                      </Button>
-                                    </div>
-                                    <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10">
-                                      <div className="space-y-1">
-                                        <div className="text-[9px] text-amber-500/40 font-bold uppercase tracking-wider">
-                                          内容 (Content)
-                                        </div>
-                                        <p className="text-sm text-amber-100/60 leading-relaxed font-mono">
-                                          {item.imagePrompt}
-                                        </p>
-                                      </div>
-                                      {item.stylePrompt && (
-                                        <div className="space-y-1 pt-3 border-t border-white/5">
-                                          <div className="text-[9px] text-amber-500/40 font-bold uppercase tracking-wider">
-                                            风格 (Style)
-                                          </div>
-                                          <p className="text-[12px] text-amber-400/40 leading-relaxed font-mono italic">
-                                            {item.stylePrompt}
-                                          </p>
-                                        </div>
-                                      )}
-                                    </div>
+                                      />
+                                    </label>
                                   </div>
                                 </div>
                               )}
+
+                              {/* 悬浮标签 - 始终在最上层 */}
+                              <div className="absolute top-10 left-10 flex items-center gap-4 z-20">
+                                <span className="px-5 py-2 bg-amber-500 text-black rounded-full text-[11px] font-black uppercase tracking-wider shadow-2xl shadow-black/50">
+                                  SHOT 0
+                                </span>
+                                <span className="text-lg font-black text-white drop-shadow-lg [text-shadow:0_2px_10px_rgba(0,0,0,0.5)]">
+                                  视频封面
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* 右侧：提示词区 */}
+                            <div className="p-10 flex flex-col bg-black/10 relative">
+                              <div className="flex items-center justify-between mb-8">
+                                <span className="text-[11px] font-black text-amber-500/60 uppercase tracking-[0.2em]">
+                                  Design Meta
+                                </span>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() =>
+                                    handleCopy(
+                                      item.stylePrompt
+                                        ? `内容: ${item.imagePrompt}\n风格: ${item.stylePrompt}`
+                                        : item.imagePrompt,
+                                      `ip-${item.id}`,
+                                    )
+                                  }
+                                  className="h-10 w-10 rounded-xl bg-amber-500/5 hover:bg-amber-500/10 text-amber-500/40 hover:text-amber-500 transition-all"
+                                >
+                                  {copiedId === `ip-${item.id}` ? (
+                                    <Check className="w-5 h-5 text-green-400" />
+                                  ) : (
+                                    <Copy className="w-5 h-5" />
+                                  )}
+                                </Button>
+                              </div>
+
+                              <div className="flex-1 overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-white/10 space-y-8">
+                                {item.imagePrompt && (
+                                  <div className="space-y-3">
+                                    <div className="text-[10px] text-amber-500/30 font-black uppercase tracking-widest pl-1">
+                                      Content Prompt
+                                    </div>
+                                    <p className="text-base text-white/80 leading-relaxed font-medium pl-1">
+                                      {item.imagePrompt}
+                                    </p>
+                                  </div>
+                                )}
+                                {item.stylePrompt && (
+                                  <div className="space-y-3 pt-8 border-t border-white/5">
+                                    <div className="text-[10px] text-amber-500/30 font-black uppercase tracking-widest pl-1">
+                                      Artistic Style
+                                    </div>
+                                    <p className="text-sm text-white/40 leading-relaxed italic pl-1">
+                                      {item.stylePrompt}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* 装饰图标 */}
+                              <div className="absolute bottom-10 right-10 pointer-events-none opacity-[0.02]">
+                                <Sparkles className="w-32 h-32 text-amber-500" />
+                              </div>
                             </div>
                           </div>
                         </div>
