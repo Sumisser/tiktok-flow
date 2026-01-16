@@ -35,7 +35,6 @@ interface StoryboardEditorProps {
   onUpdateStoryboards: (storyboards: StoryboardItem[]) => void;
   isRawMode: boolean;
   setIsRawMode: (mode: boolean) => void;
-  onReset?: () => void;
   stylePrompt?: string;
 }
 
@@ -46,7 +45,6 @@ export default function StoryboardEditor({
   onUpdateStoryboards,
   isRawMode,
   setIsRawMode,
-  onReset,
   stylePrompt,
 }: StoryboardEditorProps) {
   /* eslint-disable react-hooks/exhaustive-deps */

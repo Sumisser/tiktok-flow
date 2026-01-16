@@ -37,16 +37,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+
 import { cn } from '@/lib/utils';
 import { MODELS, STYLE_CATEGORIES } from '../constants/workflow';
 import GeneratingView from './Workflow/GeneratingView';
@@ -92,7 +83,6 @@ export default function WorkflowStep({
   const [input, setInput] = useState(step.input);
   const [output, setOutput] = useState(step.output);
   const [isPromptSidebarOpen, setIsPromptSidebarOpen] = useState(false);
-  const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [isStoryboardRawMode, setIsStoryboardRawMode] = useState(false);
 
   const [selectedModel, setSelectedModel] = useState(MODELS[0].id); // 默认 Qwen-Flash
@@ -451,19 +441,6 @@ export default function WorkflowStep({
     }
   };
 
-  const handleResetClick = () => {
-    setResetDialogOpen(true);
-  };
-
-  const handleConfirmReset = () => {
-    setInput('');
-    setOutput('');
-    onUpdate({ input: '', output: '', status: 'pending' });
-    onUpdateStoryboards([]);
-    setResetDialogOpen(false);
-    setShowResultView(false);
-  };
-
   return (
     <div className="space-y-6 relative h-full">
       <audio ref={audioRef} className="hidden" />
@@ -774,7 +751,6 @@ export default function WorkflowStep({
             onUpdateStoryboards={onUpdateStoryboards}
             isRawMode={isStoryboardRawMode}
             setIsRawMode={setIsStoryboardRawMode}
-            onReset={handleResetClick}
             stylePrompt={selectedStyleConfig?.prompt}
           />
         </div>
@@ -841,30 +817,6 @@ export default function WorkflowStep({
         basePrompt={step.basePrompt}
         onSave={handleSavePrompt}
       />
-
-      <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
-        <AlertDialogContent className="max-w-[400px] glass-card border-primary/20 shadow-2xl p-6 z-[100] bg-black/60 backdrop-blur-3xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-black text-white tracking-tight">
-              重置提示词与结果?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-muted-foreground font-medium py-3 text-sm">
-              此操作将清除您当前所有的输入内容和已生成的全部分镜数据。该操作无法撤销。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="gap-3">
-            <AlertDialogCancel className="rounded-xl border-white/5 bg-white/5 hover:bg-white/10 text-white h-11 px-6 font-bold">
-              取消
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmReset}
-              className="rounded-xl bg-destructive hover:bg-destructive/90 text-white border-none shadow-lg shadow-destructive/20 h-11 px-6 font-bold"
-            >
-              确认重置
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
