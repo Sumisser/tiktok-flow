@@ -30,6 +30,8 @@ import {
   Pause,
   Download,
   Loader2,
+  Book,
+  BookOpen,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -474,7 +476,7 @@ export default function WorkflowStep({
                           : 'text-white/50 hover:text-primary hover:bg-primary/10',
                       )}
                     >
-                      <LayoutGrid className="w-5 h-5" />
+                      <Book className="w-5 h-5 text-primary/60" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent
@@ -553,9 +555,9 @@ export default function WorkflowStep({
                       variant="ghost"
                       size="icon"
                       onClick={() => setShowResultView(false)}
-                      className="w-12 h-12 rounded-xl text-white/50 hover:text-primary hover:bg-primary/10 transition-all"
+                      className="w-12 h-12 rounded-xl text-primary bg-primary/10 hover:bg-primary/20 transition-all"
                     >
-                      <Sparkles className="w-5 h-5" />
+                      <BookOpen className="w-5 h-5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent

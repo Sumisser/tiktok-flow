@@ -723,7 +723,7 @@ export default function StoryboardEditor({
                             {/* 悬浮标签 - 始终在最上层 */}
                             <div className="absolute top-10 left-10 flex items-center gap-4 z-20">
                               <span className="px-5 py-2 bg-amber-500 text-black rounded-full text-[11px] font-black uppercase tracking-wider shadow-2xl shadow-black/50">
-                                SHOT 0
+                                SHOT 0 / {storyboards.length - 1}
                               </span>
                               <span className="text-lg font-black text-white drop-shadow-lg [text-shadow:0_2px_10px_rgba(0,0,0,0.5)]">
                                 视频封面
