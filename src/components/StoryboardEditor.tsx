@@ -36,6 +36,7 @@ interface StoryboardEditorProps {
   isRawMode: boolean;
   setIsRawMode: (mode: boolean) => void;
   onReset?: () => void;
+  stylePrompt?: string;
 }
 
 export default function StoryboardEditor({
@@ -46,6 +47,7 @@ export default function StoryboardEditor({
   isRawMode,
   setIsRawMode,
   onReset,
+  stylePrompt,
 }: StoryboardEditorProps) {
   /* eslint-disable react-hooks/exhaustive-deps */
   // 上传状态管理：支持多个分镜并行上传
@@ -444,7 +446,7 @@ export default function StoryboardEditor({
 
   const handleParseAndMerge = (markdown: string) => {
     if (markdown === lastParsedOutputRef.current) return;
-    const newItems = parseStoryboardTable(markdown);
+    const newItems = parseStoryboardTable(markdown, stylePrompt);
     const mergedItems = newItems.map((newItem) => {
       const existingItem = storyboardsRef.current.find(
         (s) => s.shotNumber === newItem.shotNumber,
@@ -453,6 +455,7 @@ export default function StoryboardEditor({
         return {
           ...newItem,
           id: existingItem.id,
+          stylePrompt: existingItem.stylePrompt || newItem.stylePrompt,
           imageUrl: existingItem.imageUrl || newItem.imageUrl,
           videoUrl: existingItem.videoUrl || newItem.videoUrl,
         };

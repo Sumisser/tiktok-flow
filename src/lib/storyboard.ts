@@ -111,6 +111,7 @@ function convertMarkdownToJson(markdown: string): string | null {
       script: string;
       image_prompt: string;
       video_prompt: string;
+      style_prompt: string;
     }> = [];
 
     // 提取完整口播文稿
@@ -169,6 +170,7 @@ function convertMarkdownToJson(markdown: string): string | null {
             script: cells[1] || '',
             image_prompt: cells[2] || '',
             video_prompt: cells[3] || '-',
+            style_prompt: '', // Will be hydrated later
           });
         }
       }
@@ -198,7 +200,10 @@ function convertMarkdownToJson(markdown: string): string | null {
  * 2. 如果 AI 输出中没有镜号 0，会自动生成一个占位封面。
  * 3. 稳健地处理 0 || 1 导致的逻辑错误。
  */
-export function parseStoryboardTable(input: string): StoryboardItem[] {
+export function parseStoryboardTable(
+  input: string,
+  defaultStylePrompt?: string,
+): StoryboardItem[] {
   if (!input) return [];
 
   let items: StoryboardItem[] = [];
@@ -231,6 +236,7 @@ export function parseStoryboardTable(input: string): StoryboardItem[] {
         script: item.script || '',
         imagePrompt: item.image_prompt || '',
         imageUrl: '',
+        stylePrompt: item.style_prompt || defaultStylePrompt || '',
         videoPrompt: item.video_prompt || '',
         videoUrl: '',
       }));
@@ -277,6 +283,7 @@ export function parseStoryboardTable(input: string): StoryboardItem[] {
             script: cells[1] || '',
             imagePrompt: cells[2] || '',
             imageUrl: '',
+            stylePrompt: defaultStylePrompt || '',
             videoPrompt: cells[3] || '',
             videoUrl: '',
           });
@@ -291,6 +298,7 @@ export function parseStoryboardTable(input: string): StoryboardItem[] {
           script: line,
           imagePrompt: '',
           imageUrl: '',
+          stylePrompt: defaultStylePrompt || '',
           videoPrompt: '',
           videoUrl: '',
         });
@@ -308,6 +316,7 @@ export function parseStoryboardTable(input: string): StoryboardItem[] {
       imagePrompt:
         'Cinematic cover image for this video, dramatic lighting, high quality',
       imageUrl: '',
+      stylePrompt: defaultStylePrompt || '',
       videoPrompt: '-',
       videoUrl: '',
     });
@@ -338,4 +347,44 @@ export function stringifyStoryboardTable(
   });
 
   return markdown;
+}
+
+/**
+ * 将风格提示词注入到 JSON 字符串中
+ */
+export function injectStyleIntoJson(
+  jsonStr: string,
+  stylePrompt: string,
+): string {
+  if (!jsonStr || !stylePrompt) return jsonStr;
+
+  try {
+    // 检查是否看起来像 JSON
+    const trimmed = jsonStr.trim();
+    if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return jsonStr;
+
+    const data = JSON.parse(trimmed);
+
+    // 处理 { storyboard: [...] } 格式
+    if (data && Array.isArray(data.storyboard)) {
+      data.storyboard = data.storyboard.map((item: any) => ({
+        ...item,
+        style_prompt: item.style_prompt || stylePrompt,
+      }));
+      return JSON.stringify(data, null, 2);
+    }
+
+    // 处理数组格式 [...]
+    if (Array.isArray(data)) {
+      const updated = data.map((item: any) => ({
+        ...item,
+        style_prompt: item.style_prompt || stylePrompt,
+      }));
+      return JSON.stringify(updated, null, 2);
+    }
+  } catch (e) {
+    // 忽略解析错误，可能不是 JSON 或者格式不对
+  }
+
+  return jsonStr;
 }

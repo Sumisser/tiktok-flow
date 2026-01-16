@@ -9,6 +9,7 @@ import type {
 import {
   parseStoryboardTable,
   extractJsonFromMarkdown,
+  injectStyleIntoJson,
 } from '../lib/storyboard';
 import StoryboardEditor from './StoryboardEditor';
 import PromptSidebar from './PromptSidebar';
@@ -129,6 +130,41 @@ export default function WorkflowStep({
     (s) => s.id === selectedStyle,
   );
 
+  // 当视觉风格改变时，自动更新所有分镜的 stylePrompt
+  useEffect(() => {
+    if (selectedStyleConfig && storyboards.length > 0) {
+      const needsUpdate = storyboards.some(
+        (s) => s.stylePrompt !== selectedStyleConfig.prompt,
+      );
+      if (needsUpdate) {
+        const updated = storyboards.map((s) => ({
+          ...s,
+          stylePrompt: selectedStyleConfig.prompt,
+        }));
+        onUpdateStoryboards(updated);
+
+        // 如果 output 是 JSON 格式，同步更新 output 中的 style_prompt
+        if (output) {
+          const updatedOutput = injectStyleIntoJson(
+            output,
+            selectedStyleConfig.prompt,
+          );
+          if (updatedOutput !== output) {
+            setOutput(updatedOutput);
+            onUpdate({ output: updatedOutput });
+          }
+        }
+      }
+    }
+  }, [
+    selectedStyle,
+    selectedStyleConfig,
+    storyboards.length,
+    onUpdateStoryboards,
+    output,
+    onUpdate,
+  ]);
+
   const getFullPrompt = () => {
     const stylePrompt = selectedStyleConfig?.prompt || '';
     let finalBasePrompt = step.basePrompt;
@@ -193,11 +229,13 @@ export default function WorkflowStep({
 
       if (text) {
         const stylePrefix = selectedStyleConfig?.prompt || '';
-        const cleanedOutput = extractJsonFromMarkdown(text);
+        const rawOutput = extractJsonFromMarkdown(text);
+        const cleanedOutput = injectStyleIntoJson(rawOutput, stylePrefix);
+
         setOutput(cleanedOutput);
         onUpdate({ output: cleanedOutput, status: 'in-progress' });
 
-        const rawStoryboards = parseStoryboardTable(text);
+        const rawStoryboards = parseStoryboardTable(text, stylePrefix);
         const styledStoryboards = rawStoryboards.map((item) => {
           const cleanedPrompt = item.imagePrompt.trim();
           return {
@@ -737,6 +775,7 @@ export default function WorkflowStep({
             isRawMode={isStoryboardRawMode}
             setIsRawMode={setIsStoryboardRawMode}
             onReset={handleResetClick}
+            stylePrompt={selectedStyleConfig?.prompt}
           />
         </div>
 
