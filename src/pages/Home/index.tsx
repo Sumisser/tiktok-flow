@@ -4,50 +4,7 @@ import TaskCard from '../../components/TaskCard';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, X, Search, LogOut } from 'lucide-react';
-
-const JellyfishIcon = ({ className }: { className?: string }) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    {/* Biomorphic Dome */}
-    <path d="M3 11c0-5.5 4-10 9-10s9 4.5 9 10" className="opacity-80" />
-    <path d="M5 11h14" className="opacity-40" />
-
-    {/* Neural Tentacles */}
-    <path d="M12 11v8c0 2-2 3-2 3" />
-    <path d="M8 11v5c0 2.5-2.5 4-3 4" />
-    <path d="M16 11v5c0 2.5 2.5 4 3 4" />
-
-    {/* AI Synapses */}
-    <circle
-      cx="12"
-      cy="6"
-      r="1"
-      fill="currentColor"
-      className="animate-pulse"
-    />
-    <circle
-      cx="8"
-      cy="8"
-      r="0.5"
-      fill="currentColor"
-      className="animate-pulse delay-75"
-    />
-    <circle
-      cx="16"
-      cy="8"
-      r="0.5"
-      fill="currentColor"
-      className="animate-pulse delay-150"
-    />
-  </svg>
-);
+import jellyfishIcon from '@/assets/jellyfish.png';
 
 const useTime = () => {
   const [time, setTime] = useState(new Date());
@@ -192,12 +149,16 @@ export default function Home() {
           >
             <div className="relative flex items-center justify-center">
               <div className="absolute inset-0 bg-primary/30 blur-lg rounded-full animate-pulse-slow group-hover:bg-primary/50 transition-colors" />
-              <JellyfishIcon className="relative w-7 h-7 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
+              <img
+                src={jellyfishIcon}
+                alt="JellyFlow"
+                className="relative w-7 h-7 drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]"
+              />
               <div className="absolute top-0 right-0 w-1.5 h-1.5 bg-green-400 rounded-full border border-black shadow-[0_0_8px_rgba(74,222,128,1)] animate-ping" />
             </div>
             <div className="flex flex-col justify-center">
               <span className="font-extrabold tracking-tight text-sm leading-none text-white group-hover:text-primary transition-colors">
-                TikTok Flow
+                JellyFlow
               </span>
               <span className="text-[9px] font-bold text-primary/80 tracking-[0.2em] uppercase leading-none mt-1 scale-90 origin-left">
                 AI Studio
