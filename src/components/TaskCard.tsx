@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Task } from '../types';
-import { useAuth } from '../store/auth';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -22,8 +21,6 @@ interface TaskCardProps {
 
 export default function TaskCard({ task, onDelete }: TaskCardProps) {
   const navigate = useNavigate();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { user } = useAuth();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // 格式化日期
