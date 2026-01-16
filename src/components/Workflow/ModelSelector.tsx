@@ -11,7 +11,7 @@ export default function ModelSelector({
   onModelSelect,
 }: ModelSelectorProps) {
   return (
-    <div className="flex items-center justify-center gap-1.5 p-1.5 bg-black/40 backdrop-blur-xl rounded-xl border border-white/5 w-fit mx-auto scale-90 shadow-2xl">
+    <div className="flex flex-wrap items-center justify-start gap-2 p-2.5 bg-black/20 border border-white/5 rounded-xl w-full">
       {MODELS.map((m) => (
         <button
           key={m.id}

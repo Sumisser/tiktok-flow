@@ -15,13 +15,11 @@ import StoryboardEditor from './StoryboardEditor';
 import PromptSidebar from './PromptSidebar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 
 import {
   ListTodo,
   Wand2,
   LayoutGrid,
-  Sparkles,
   FileCode,
   Copy,
   Check,
@@ -50,6 +48,7 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { generateMinimaxTts } from '../lib/tts';
 import { uploadTtsAudio, deleteTtsAudio } from '../lib/storage';
+import jellyfishIcon from '@/assets/jellyfish.png'; // Correct import
 
 interface WorkflowStepProps {
   taskId: string;
@@ -757,59 +756,81 @@ export default function WorkflowStep({
           />
         </div>
 
-        {/* 创意描述视图 */}
+        {/* 创意描述视图 - Concept Studio Design */}
         <div
           className={cn(
-            'w-[calc(100vw-12rem)] max-w-[1400px] mx-auto animate-in fade-in duration-300',
+            'w-[calc(100vw-12rem)] max-w-[1200px] mx-auto animate-in fade-in duration-500 h-[85vh] min-h-[600px] flex flex-col justify-center',
             !isGenerating && !showResultView ? 'block' : 'hidden',
           )}
         >
-          <Card className="glass-card border-primary/20 ring-1 ring-primary/10 shadow-2xl relative overflow-hidden gap-0 py-0 h-[85vh] min-h-[540px] flex flex-col">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
+          <div className="relative group w-full h-full">
+            {/* Ambient Glow */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-purple-500/20 to-blue-500/20 rounded-[32px] blur-xl opacity-20 group-hover:opacity-30 transition-opacity duration-1000" />
 
-            <CardHeader className="px-5 py-4 border-b border-white/5 flex flex-row items-center justify-between bg-white/[0.01]">
-              <div className="flex items-center gap-3.5">
-                <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-inner">
-                  <Sparkles className="w-4 h-4" />
+            <Card className="relative bg-black/40 backdrop-blur-2xl border border-white/10 rounded-[30px] shadow-2xl overflow-hidden w-full h-full flex flex-col ring-1 ring-white/5">
+              {/* Decorative Top Line */}
+              <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-50" />
+
+              <CardHeader className="px-8 py-5 shrink-0 flex flex-row items-center gap-4 border-b border-white/5 bg-gradient-to-b from-white/[0.03] to-transparent">
+                {/* Brand Logo */}
+                <div className="relative flex items-center justify-center w-10 h-10 shrink-0">
+                  <div className="absolute inset-0 bg-primary/30 blur-lg rounded-full animate-pulse-slow" />
+                  <img
+                    src={jellyfishIcon}
+                    alt="JellyFlow"
+                    className="relative w-8 h-8 drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]"
+                  />
                 </div>
-                <div>
-                  <h2 className="text-base font-black text-white tracking-wide leading-tight">
-                    创意描述
+
+                <div className="space-y-0.5">
+                  <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-white/90 to-white/60 tracking-tight">
+                    灵感构思
                   </h2>
-                  <p className="text-[10px] text-muted-foreground font-medium mt-0.5">
-                    输入你的想法，AI 将自动生成视觉预览与分镜提示词
+                  <p className="text-xs text-white/40 font-medium tracking-wide">
+                    AI 驱动的智能分镜生成工具
                   </p>
                 </div>
-              </div>
-            </CardHeader>
+              </CardHeader>
 
-            <CardContent className="px-5 py-5 space-y-4 flex-1 flex flex-col overflow-hidden h-full">
-              <div className="space-y-2 flex-1 flex flex-col min-h-0">
-                <div className="flex items-center gap-2 text-primary font-bold text-[11px] uppercase tracking-wider shrink-0">
-                  <span className="w-1 h-1 rounded-full bg-primary" />
-                  创意描述
+              <CardContent className="px-8 py-0 flex-1 flex flex-col min-h-0 gap-4">
+                {/* Main Input Area - The "Canvas" */}
+                <div className="flex-1 relative group/input min-h-0 pt-1">
+                  <textarea
+                    value={input}
+                    onChange={(e) => handleInputChange(e.target.value)}
+                    placeholder="在此描述你的创意... (例如：雨夜的赛博朋克城市，霓虹灯倒映在积水中...)"
+                    className="w-full h-full bg-transparent border-none focus:ring-0 ring-0 focus:outline-none resize-none text-lg leading-relaxed font-medium text-white/90 placeholder:text-white/20 selection:bg-primary/30 p-0 overflow-y-auto custom-scrollbar"
+                  />
+                  {/* Focus Indicator */}
+                  <div className="absolute bottom-0 left-0 w-10 h-0.5 bg-primary/50 group-focus-within/input:w-full transition-all duration-700 ease-out" />
                 </div>
-                <Textarea
-                  value={input}
-                  onChange={(e) => handleInputChange(e.target.value)}
-                  placeholder="例如：一个年轻人在雨后的城市街道上奔跑..."
-                  className="flex-1 min-h-[100px] bg-black/20 border-white/10 focus:border-primary/50 focus:ring-primary/20 placeholder:text-white/10 resize-none rounded-xl p-3 text-xs leading-relaxed font-medium transition-all shadow-inner text-white h-screen"
-                />
-              </div>
 
-              <StyleSelector
-                selectedStyle={selectedStyle}
-                onStyleSelect={setSelectedStyle}
-              />
-
-              <div className="pt-3 border-t border-white/5 w-full">
-                <ModelSelector
-                  selectedModel={selectedModel}
-                  onModelSelect={setSelectedModel}
-                />
-              </div>
-            </CardContent>
-          </Card>
+                {/* Controls Section - Floating Deck */}
+                <div className="shrink-0 space-y-4 pt-4 border-t border-white/5 pb-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                    <div className="space-y-2 min-w-0">
+                      <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest pl-1">
+                        视觉风格
+                      </label>
+                      <StyleSelector
+                        selectedStyle={selectedStyle}
+                        onStyleSelect={setSelectedStyle}
+                      />
+                    </div>
+                    <div className="space-y-2 min-w-0">
+                      <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest pl-1">
+                        AI 模型
+                      </label>
+                      <ModelSelector
+                        selectedModel={selectedModel}
+                        onModelSelect={setSelectedModel}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
 
