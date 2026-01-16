@@ -52,7 +52,14 @@ const useQuote = () => {
 };
 
 export default function Home() {
-  const { tasks, isLoading, addTask, deleteTask, wallpaperUrl } = useTasks();
+  const {
+    tasks,
+    isLoading,
+    addTask,
+    deleteTask,
+    wallpaperUrl,
+    wallpaperAttribution,
+  } = useTasks();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [isCreating, setIsCreating] = useState(false);
@@ -71,14 +78,14 @@ export default function Home() {
     user?.user_metadata?.full_name ||
     user?.user_metadata?.name ||
     user?.email?.split('@')[0] ||
-    '创作者';
+    'Creator';
 
   const greeting =
     currentTime.getHours() < 12
-      ? '早上好'
+      ? 'Good morning'
       : currentTime.getHours() < 18
-        ? '下午好'
-        : '晚上好';
+        ? 'Good afternoon'
+        : 'Good evening';
 
   const handleCreate = async () => {
     if (newTitle.trim()) {
@@ -139,6 +146,30 @@ export default function Home() {
         <div className="absolute inset-0 bg-black/10 backdrop-blur-[0px]" />
       </div>
 
+      {/* Unsplash Attribution - Top Right */}
+      {wallpaperAttribution && (
+        <div className="fixed top-9 right-6 z-40 hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full border border-white/5 text-[10px] text-white/40 transition-all hover:scale-105 pointer-events-auto">
+          <span>Photo by</span>
+          <a
+            href={wallpaperAttribution.photographerUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-white/80 hover:text-white hover:underline"
+          >
+            {wallpaperAttribution.photographerName}
+          </a>
+          <span>on</span>
+          <a
+            href={wallpaperAttribution.unsplashUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-white/80 hover:text-white hover:underline"
+          >
+            Unsplash
+          </a>
+        </div>
+      )}
+
       {/* Floating HUD Header - Always Centered/Available */}
       <header className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-5xl px-4 pointer-events-none flex justify-center">
         <div className="flex items-center gap-3 p-1.5 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-full shadow-2xl ring-1 ring-white/5 pointer-events-auto transition-all duration-500 hover:bg-black/70 hover:scale-[1.01] hover:shadow-primary/5">
@@ -174,7 +205,7 @@ export default function Home() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="搜索创作流..."
+                placeholder="Search workflows..."
                 className="w-full bg-white/5 hover:bg-white/10 focus:bg-white/10 rounded-full h-9 pl-9 pr-4 text-xs font-medium placeholder:text-white/20 border-none outline-none ring-1 ring-transparent focus:ring-white/10 transition-all"
               />
             </div>
@@ -187,7 +218,7 @@ export default function Home() {
               className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full font-bold text-xs transition-all shadow-lg hover:shadow-primary/20"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>新建</span>
+              <span>New</span>
             </button>
           )}
 
@@ -235,7 +266,7 @@ export default function Home() {
               <div className="absolute inset-2 border-b-2 border-primary/50 rounded-full animate-spin [animation-direction:reverse]"></div>
             </div>
             <p className="text-white/30 text-xs font-bold tracking-[0.2em] animate-pulse">
-              正在载入工作区
+              Loading Workspace
             </p>
           </div>
         )}
@@ -262,7 +293,7 @@ export default function Home() {
                     value={newTitle}
                     onChange={(e) => setNewTitle(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="今天想创作什么？"
+                    placeholder="What will you create today?"
                     className="flex-1 bg-transparent border-none outline-none h-14 px-6 text-xl font-bold placeholder:text-white/20 text-center text-white"
                   />
                   <button
@@ -270,16 +301,16 @@ export default function Home() {
                     disabled={!newTitle.trim()}
                     className="h-12 px-8 bg-white text-black font-bold rounded-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
                   >
-                    开始
+                    Start
                   </button>
                 </div>
               </div>
               <div className="mt-4 text-center text-white/20 text-xs font-medium">
-                按{' '}
+                Press{' '}
                 <span className="px-1.5 py-0.5 rounded bg-white/10 border border-white/5 mx-1">
                   Enter
                 </span>{' '}
-                键开始创作
+                to start
               </div>
             </div>
 
@@ -289,7 +320,9 @@ export default function Home() {
                 className="group relative flex items-center gap-3 px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl backdrop-blur-md transition-all hover:scale-105 active:scale-95"
               >
                 <Plus className="w-5 h-5 text-primary group-hover:rotate-90 transition-transform duration-500" />
-                <span className="font-bold tracking-wide">开始新创作</span>
+                <span className="font-bold tracking-wide">
+                  Start New Creation
+                </span>
               </button>
             )}
           </div>
@@ -309,7 +342,7 @@ export default function Home() {
                       : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
                   }`}
                 >
-                  全部
+                  All
                 </button>
                 {allTags.map((tag) => (
                   <button
@@ -335,12 +368,12 @@ export default function Home() {
             {filteredTasks.length === 0 && searchQuery && (
               <div className="flex flex-col items-center justify-center py-32 opacity-50">
                 <Search className="w-12 h-12 mb-4 text-white/20" />
-                <p className="font-bold text-white/40">未找到相关项目</p>
+                <p className="font-bold text-white/40">No workflows found</p>
                 <button
                   onClick={() => setSearchQuery('')}
                   className="mt-4 text-primary hover:underline text-sm"
                 >
-                  清除搜索
+                  Clear search
                 </button>
               </div>
             )}
