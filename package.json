@@ -4,12 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "bun --bun vite",
-    "start": "bun --bun vite --open",
-    "build": "bun --bun tsc -b && bun --bun vite build",
-    "lint": "bun --bun oxlint",
-    "preview": "bun --bun vite preview",
-    "prepare": "bun --bun husky",
+    "dev": "vite",
+    "start": "vite --open",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "prepare": "husky",
     "format": "prettier --write ."
   },
   "dependencies": {
