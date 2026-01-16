@@ -3,7 +3,7 @@ import { useAuth } from '../../store/auth';
 import TaskCard from '../../components/TaskCard';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, X, Search, LogOut } from 'lucide-react';
+import { Plus, X, Search, LogOut, Sparkles, Clapperboard } from 'lucide-react';
 
 const useTime = () => {
   const [time, setTime] = useState(new Date());
@@ -37,7 +37,6 @@ const useQuote = () => {
         }
       } catch (error) {
         console.error('获取名言失败:', error);
-        // Fallback 名言
         setQuote({
           content: '一个人至少拥有一个梦想，有一个理由去强大。',
           author: '三毛',
@@ -52,19 +51,13 @@ const useQuote = () => {
 };
 
 export default function Home() {
-  const {
-    tasks,
-    isLoading,
-    addTask,
-    deleteTask,
-    wallpaperUrl,
-    wallpaperAttribution,
-  } = useTasks();
+  const { tasks, isLoading, addTask, deleteTask, wallpaperUrl } = useTasks();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const currentTime = useTime();
   const quote = useQuote();
 
@@ -73,7 +66,6 @@ export default function Home() {
     minute: '2-digit',
   });
 
-  // 从用户信息中提取显示名称
   const displayName =
     user?.user_metadata?.full_name ||
     user?.user_metadata?.name ||
@@ -92,7 +84,6 @@ export default function Home() {
       const newTask = await addTask(newTitle.trim());
       setNewTitle('');
       setIsCreating(false);
-      // 立即跳转到新创建的 workflow 页面
       navigate(`/workflow/${newTask.id}`);
     }
   };
@@ -106,268 +97,249 @@ export default function Home() {
     }
   };
 
+  // 提取所有唯一标签
+  const allTags = Array.from(
+    new Set(tasks.flatMap((task) => task.tags || [])),
+  ).sort();
+
   const filteredTasks = tasks.filter((task) => {
     const searchLower = searchQuery.toLowerCase();
     const matchTitle = task.title.toLowerCase().includes(searchLower);
     const matchTags = task.tags?.some((tag) =>
       tag.toLowerCase().includes(searchLower),
     );
-    return matchTitle || matchTags;
+    const matchSelectedTag = selectedTag
+      ? task.tags?.includes(selectedTag)
+      : true;
+
+    return (matchTitle || matchTags) && matchSelectedTag;
   });
 
   const hasTasks = tasks.length > 0;
 
+  // Default Cinematic Wallpaper
+  const defaultWallpaper =
+    'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2070&auto=format&fit=crop';
+  const activeWallpaper =
+    wallpaperUrl && wallpaperUrl.trim() !== ''
+      ? wallpaperUrl
+      : defaultWallpaper;
+
   return (
-    <div className="min-h-screen text-white overflow-x-hidden selection:bg-white/20 relative">
-      {/* 背景图片 */}
-      {wallpaperUrl && (
-        <>
-          <div
-            className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat"
-            style={{
-              backgroundImage: `url(${wallpaperUrl})`,
-            }}
-          />
-          {/* 浅色遮罩层，保持文本可读性的同时更明亮 */}
-          <div className="fixed inset-0 -z-10 bg-gradient-to-b from-black/20 via-black/10 to-black/30" />
-        </>
-      )}
-      {/* 极简顶栏 - 仅保留功能性图标 */}
-      <header className="fixed top-0 left-0 right-0 z-50 px-8 py-6 flex items-center justify-between pointer-events-none">
-        <div className="flex items-center gap-4 pointer-events-auto">
-          {!isCreating ? (
+    <div className="min-h-screen text-white overflow-x-hidden selection:bg-primary/30 relative font-sans">
+      {/* Cinematic Background Layer */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-[ken-burns_30s_ease-in-out_infinite_alternate]"
+          style={{ backgroundImage: `url(${activeWallpaper})` }}
+        />
+        {/* Gradient Overlay - Vibrant but legible */}
+        <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/40 to-indigo-950/30 mix-blend-multiply" />
+        <div className="absolute inset-0 bg-black/10 backdrop-blur-[0px]" />
+      </div>
+
+      {/* Floating HUD Header - Always Centered/Available */}
+      <header className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-5xl px-4 pointer-events-none flex justify-center">
+        <div className="flex items-center gap-3 p-1.5 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-full shadow-2xl ring-1 ring-white/5 pointer-events-auto transition-all duration-500 hover:bg-black/70 hover:scale-[1.01] hover:shadow-primary/5">
+          {/* Brand / Home Shortcut */}
+          <div className="pl-4 pr-4 flex items-center gap-2 border-r border-white/10">
+            <Clapperboard className="w-4 h-4 text-primary fill-primary/20" />
+            <span className="font-extrabold tracking-tight text-sm">
+              CineFlow
+            </span>
+          </div>
+
+          {/* Search Bar - Expands when tasks exist */}
+          {hasTasks && !isCreating && (
+            <div className="relative group w-64 transition-all focus-within:w-80 hidden md:block">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40 group-focus-within:text-white transition-colors" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="搜索创作流..."
+                className="w-full bg-white/5 hover:bg-white/10 focus:bg-white/10 rounded-full h-9 pl-9 pr-4 text-xs font-medium placeholder:text-white/20 border-none outline-none ring-1 ring-transparent focus:ring-white/10 transition-all"
+              />
+            </div>
+          )}
+
+          {/* Create Button */}
+          {!isCreating && (
             <button
               onClick={() => setIsCreating(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full transition-all border border-white/10 group active:scale-95 shadow-2xl"
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full font-bold text-xs transition-all shadow-lg hover:shadow-primary/20"
             >
-              <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" />
-              <span className="text-[11px] font-black tracking-widest uppercase">
-                新建创作流
-              </span>
+              <Plus className="w-3.5 h-3.5" />
+              <span>新建</span>
             </button>
-          ) : (
+          )}
+
+          {isCreating && (
             <button
               onClick={() => setIsCreating(false)}
-              className="p-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full border border-white/10 transition-all shadow-2xl"
+              className="w-9 h-9 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-full transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
           )}
 
-          {/* 状态感知的搜索框 - 仅在有任务且不处于创建状态时在顶部显示 */}
-          {hasTasks && !isCreating && (
-            <div className="ml-4 w-64 md:w-80 transition-all duration-500 animate-in fade-in slide-in-from-left-4">
-              <div className="relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-white/60 transition-colors" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="搜索项目..."
-                  className="w-full bg-white/5 hover:bg-white/10 focus:bg-white/20 backdrop-blur-3xl rounded-2xl h-11 pl-11 pr-4 text-sm font-bold tracking-tight border border-white/5 focus:border-white/20 transition-all outline-none"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-6 pointer-events-auto">
-          {isLoading && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 backdrop-blur-md rounded-full border border-white/10 animate-pulse">
-              <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
-              <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
-              <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
-            </div>
-          )}
-
-          {/* Unsplash 归属信息 */}
-          {wallpaperAttribution && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-full text-[10px] text-white/80 drop-shadow-md animate-in fade-in duration-1000">
-              <span>Photo by</span>
-              <a
-                href={wallpaperAttribution.photographerUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium hover:text-white transition-colors"
-              >
-                {wallpaperAttribution.photographerName}
-              </a>
-              <span>on</span>
-              <a
-                href={wallpaperAttribution.unsplashUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium hover:text-white transition-colors"
-              >
-                Unsplash
-              </a>
-            </div>
-          )}
-          {/* 用户信息与登出 */}
+          {/* User Profile */}
           {user && (
-            <div className="flex items-center gap-3 animate-in fade-in duration-500">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10">
+            <div className="pl-2 flex items-center gap-3 border-l border-white/10">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 p-[1px] cursor-pointer group relative overflow-hidden">
                 {user.user_metadata?.avatar_url ? (
                   <img
                     src={user.user_metadata.avatar_url}
-                    alt="Avatar"
-                    className="w-6 h-6 rounded-full"
+                    className="w-full h-full rounded-full object-cover"
                   />
                 ) : (
-                  <div className="w-6 h-6 rounded-full bg-primary/30 flex items-center justify-center text-[10px] font-bold text-white">
+                  <div className="w-full h-full rounded-full bg-black flex items-center justify-center text-[10px] font-bold">
                     {user.email?.charAt(0).toUpperCase()}
                   </div>
                 )}
-                <span className="text-[11px] text-white/70 font-medium max-w-[120px] truncate">
-                  {user.email}
-                </span>
               </div>
               <button
                 onClick={signOut}
-                className="p-2 bg-black/40 hover:bg-red-500/20 backdrop-blur-md rounded-full border border-white/10 hover:border-red-500/30 transition-all group"
-                title="退出登录"
+                className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/50 hover:text-white"
               >
-                <LogOut className="w-4 h-4 text-white/60 group-hover:text-red-400 transition-colors" />
+                <LogOut className="w-3.5 h-3.5" />
               </button>
             </div>
           )}
         </div>
       </header>
 
-      {/* 动态区域 - 根据是否有任务切换布局 */}
-      <main className="relative z-10 min-h-screen">
-        {isLoading ? (
-          /* Loading 状态：展示加载动画 */
-          <section className="min-h-screen flex flex-col items-center justify-center px-8 animate-in fade-in duration-500">
-            <div className="space-y-8 text-center">
-              <div className="relative">
-                <div className="w-24 h-24 border-4 border-white/10 border-t-white/80 rounded-full animate-spin mx-auto" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div
-                    className="w-12 h-12 border-4 border-white/5 border-t-white/40 rounded-full animate-spin"
-                    style={{
-                      animationDirection: 'reverse',
-                      animationDuration: '1s',
-                    }}
-                  />
-                </div>
-              </div>
-              <p className="text-xl font-black tracking-widest uppercase opacity-40">
-                正在加载创作流...
-              </p>
+      <main className="relative z-10 pt-28 pb-32 px-4 md:px-8 max-w-[1920px] mx-auto min-h-screen flex flex-col">
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex-1 flex flex-col items-center justify-center space-y-4">
+            <div className="relative w-16 h-16">
+              <div className="absolute inset-0 border-t-2 border-primary rounded-full animate-spin"></div>
+              <div className="absolute inset-2 border-b-2 border-primary/50 rounded-full animate-spin [animation-direction:reverse]"></div>
             </div>
-          </section>
-        ) : !hasTasks || isCreating ? (
-          /* 空状态 / 创建状态：简洁的 Hero 区域 */
-          <section className="min-h-screen flex flex-col items-center justify-center px-8 pb-20 animate-in fade-in duration-1000">
-            <div className="w-full max-w-2xl space-y-12 text-center">
-              {/* 时钟与问候 */}
-              <div className="space-y-3 select-none">
-                <h1 className="text-[100px] md:text-[140px] font-black tracking-tighter leading-none drop-shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
-                  {timeString}
-                </h1>
-                <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white/70">
-                  {greeting}, {displayName}
-                </h2>
-              </div>
+            <p className="text-white/30 text-xs font-bold tracking-[0.2em] animate-pulse">
+              正在载入工作区
+            </p>
+          </div>
+        )}
 
-              {/* 创建任务区域 */}
-              {isCreating ? (
-                <div className="animate-in zoom-in-95 fade-in duration-300 space-y-6">
+        {/* Empty / Creation Hero State */}
+        {!isLoading && (!hasTasks || isCreating) && (
+          <div className="flex-1 flex flex-col items-center justify-center -mt-20 animate-in fade-in duration-700 slide-in-from-bottom-4">
+            <h1 className="text-[8rem] md:text-[12rem] font-black tracking-tighter leading-none bg-clip-text text-transparent bg-gradient-to-b from-white to-white/10 select-none drop-shadow-2xl">
+              {timeString}
+            </h1>
+            <div className="text-xl md:text-2xl font-medium text-white/60 tracking-tight mb-12">
+              {greeting}, {displayName}
+            </div>
+
+            <div
+              className={`w-full max-w-xl transition-all duration-500 ${isCreating ? 'scale-100 opacity-100' : 'scale-95 opacity-0 hidden'}`}
+            >
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary to-purple-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+                <div className="relative bg-black/40 backdrop-blur-xl rounded-2xl border border-white/10 p-2 flex items-center">
                   <input
                     autoFocus
                     type="text"
                     value={newTitle}
                     onChange={(e) => setNewTitle(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="输入创作主题..."
-                    className="w-full bg-white/10 backdrop-blur-xl rounded-2xl h-16 px-6 text-xl font-bold placeholder:text-white/20 border border-white/10 focus:border-white/30 transition-all outline-none text-center"
+                    placeholder="今天想创作什么？"
+                    className="flex-1 bg-transparent border-none outline-none h-14 px-6 text-xl font-bold placeholder:text-white/20 text-center text-white"
                   />
-                  <div className="flex justify-center gap-4">
-                    <button
-                      onClick={handleCreate}
-                      disabled={!newTitle.trim()}
-                      className="px-10 py-4 bg-white text-black font-black rounded-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:scale-100"
-                    >
-                      开始创作
-                    </button>
-                    <button
-                      onClick={() => setIsCreating(false)}
-                      className="px-10 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-xl font-bold transition-all border border-white/10"
-                    >
-                      取消
-                    </button>
-                  </div>
+                  <button
+                    onClick={handleCreate}
+                    disabled={!newTitle.trim()}
+                    className="h-12 px-8 bg-white text-black font-bold rounded-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
+                  >
+                    开始
+                  </button>
                 </div>
-              ) : (
-                <button
-                  onClick={() => setIsCreating(true)}
-                  className="inline-flex items-center gap-3 px-8 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-2xl border border-white/10 transition-all group"
-                >
-                  <Plus className="w-5 h-5 opacity-60 group-hover:opacity-100 group-hover:rotate-90 transition-all" />
-                  <span className="text-base font-bold">新建创作流</span>
-                </button>
-              )}
+              </div>
+              <div className="mt-4 text-center text-white/20 text-xs font-medium">
+                按{' '}
+                <span className="px-1.5 py-0.5 rounded bg-white/10 border border-white/5 mx-1">
+                  Enter
+                </span>{' '}
+                键开始创作
+              </div>
             </div>
-          </section>
-        ) : (
-          /* 有任务状态：展示顶部对齐的画廊布局 */
-          <section className="pt-24 px-8 pb-40 max-w-[1600px] mx-auto animate-in slide-in-from-bottom-8 duration-700">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+
+            {!isCreating && (
+              <button
+                onClick={() => setIsCreating(true)}
+                className="group relative flex items-center gap-3 px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl backdrop-blur-md transition-all hover:scale-105 active:scale-95"
+              >
+                <Plus className="w-5 h-5 text-primary group-hover:rotate-90 transition-transform duration-500" />
+                <span className="font-bold tracking-wide">开始新创作</span>
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Task Grid */}
+        {!isLoading && hasTasks && !isCreating && (
+          <div className="animate-in fade-in duration-500 slide-in-from-bottom-8">
+            {/* 标签/分类筛选器 */}
+            {allTags.length > 0 && (
+              <div className="flex items-center justify-center mb-8 gap-2">
+                <button
+                  onClick={() => setSelectedTag(null)}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                    selectedTag === null
+                      ? 'bg-white text-black'
+                      : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  全部
+                </button>
+                {allTags.map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => setSelectedTag(tag)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all border ${
+                      selectedTag === tag
+                        ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20'
+                        : 'bg-transparent border-white/10 text-white/60 hover:border-white/20 hover:text-white'
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6 max-w-[1920px] mx-auto">
               {filteredTasks.map((task) => (
                 <TaskCard key={task.id} task={task} onDelete={deleteTask} />
               ))}
             </div>
 
             {filteredTasks.length === 0 && searchQuery && (
-              <div className="mt-20 text-center py-32 bg-white/2 backdrop-blur-sm rounded-[3rem] border border-dashed border-white/10 transition-all">
-                <Search className="w-16 h-16 opacity-5 mx-auto mb-6" />
-                <p className="text-white/30 font-black uppercase tracking-[0.3em] text-xs">
-                  未找到匹配的流水线资产
-                </p>
+              <div className="flex flex-col items-center justify-center py-32 opacity-50">
+                <Search className="w-12 h-12 mb-4 text-white/20" />
+                <p className="font-bold text-white/40">未找到相关项目</p>
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="mt-6 text-[10px] font-black uppercase tracking-widest text-primary hover:text-white transition-colors"
+                  className="mt-4 text-primary hover:underline text-sm"
                 >
-                  清除所有筛选
+                  清除搜索
                 </button>
               </div>
             )}
-          </section>
+          </div>
         )}
       </main>
 
-      {/* 底部引用 - 灵感来源 */}
-      <footer className="fixed bottom-12 left-0 right-0 z-40 flex justify-center px-6 pointer-events-none">
-        <div className="max-w-2xl w-full text-center pointer-events-auto">
-          {quote ? (
-            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-1000">
-              <div className="relative inline-block">
-                {/* 装饰性引号 */}
-                <span className="absolute -left-8 -top-4 text-4xl text-white/20 font-serif italic select-none mix-blend-overlay">
-                  “
-                </span>
-                <p className="text-sm md:text-base font-medium tracking-wide text-white/90 selection:bg-primary/30 cursor-text mix-blend-plus-lighter drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">
-                  {quote.content}
-                </p>
-                <span className="absolute -right-8 -bottom-4 text-4xl text-white/20 font-serif italic select-none mix-blend-overlay">
-                  ”
-                </span>
-              </div>
-              <div className="flex items-center justify-center gap-2 text-[10px] uppercase tracking-[0.3em] text-white/40 font-black mix-blend-plus-lighter">
-                <span className="w-8 h-px bg-white/20" />
-                <span>
-                  {quote.author || '佚名'}
-                  {quote.origin && ` · 《${quote.origin}》`}
-                </span>
-                <span className="w-8 h-px bg-white/20" />
-              </div>
-            </div>
-          ) : (
-            <div className="h-4 w-48 bg-white/10 animate-pulse mx-auto rounded-full backdrop-blur-md" />
-          )}
-        </div>
-      </footer>
+      {/* Footer Quote - Minimalist with improved visibility */}
+      {!isLoading && quote && (
+        <footer className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none w-auto max-w-lg px-6 py-2 rounded-full backdrop-blur-md bg-black/20 border border-white/5 shadow-2xl transition-opacity duration-500">
+          <p className="text-[10px] md:text-xs font-medium tracking-widest text-white/50 text-center leading-relaxed uppercase whitespace-nowrap overflow-hidden text-ellipsis">
+            “{quote.content}” —{' '}
+            <span className="text-white/30">{quote.author || '佚名'}</span>
+          </p>
+        </footer>
+      )}
     </div>
   );
 }
