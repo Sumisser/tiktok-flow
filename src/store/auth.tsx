@@ -12,7 +12,11 @@ import type { User, Session } from '@supabase/supabase-js';
 export const ADMIN_EMAIL = 'miracleisshit@gmail.com';
 
 // 允许访问的用户邮箱列表（只有这些用户能看到数据）
-const ALLOWED_EMAILS = [ADMIN_EMAIL, '656603135@qq.com'];
+const ALLOWED_EMAILS = [
+  ADMIN_EMAIL,
+  '656603135@qq.com',
+  'maharishi_sengar@yahoo.com',
+];
 
 interface AuthContextType {
   user: User | null;
